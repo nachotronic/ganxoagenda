@@ -52,17 +52,8 @@
 </div>
 </div>
 
-<!-- pestanyes -->
-<div style="background:#fff; display:flex; border-bottom:1px solid #e4e0d7;">
-<div id="gx-tab-vei" onclick="gxView('vei')" style="flex:1; text-align:center; padding:11px 0; font-size:13px; font-weight:500; color:#103b52; border-bottom:2px solid #103b52; cursor:pointer;">Sóc d'aquí</div>
-<div id="gx-tab-vis" onclick="gxView('vis')" style="flex:1; text-align:center; padding:11px 0; font-size:13px; font-weight:500; color:#a8a193; cursor:pointer;">De visita</div>
-</div>
-
-<!-- ===== VISTA VEÍ ===== -->
-<div id="gx-vei">
-
 <!-- accessos temporals 2x2 -->
-<div style="background:#fff; padding:13px 14px 14px; border-bottom:1px solid #e4e0d7;">
+<div id="gx-filtres-wrap" style="background:#fff; padding:13px 14px 14px; border-bottom:1px solid #e4e0d7;">
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
 <div id="gx-filtre-avui" onclick="gxFiltrar('avui')" style="font-size:13px; font-weight:600; padding:11px 0; border-radius:11px; background:#103b52; color:#fff; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-sun" style="font-size:15px;"></i>Avui</div>
 <div id="gx-filtre-dema" onclick="gxFiltrar('dema')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Demà</div>
@@ -93,20 +84,6 @@
 <div id="gx-agenda-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
 </div>
 
-<!-- pàgina família -->
-<div id="gx-page-familia" style="display:none; padding:16px 16px 20px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 13px;">Aquest cap de setmana</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:14px; margin-bottom:11px; display:flex; gap:13px;">
-<div style="width:46px; text-align:center; flex-shrink:0; border-right:1px solid #ece8df; padding-right:13px;"><div style="font-size:13px; font-weight:600; color:#103b52;">Dis</div><div style="font-size:18px; font-weight:500; color:#103b52;">13</div></div>
-<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#1d8a6a; text-transform:uppercase; letter-spacing:.4px;">Taller · a partir de 6 anys</div><div style="font-size:15px; font-weight:900; color:#1d2b27; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px; margin-top:2px;">Taller de nusos mariners</div><div style="font-size:12px; color:#8a8478; margin-top:4px;"><i class="ti ti-map-pin" style="font-size:12px;"></i> Museu d'Història · 11:00</div></div>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:14px; margin-bottom:11px; display:flex; gap:13px;">
-<div style="width:46px; text-align:center; flex-shrink:0; border-right:1px solid #ece8df; padding-right:13px;"><div style="font-size:13px; font-weight:600; color:#103b52;">Diu</div><div style="font-size:18px; font-weight:500; color:#103b52;">14</div></div>
-<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#1a7ba3; text-transform:uppercase; letter-spacing:.4px;">Mar · a partir de 8 anys</div><div style="font-size:15px; font-weight:900; color:#1d2b27; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px; margin-top:2px;">Iniciació al rem en llagut</div><div style="font-size:12px; color:#8a8478; margin-top:4px;"><i class="ti ti-map-pin" style="font-size:12px;"></i> Club de Rem · 10:30</div></div>
-</div>
-<div style="background:#eef4f2; border:1px solid #d6e6df; border-radius:12px; padding:13px 15px; display:flex; align-items:center; gap:11px;"><i class="ti ti-map-pin" style="font-size:22px; color:#1d8a6a;"></i><div><div style="font-size:13px; font-weight:600; color:#1d2b27;">Sempre obert</div><div style="font-size:12px; color:#6b7780;">Parcs infantils, ludoteca i platja accessible</div></div></div>
-</div>
-
 <!-- pàgina pràctic -->
 <div id="gx-page-practic" style="display:none; padding:16px 16px 20px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 13px;">Informació útil</div>
@@ -117,10 +94,8 @@
 </div>
 </div>
 
-</div><!-- fi vista veí -->
-
-<!-- ===== VISTA VISITANT ===== -->
-<div id="gx-vis" style="display:none; padding:18px 16px 20px;">
+<!-- pàgina de visita -->
+<div id="gx-page-visita" style="display:none; padding:16px 16px 20px;">
 <div onclick="gxOpenGuia()" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">
 <div style="height:158px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; align-items:flex-end;">
 <div style="position:absolute; inset:0; background:linear-gradient(transparent 36%, rgba(0,0,0,.6));"></div>
@@ -140,10 +115,8 @@
 <!-- barra inferior -->
 <div style="background:#fff; border-top:1px solid #e4e0d7; display:flex; padding:9px 0 11px;">
 <div id="gx-nav-agenda" onclick="gxPage('agenda')" style="flex:1; text-align:center; color:#103b52; cursor:pointer;"><i class="ti ti-calendar-event" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">Agenda</div></div>
-<div id="gx-nav-familia" onclick="gxPage('familia')" style="flex:1; text-align:center; color:#b3a89a; cursor:pointer;"><i class="ti ti-mood-kid" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">En família</div></div>
+<div id="gx-nav-visita" onclick="gxPage('visita')" style="flex:1; text-align:center; color:#b3a89a; cursor:pointer;"><i class="ti ti-compass" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">De visita</div></div>
 <div id="gx-nav-practic" onclick="gxPage('practic')" style="flex:1; text-align:center; color:#b3a89a; cursor:pointer;"><i class="ti ti-info-circle" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">Pràctic</div></div>
-</div>
-
 </div>
 
 <!-- ===== FITXA D'ESDEVENIMENT ===== -->
@@ -336,18 +309,12 @@
 </div>
 
 <script>
-function gxView(v){
-  var vei=document.getElementById('gx-vei'), vis=document.getElementById('gx-vis');
-  var tv=document.getElementById('gx-tab-vei'), tvi=document.getElementById('gx-tab-vis');
-  if(v==='vei'){vei.style.display='block';vis.style.display='none';tv.style.color='#103b52';tv.style.borderBottom='2px solid #103b52';tvi.style.color='#a8a193';tvi.style.borderBottom='none';}
-  else{vei.style.display='none';vis.style.display='block';tvi.style.color='#103b52';tvi.style.borderBottom='2px solid #103b52';tv.style.color='#a8a193';tv.style.borderBottom='none';}
-}
 function gxPage(p){
-  ['agenda','familia','practic'].forEach(function(x){
+  ['agenda','visita','practic'].forEach(function(x){
     document.getElementById('gx-page-'+x).style.display = (x===p)?'block':'none';
     document.getElementById('gx-nav-'+x).style.color = (x===p)?'#103b52':'#b3a89a';
   });
-  gxView('vei');
+  document.getElementById('gx-filtres-wrap').style.display = (p==='agenda')?'block':'none';
 }
 function gxToggleMeteo(){
   var d=document.getElementById('gx-meteo-detail'), c=document.getElementById('gx-meteo-chev');
@@ -377,6 +344,8 @@ var gxFiltreActiu = 'avui';
 var gxMesOffset = 0;
 var gxNomesNens = false;
 var gxPagina = 0;
+var gxFichaStack = [];
+var gxFichaCurrentId = null;
 
 function gxToISO(d){
   var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -633,9 +602,16 @@ function gxRenderAgenda(){
   }
 }
 
-function gxOpenFicha(id){
+function gxOpenFicha(id, fromFicha){
   var ev = gxEvents.find(function(e){ return e.id===id; });
   if(!ev) return;
+  var fichaEl = document.getElementById('gx-ficha');
+  if(fromFicha && fichaEl.style.display==='block' && gxFichaCurrentId && gxFichaCurrentId!==id){
+    gxFichaStack.push(gxFichaCurrentId);
+  } else if(!fromFicha){
+    gxFichaStack = [];
+  }
+  gxFichaCurrentId = id;
   var cat = gxCatInfo(ev);
 
   document.getElementById('gx-f-header').style.backgroundImage = ev.foto_url ? "url('"+ev.foto_url+"')" : cat.color_gradient;
@@ -681,7 +657,7 @@ function gxOpenFicha(id){
     others.forEach(function(o){
       var oc = gxCatInfo(o);
       var row = document.createElement('div');
-      row.onclick = function(){ gxOpenFicha(o.id); };
+      row.onclick = function(){ gxOpenFicha(o.id, true); };
       row.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;';
       row.innerHTML =
         '<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:'+(o.foto_url? "url('"+o.foto_url+"')" : oc.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
@@ -695,7 +671,14 @@ function gxOpenFicha(id){
   document.getElementById('gx-ficha').scrollTop=0;
 }
 function gxCloseFicha(){
-  document.getElementById('gx-ficha').style.display='none';
+  if(gxFichaStack.length){
+    var prevId = gxFichaStack.pop();
+    gxOpenFicha(prevId, true);
+    gxFichaStack.pop(); // remove the entry gxOpenFicha just re-pushed
+  } else {
+    document.getElementById('gx-ficha').style.display='none';
+    gxFichaCurrentId = null;
+  }
 }
 
 gxInit();
