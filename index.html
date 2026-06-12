@@ -346,6 +346,7 @@ var gxNomesNens = false;
 var gxPagina = 0;
 var gxFichaStack = [];
 var gxFichaCurrentId = null;
+var gxScrollAbans = 0;
 
 function gxToISO(d){
   var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -649,7 +650,7 @@ function gxOpenFicha(id, fromFicha){
   // altres plans aquest dia
   var altres = document.getElementById('gx-f-altres');
   altres.innerHTML='';
-  var others = gxEvents.filter(function(e){ return e.id!==ev.id; }).slice(0,4);
+  var others = gxEvents.filter(function(e){ return e.id!==ev.id && e.data===ev.data; }).slice(0,4);
   if(others.length===0){
     document.getElementById('gx-f-altres-wrap').style.display='none';
   } else {
@@ -667,8 +668,18 @@ function gxOpenFicha(id, fromFicha){
     });
   }
 
+  if(document.getElementById('gx-ficha').style.display!=='block'){
+    gxScrollAbans = window.scrollY || document.documentElement.scrollTop || 0;
+  }
   document.getElementById('gx-ficha').style.display='block';
   document.getElementById('gx-ficha').scrollTop=0;
+  requestAnimationFrame(function(){
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    var ficha = document.getElementById('gx-ficha');
+    if(ficha.scrollIntoView) ficha.scrollIntoView({block:'start'});
+  });
 }
 function gxCloseFicha(){
   if(gxFichaStack.length){
@@ -678,6 +689,7 @@ function gxCloseFicha(){
   } else {
     document.getElementById('gx-ficha').style.display='none';
     gxFichaCurrentId = null;
+    window.scrollTo(0, gxScrollAbans||0);
   }
 }
 
