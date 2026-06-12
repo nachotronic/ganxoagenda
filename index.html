@@ -376,6 +376,7 @@ var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost',
 var gxFiltreActiu = 'avui';
 var gxMesOffset = 0;
 var gxNomesNens = false;
+var gxPagina = 0;
 
 function gxToISO(d){
   var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -443,6 +444,8 @@ async function gxCarregarRang(range){
       .gte('data', range.from)
       .lte('data', range.to)
       .eq('estat','publicat')
+      .order('destacat', {ascending:false})
+      .order('ordre', {ascending:true})
       .order('data', {ascending:true})
       .order('hora_inici', {ascending:true});
     if(evRes.error){ console.error(evRes.error); }
@@ -459,6 +462,7 @@ function gxCanviaMes(delta){
 }
 function gxToggleNens(){
   gxNomesNens = !gxNomesNens;
+  gxPagina=0;
   var el = document.getElementById('gx-filtre-nens');
   if(gxNomesNens){ el.style.background='#103b52'; el.style.color='#fff'; el.style.fontWeight='600'; }
   else{ el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500'; }
@@ -466,6 +470,7 @@ function gxToggleNens(){
 }
 async function gxFiltrar(filtre){
   if(filtre!=='mes') gxMesOffset=0;
+  gxPagina=0;
   gxSetFiltreActiu(filtre);
   var range = gxRangeFor(filtre);
   document.getElementById('gx-agenda-titol').textContent = range.titol;
@@ -595,7 +600,10 @@ function gxRenderAgenda(){
     '<div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>'+
     '</div></div></div>';
 
-  for(var i=1;i<llista.length;i++){
+  var GX_PAGE = 6;
+  var totalGrid = llista.length - 1;
+  var visible = Math.min(totalGrid, GX_PAGE*(gxPagina+1));
+  for(var i=1;i<=visible;i++){
     var ev = llista[i];
     var c = gxCatInfo(ev);
     var card = document.createElement('div');
@@ -605,6 +613,17 @@ function gxRenderAgenda(){
       '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\''+ev.foto_url+'\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
       '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(ambData?(gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):'')):(gxFormatHora(ev.hora_inici)||'Tot el dia'))+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+gxLlocNom(ev)+'</div></div>';
     grid.appendChild(card);
+  }
+
+  var existingBtn = document.getElementById('gx-veure-mes');
+  if(existingBtn) existingBtn.remove();
+  if(totalGrid > visible){
+    var btn = document.createElement('div');
+    btn.id = 'gx-veure-mes';
+    btn.style.cssText = 'grid-column:1 / -1; text-align:center; padding:12px; margin-top:4px; border:1px dashed #c9c2b4; border-radius:11px; color:#103b52; font-size:13px; font-weight:700; cursor:pointer;';
+    btn.textContent = 'Veure més ('+(totalGrid-visible)+')';
+    btn.onclick = function(){ gxPagina += 1; gxRenderAgenda(); };
+    grid.parentElement.appendChild(btn);
   }
 }
 
