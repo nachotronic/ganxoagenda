@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="ca">
 <head>
 <meta charset="UTF-8">
@@ -60,17 +60,17 @@
 <!-- accessos temporals 2x2 -->
 <div style="background:#fff; padding:13px 14px 14px; border-bottom:1px solid #e4e0d7;">
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
-<div style="font-size:13px; font-weight:600; padding:11px 0; border-radius:11px; background:#103b52; color:#fff; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;"><i class="ti ti-sun" style="font-size:15px;"></i>Avui</div>
-<div style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center;">Demà</div>
-<div style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center;">Cap de setmana</div>
-<div style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;"><i class="ti ti-calendar" style="font-size:14px;"></i>Al juny</div>
+<div id="gx-filtre-avui" onclick="gxFiltrar('avui')" style="font-size:13px; font-weight:600; padding:11px 0; border-radius:11px; background:#103b52; color:#fff; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-sun" style="font-size:15px;"></i>Avui</div>
+<div id="gx-filtre-dema" onclick="gxFiltrar('dema')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Demà</div>
+<div id="gx-filtre-cap" onclick="gxFiltrar('cap')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Cap de setmana</div>
+<div id="gx-filtre-mes" onclick="gxFiltrar('mes')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-calendar" style="font-size:14px;"></i><span id="gx-filtre-mes-text">Al juny</span></div>
 </div>
 </div>
 
 <!-- pàgina agenda -->
 <div id="gx-page-agenda" style="padding:16px 16px 20px;">
 <div style="display:flex; align-items:baseline; justify-content:space-between; margin:0 2px 13px;">
-<div style="font-size:15px; font-weight:600; color:#1d2b27;">Avui a Sant Feliu</div>
+<div id="gx-agenda-titol" style="font-size:15px; font-weight:600; color:#1d2b27;">Avui a Sant Feliu</div>
 <div id="gx-avui-data" style="font-size:14px; font-weight:600; color:#1d2b27;">—</div>
 </div>
 
@@ -363,12 +363,16 @@ var gxEvents = [];       // events d'avui carregats
 var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
 
 var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
+var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+var gxFiltreActiu = 'avui';
 
-function gxTodayISO(){
-  var d = new Date();
+function gxToISO(d){
   var mm = String(d.getMonth()+1).padStart(2,'0');
   var dd = String(d.getDate()).padStart(2,'0');
   return d.getFullYear()+'-'+mm+'-'+dd;
+}
+function gxTodayISO(){
+  return gxToISO(new Date());
 }
 function gxFormatDataCurta(dataISO){
   if(!dataISO) return '';
@@ -380,24 +384,73 @@ function gxFormatHora(hora){
   return hora.slice(0,5);
 }
 
-async function gxInit(){
-  // data d'avui a la capçalera
+function gxRangeFor(filtre){
   var today = new Date();
-  document.getElementById('gx-avui-data').textContent = GX_DIES[today.getDay()] + ' ' + today.getDate();
+  today.setHours(0,0,0,0);
+  if(filtre==='dema'){
+    var d = new Date(today); d.setDate(d.getDate()+1);
+    return {from:gxToISO(d), to:gxToISO(d), titol:'Demà a Sant Feliu'};
+  }
+  if(filtre==='cap'){
+    var dow = today.getDay(); // 0=diumenge..6=dissabte
+    var diesFinsDissabte = (6-dow+7)%7;
+    var sab = new Date(today); sab.setDate(sab.getDate()+diesFinsDissabte);
+    var diu = new Date(sab); diu.setDate(diu.getDate()+1);
+    // si avui ja és dissabte o diumenge, comença avui
+    if(dow===6){ sab = new Date(today); diu = new Date(today); diu.setDate(diu.getDate()+1); }
+    if(dow===0){ sab = new Date(today); diu = new Date(today); }
+    return {from:gxToISO(sab), to:gxToISO(diu), titol:'Cap de setmana'};
+  }
+  if(filtre==='mes'){
+    var first = new Date(today.getFullYear(), today.getMonth(), 1);
+    var last = new Date(today.getFullYear(), today.getMonth()+1, 0);
+    return {from:gxToISO(today), to:gxToISO(last), titol:'Al '+GX_MESOS[today.getMonth()]};
+  }
+  // avui (default)
+  return {from:gxToISO(today), to:gxToISO(today), titol:'Avui a Sant Feliu'};
+}
 
-  // carrega esdeveniments d'avui (amb categoria i lloc via join)
+function gxSetFiltreActiu(filtre){
+  gxFiltreActiu = filtre;
+  ['avui','dema','cap','mes'].forEach(function(f){
+    var el = document.getElementById('gx-filtre-'+f);
+    if(f===filtre){ el.style.background='#103b52'; el.style.color='#fff'; el.style.fontWeight='600'; }
+    else{ el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500'; }
+  });
+}
+
+async function gxCarregarRang(range){
+  document.getElementById('gx-agenda-loading').style.display='block';
+  document.getElementById('gx-agenda-loading').textContent='Carregant...';
+  document.getElementById('gx-agenda-buit').style.display='none';
+  document.getElementById('gx-agenda-destacat').innerHTML='';
+  document.getElementById('gx-agenda-grid').innerHTML='';
   try{
-    var todayISO = gxTodayISO();
     var evRes = await gxSupabase.from('esdeveniments')
       .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url)')
-      .eq('data', todayISO)
+      .gte('data', range.from)
+      .lte('data', range.to)
       .eq('estat','publicat')
+      .order('data', {ascending:true})
       .order('hora_inici', {ascending:true});
     if(evRes.error){ console.error(evRes.error); }
     gxEvents = evRes.data || [];
   }catch(e){ console.error('Error esdeveniments', e); }
-
   gxRenderAgenda();
+}
+
+function gxFiltrar(filtre){
+  gxSetFiltreActiu(filtre);
+  var range = gxRangeFor(filtre);
+  document.getElementById('gx-agenda-titol').textContent = range.titol;
+  document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
+  gxCarregarRang(range);
+}
+
+async function gxInit(){
+  // text del botó "Al <mes actual>"
+  document.getElementById('gx-filtre-mes-text').textContent = 'Al '+GX_MESOS[new Date().getMonth()];
+  gxFiltrar('avui');
 }
 
 function gxCatInfo(ev){
@@ -414,10 +467,13 @@ function gxRenderAgenda(){
   destacat.innerHTML=''; grid.innerHTML='';
 
   if(!gxEvents.length){
+    var msgs = {avui:'Avui no hi ha esdeveniments publicats.', dema:'Demà no hi ha esdeveniments publicats.', cap:'Aquest cap de setmana no hi ha esdeveniments publicats.', mes:'Aquest mes no hi ha esdeveniments publicats.'};
+    document.getElementById('gx-agenda-buit').textContent = msgs[gxFiltreActiu] || msgs.avui;
     document.getElementById('gx-agenda-buit').style.display='block';
     return;
   }
   document.getElementById('gx-agenda-buit').style.display='none';
+  var ambData = (gxFiltreActiu==='cap' || gxFiltreActiu==='mes');
 
   var first = gxEvents[0];
   var cat = gxCatInfo(first);
@@ -427,7 +483,7 @@ function gxRenderAgenda(){
     '<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>'+
     '<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">'+cat.nom.toUpperCase()+'</div>'+
     '<div style="position:relative; padding:15px 16px; color:#fff;">'+
-    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(gxFormatHora(first.hora_inici)||'Tot el dia')+'</div>'+
+    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(ambData?(gxFormatDataCurta(first.data)+(first.hora_inici?(' · '+gxFormatHora(first.hora_inici)):'')):(gxFormatHora(first.hora_inici)||'Tot el dia'))+'</div>'+
     '<div style="font-size:21px; font-weight:900; letter-spacing:-.5px; line-height:1.1; font-family:var(--font-serif);">'+first.titol+'</div>'+
     '</div></div>'+
     '<div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">'+
@@ -445,7 +501,7 @@ function gxRenderAgenda(){
     card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
     card.innerHTML =
       '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\''+ev.foto_url+'\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
-      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(ev.hora_inici)||'Tot el dia')+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+gxLlocNom(ev)+'</div></div>';
+      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(ambData?(gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):'')):(gxFormatHora(ev.hora_inici)||'Tot el dia'))+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+gxLlocNom(ev)+'</div></div>';
     grid.appendChild(card);
   }
 }
@@ -512,9 +568,6 @@ function gxCloseFicha(){
 }
 
 gxInit();
-</script>
-</body>
-</html>
 </script>
 </body>
 </html>
