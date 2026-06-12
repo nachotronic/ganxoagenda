@@ -678,7 +678,9 @@ function gxOpenFicha(id, fromFicha){
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     var ficha = document.getElementById('gx-ficha');
-    if(ficha.scrollIntoView) ficha.scrollIntoView({block:'start'});
+    var rect = document.getElementById('gx-app').getBoundingClientRect();
+    var top = rect.top + window.scrollY - 18;
+    window.scrollTo(0, Math.max(0, top));
   });
 }
 function gxCloseFicha(){
