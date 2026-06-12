@@ -460,20 +460,39 @@ function gxToggleNens(){
   else{ el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500'; }
   gxRenderAgenda();
 }
-function gxFiltrar(filtre){
+async function gxFiltrar(filtre){
   if(filtre!=='mes') gxMesOffset=0;
   gxSetFiltreActiu(filtre);
   var range = gxRangeFor(filtre);
   document.getElementById('gx-agenda-titol').textContent = range.titol;
   document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
   if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.titol; }
-  gxCarregarRang(range);
+  await gxCarregarRang(range);
 }
 
 async function gxInit(){
   // text del botó "Al <mes actual>"
   document.getElementById('gx-filtre-mes-text').textContent = 'Al '+GX_MESOS[new Date().getMonth()];
-  gxFiltrar('avui');
+  await gxFiltrar('avui');
+
+  // obrir fitxa directe si l'enllaç porta ?ev=ID
+  var params = new URLSearchParams(window.location.search);
+  var evId = params.get('ev');
+  if(evId){ gxObrirFichaPerId(evId); }
+}
+
+async function gxObrirFichaPerId(id){
+  var ev = gxEvents.find(function(e){ return e.id===id; });
+  if(ev){ gxOpenFicha(id); return; }
+  try{
+    var res = await gxSupabase.from('esdeveniments')
+      .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url)')
+      .eq('id', id).eq('estat','publicat').single();
+    if(res.data){
+      gxEvents.push(res.data);
+      gxOpenFicha(id);
+    }
+  }catch(e){ console.error('Error obrint esdeveniment per id', e); }
 }
 
 function gxCatInfo(ev){
@@ -561,7 +580,11 @@ function gxOpenFicha(id){
   document.getElementById('gx-f-alert').style.display = (outdoor.indexOf((ev.categories&&ev.categories.slug)||'')>-1) ? 'flex' : 'none';
 
   // whatsapp
-  var msg = '⛵ '+ev.titol+'\\n'+gxFormatDataCurta(ev.data)+(ev.hora?(' · '+gxFormatHora(ev.hora)):'')+'\\n'+gxLlocNom(ev)+'\\nhttps://ganxoagenda.cat';
+  var GX_EMOJI = {esports:'\u26bd', cultura:'\ud83c\udfad', musica:'\ud83c\udfb6', fira:'\ud83c\udfaa', gastro:'\ud83c\udf7d', festa:'\ud83c\udf89'};
+  var emoji = (ev.categories && GX_EMOJI[ev.categories.slug]) || '\ud83d\udccc';
+  var msg = emoji+' *'+ev.titol+'*\n'+gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):'')+'\n\ud83d\udccd '+gxLlocNom(ev);
+  if(ev.preu_text){ msg += '\n\ud83c\udfab '+ev.preu_text; }
+  msg += '\n\nVia Ganxoagenda \nhttps://ganxoagenda.cat/?ev='+ev.id;
   document.getElementById('gx-f-whatsapp').href = 'https://wa.me/?text='+encodeURIComponent(msg);
 
   // altres plans aquest dia
