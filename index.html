@@ -385,22 +385,14 @@ async function gxInit(){
   var today = new Date();
   document.getElementById('gx-avui-data').textContent = GX_DIES[today.getDay()] + ' ' + today.getDate();
 
-  // carrega categories
-  try{
-    var catRes = await gxSupabase.from('categories').select('*');
-    if(catRes.data){
-      catRes.data.forEach(function(c){ gxCategories[c.slug] = c; });
-    }
-  }catch(e){ console.error('Error categories', e); }
-
-  // carrega esdeveniments d'avui
+  // carrega esdeveniments d'avui (amb categoria i lloc via join)
   try{
     var todayISO = gxTodayISO();
     var evRes = await gxSupabase.from('esdeveniments')
-      .select('*')
+      .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url)')
       .eq('data', todayISO)
       .eq('estat','publicat')
-      .order('hora', {ascending:true});
+      .order('hora_inici', {ascending:true});
     if(evRes.error){ console.error(evRes.error); }
     gxEvents = evRes.data || [];
   }catch(e){ console.error('Error esdeveniments', e); }
@@ -408,8 +400,11 @@ async function gxInit(){
   gxRenderAgenda();
 }
 
-function gxCatInfo(slug){
-  return gxCategories[slug] || {nom: slug||'', color_gradient: GX_DEFAULT_GRADIENT, icona:''};
+function gxCatInfo(ev){
+  return (ev && ev.categories) || {nom:'', color_gradient: GX_DEFAULT_GRADIENT, icona:''};
+}
+function gxLlocNom(ev){
+  return (ev && ev.llocs && ev.llocs.nom) || '';
 }
 
 function gxRenderAgenda(){
@@ -425,18 +420,18 @@ function gxRenderAgenda(){
   document.getElementById('gx-agenda-buit').style.display='none';
 
   var first = gxEvents[0];
-  var cat = gxCatInfo(first.categoria);
+  var cat = gxCatInfo(first);
   destacat.innerHTML =
     '<div onclick="gxOpenFicha(\''+first.id+'\')" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">'+
     '<div style="height:166px; position:relative; background-image:'+(first.foto_url? 'url(\''+first.foto_url+'\')' : cat.color_gradient)+'; background-size:cover; background-position:center; display:flex; align-items:flex-end;">'+
     '<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>'+
     '<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">'+cat.nom.toUpperCase()+'</div>'+
     '<div style="position:relative; padding:15px 16px; color:#fff;">'+
-    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(gxFormatHora(first.hora)||'Tot el dia')+'</div>'+
+    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(gxFormatHora(first.hora_inici)||'Tot el dia')+'</div>'+
     '<div style="font-size:21px; font-weight:900; letter-spacing:-.5px; line-height:1.1; font-family:var(--font-serif);">'+first.titol+'</div>'+
     '</div></div>'+
     '<div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">'+
-    '<div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>'+(first.lloc_nom||'')+'</div>'+
+    '<div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>'+gxLlocNom(first)+'</div>'+
     '<div onclick="event.stopPropagation()" style="display:flex; gap:7px;">'+
     '<div style="width:33px; height:33px; border-radius:9px; border:1px solid #e4e0d7; display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-bell" style="font-size:15px;"></i></div>'+
     '<div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>'+
@@ -444,13 +439,13 @@ function gxRenderAgenda(){
 
   for(var i=1;i<gxEvents.length;i++){
     var ev = gxEvents[i];
-    var c = gxCatInfo(ev.categoria);
+    var c = gxCatInfo(ev);
     var card = document.createElement('div');
     card.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
     card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
     card.innerHTML =
       '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\''+ev.foto_url+'\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
-      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(ev.hora)||'Tot el dia')+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+(ev.lloc_nom||'')+'</div></div>';
+      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(ev.hora_inici)||'Tot el dia')+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+gxLlocNom(ev)+'</div></div>';
     grid.appendChild(card);
   }
 }
@@ -458,16 +453,16 @@ function gxRenderAgenda(){
 function gxOpenFicha(id){
   var ev = gxEvents.find(function(e){ return e.id===id; });
   if(!ev) return;
-  var cat = gxCatInfo(ev.categoria);
+  var cat = gxCatInfo(ev);
 
   document.getElementById('gx-f-header').style.backgroundImage = ev.foto_url ? "url('"+ev.foto_url+"')" : cat.color_gradient;
   document.getElementById('gx-f-header').style.backgroundSize = 'cover';
   document.getElementById('gx-f-header').style.backgroundPosition = 'center';
   document.getElementById('gx-f-cat').textContent = cat.nom.toUpperCase();
   document.getElementById('gx-f-title').textContent = ev.titol;
-  document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora ? (' · '+gxFormatHora(ev.hora)) : '');
-  document.getElementById('gx-f-on').textContent = ev.lloc_nom || '—';
-  document.getElementById('gx-f-lloc-map').textContent = ev.lloc_nom || '—';
+  document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : '');
+  document.getElementById('gx-f-on').textContent = gxLlocNom(ev) || '—';
+  document.getElementById('gx-f-lloc-map').textContent = gxLlocNom(ev) || '—';
   document.getElementById('gx-f-preu').textContent = ev.preu_text || 'Entrada lliure';
   document.getElementById('gx-f-organitza').textContent = ev.organitza || '—';
   document.getElementById('gx-f-desc').textContent = ev.descripcio || '';
@@ -482,10 +477,10 @@ function gxOpenFicha(id){
 
   // avís meteo: només per a categories a l'aire lliure
   var outdoor = ['rem','vela','platja','senderisme','festa_major','fira','futbol','padel','basquet'];
-  document.getElementById('gx-f-alert').style.display = (outdoor.indexOf(ev.categoria)>-1) ? 'flex' : 'none';
+  document.getElementById('gx-f-alert').style.display = (outdoor.indexOf((ev.categories&&ev.categories.slug)||'')>-1) ? 'flex' : 'none';
 
   // whatsapp
-  var msg = '⛵ '+ev.titol+'\\n'+gxFormatDataCurta(ev.data)+(ev.hora?(' · '+gxFormatHora(ev.hora)):'')+'\\n'+(ev.lloc_nom||'')+'\\nhttps://ganxoagenda.cat';
+  var msg = '⛵ '+ev.titol+'\\n'+gxFormatDataCurta(ev.data)+(ev.hora?(' · '+gxFormatHora(ev.hora)):'')+'\\n'+gxLlocNom(ev)+'\\nhttps://ganxoagenda.cat';
   document.getElementById('gx-f-whatsapp').href = 'https://wa.me/?text='+encodeURIComponent(msg);
 
   // altres plans aquest dia
@@ -497,13 +492,13 @@ function gxOpenFicha(id){
   } else {
     document.getElementById('gx-f-altres-wrap').style.display='block';
     others.forEach(function(o){
-      var oc = gxCatInfo(o.categoria);
+      var oc = gxCatInfo(o);
       var row = document.createElement('div');
       row.onclick = function(){ gxOpenFicha(o.id); };
       row.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;';
       row.innerHTML =
         '<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:'+(o.foto_url? "url('"+o.foto_url+"')" : oc.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
-        '<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(o.hora)||'Tot el dia')+'</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">'+o.titol+'</div></div>'+
+        '<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(o.hora_inici)||'Tot el dia')+'</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">'+o.titol+'</div></div>'+
         '<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>';
       altres.appendChild(row);
     });
@@ -517,6 +512,9 @@ function gxCloseFicha(){
 }
 
 gxInit();
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
