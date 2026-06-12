@@ -34,16 +34,16 @@
 <!-- meteo plegable -->
 <div onclick="gxToggleMeteo()" style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding-top:11px; border-top:1px solid rgba(255,255,255,.13); cursor:pointer;">
 <div style="display:flex; align-items:center; gap:9px;">
-<i class="ti ti-sun" style="font-size:20px;"></i>
-<div style="font-size:16px; font-weight:500;">23°</div>
-<div style="font-size:12px; opacity:.75;">Assolellat · aigua 21°</div>
+<i id="gx-meteo-icon" class="ti ti-sun" style="font-size:20px;"></i>
+<div id="gx-meteo-temp" style="font-size:16px; font-weight:500;">—°</div>
+<div id="gx-meteo-desc" style="font-size:12px; opacity:.75;">Carregant...</div>
 </div>
 <div style="display:flex; align-items:center; gap:5px; font-size:11px; opacity:.8;">Temps per dies<i id="gx-meteo-chev" class="ti ti-chevron-down" style="font-size:16px;"></i></div>
 </div>
 <div id="gx-meteo-detail" style="display:none; margin-top:11px; flex-direction:column; gap:2px;">
-<div style="display:flex; align-items:center; padding:8px 10px; background:rgba(255,255,255,.10); border-radius:9px;"><div style="width:58px; font-size:12px; font-weight:600;">Avui</div><i class="ti ti-sun" style="font-size:17px; width:26px; text-align:center;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">23° assolellat</div><div style="font-size:10.5px; opacity:.8;"><i class="ti ti-wind" style="font-size:11px;"></i> Garbí fluix · <span style="color:#7fd69a;">verda</span></div></div>
-<div style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">Demà</div><i class="ti ti-cloud" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">22° núvols</div><div style="font-size:10.5px; opacity:.8;"><i class="ti ti-wind" style="font-size:11px;"></i> Gregal fluix · <span style="color:#7fd69a;">verda</span></div></div>
-<div style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">Dis 13</div><i class="ti ti-cloud-rain" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">19° pluja</div><div style="font-size:10.5px; opacity:.8;"><i class="ti ti-wind" style="font-size:11px;"></i> Llevant moderat · <span style="color:#ffd36a;">groga</span></div></div>
+<div id="gx-meteo-dia-0" style="display:flex; align-items:center; padding:8px 10px; background:rgba(255,255,255,.10); border-radius:9px;"><div style="width:58px; font-size:12px; font-weight:600;">Avui</div><i class="ti ti-sun" style="font-size:17px; width:26px; text-align:center;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
+<div id="gx-meteo-dia-1" style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">Demà</div><i class="ti ti-cloud" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
+<div id="gx-meteo-dia-2" style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">—</div><i class="ti ti-cloud" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
 </div>
 </div>
 </div>
@@ -470,7 +470,61 @@ async function gxFiltrar(filtre){
   await gxCarregarRang(range);
 }
 
+var GX_VENTS = ['Tramuntana','Gregal','Llevant','Xaloc','Migjorn','Garbí','Ponent','Mestral'];
+function gxNomVent(graus){
+  var idx = Math.round(graus/45) % 8;
+  return GX_VENTS[idx];
+}
+function gxForcaVent(kmh){
+  if(kmh < 15) return {nom:'fluix', color:'#7fd69a', etiqueta:'verda'};
+  if(kmh < 30) return {nom:'moderat', color:'#ffd36a', etiqueta:'groga'};
+  return {nom:'fort', color:'#ff9a6a', etiqueta:'taronja'};
+}
+function gxCeleIcona(codi){
+  if(codi===0) return {icon:'ti-sun', desc:'Assolellat'};
+  if(codi<=3) return {icon:'ti-cloud', desc:'Núvols'};
+  if(codi===45||codi===48) return {icon:'ti-cloud-fog', desc:'Boira'};
+  if((codi>=51&&codi<=67)||(codi>=80&&codi<=82)) return {icon:'ti-cloud-rain', desc:'Pluja'};
+  if((codi>=71&&codi<=77)||codi===85||codi===86) return {icon:'ti-snowflake', desc:'Neu'};
+  if(codi>=95) return {icon:'ti-bolt', desc:'Tempesta'};
+  return {icon:'ti-cloud', desc:'Núvols'};
+}
+
+async function gxLoadMeteo(){
+  try{
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=41.7815&longitude=3.0295'
+      +'&current=temperature_2m,weather_code'
+      +'&daily=weather_code,temperature_2m_max,wind_speed_10m_max,wind_direction_10m_dominant'
+      +'&timezone=Europe%2FMadrid&forecast_days=3';
+    var res = await fetch(url);
+    var d = await res.json();
+
+    var curCel = gxCeleIcona(d.current.weather_code);
+    document.getElementById('gx-meteo-icon').className = 'ti '+curCel.icon;
+    document.getElementById('gx-meteo-temp').textContent = Math.round(d.current.temperature_2m)+'°';
+    document.getElementById('gx-meteo-desc').textContent = curCel.desc;
+
+    var labels = ['Avui','Demà', null];
+    for(var i=0;i<3;i++){
+      var cel = gxCeleIcona(d.daily.weather_code[i]);
+      var temp = Math.round(d.daily.temperature_2m_max[i]);
+      var vent = gxNomVent(d.daily.wind_direction_10m_dominant[i]);
+      var forca = gxForcaVent(d.daily.wind_speed_10m_max[i]);
+      var row = document.getElementById('gx-meteo-dia-'+i);
+      var dataDia = new Date(d.daily.time[i]+'T00:00:00');
+      var label = labels[i] || (GX_DIES[dataDia.getDay()].slice(0,3).replace(/^./,function(c){return c.toUpperCase();})+' '+dataDia.getDate());
+      row.children[0].textContent = label;
+      row.children[1].className = 'ti '+cel.icon+' '+row.children[1].className.replace(/ti-[a-z-]+/,'').trim();
+      row.children[1].className = 'ti '+cel.icon;
+      row.children[1].style.fontSize='17px'; row.children[1].style.width='26px'; row.children[1].style.textAlign='center'; row.children[1].style.opacity='.9';
+      row.children[2].textContent = temp+'° '+cel.desc.toLowerCase();
+      row.children[3].innerHTML = '<i class="ti ti-wind" style="font-size:11px;"></i> '+vent+' '+forca.nom+' · <span style="color:'+forca.color+';">'+forca.etiqueta+'</span>';
+    }
+  }catch(e){ console.error('Error meteo', e); document.getElementById('gx-meteo-desc').textContent='Sense dades'; }
+}
+
 async function gxInit(){
+  gxLoadMeteo();
   // text del botó "Al <mes actual>"
   document.getElementById('gx-filtre-mes-text').textContent = 'Al '+GX_MESOS[new Date().getMonth()];
   await gxFiltrar('avui');
