@@ -286,10 +286,30 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
     <div id="vista-llista">
       <div class="llista-header">
         <h2>Esdeveniments</h2>
-        <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGaleria()">📷 Fotos</button>
+          <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
+        </div>
       </div>
       <div class="filtre-bar" id="filtre-bar"></div>
       <div id="llista-events"></div>
+    </div>
+
+    <!-- GALERIA DE FOTOS -->
+    <div id="vista-galeria" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGaleria()">← Tornar</button>
+        <h2>Galeria de fotos</h2>
+      </div>
+      <div class="foto-zone" style="margin-bottom:16px;" onclick="document.getElementById('batch-fotos').click()">
+        <div class="placeholder">
+          <span class="icon">⬆️</span>
+          Arrossega aquí o fes clic per pujar diverses fotos alhora
+        </div>
+        <input type="file" id="batch-fotos" accept="image/*" multiple onchange="pujarBatch(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+      </div>
+      <div id="batch-progres" style="display:none; font-size:13px; color:var(--text-sec); margin-bottom:12px;"></div>
+      <div id="galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
     </div>
 
     <!-- FORMULARI -->
@@ -374,6 +394,18 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
             </div>
             <img id="foto-preview" style="display:none;">
             <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)">
+          </div>
+          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
+        </div>
+
+        <!-- Modal selector galeria -->
+        <div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;" onclick="if(event.target===this) tancarSelectorGaleria()">
+          <div style="background:#fff; border-radius:14px; max-width:720px; margin:30px auto; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h3 style="margin:0; font-size:16px;">Tria una foto de la galeria</h3>
+              <button onclick="tancarSelectorGaleria()" style="border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-sec);">✕</button>
+            </div>
+            <div id="selector-galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px;"></div>
           </div>
         </div>
 
@@ -642,9 +674,131 @@ function toggleSwitch(el) {
 
 // ---- FORMULARI: foto ----
 let fotoFile = null;
+let fotoGaleriaUrl = null; // URL triada de la galeria
+
+// ---- GALERIA ----
+async function llistarFotos(){
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'created_at', order: 'desc' } }),
+  });
+  if(!res.ok) return [];
+  const items = await res.json();
+  return items.filter(f => f.name && !f.name.endsWith('/') && f.id);
+}
+
+function urlPublica(nom){
+  return `${SUPABASE_URL}/storage/v1/object/public/fotos/${encodeURIComponent(nom).replace(/%2F/g,'/')}`;
+}
+
+function obrirGaleria(){
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-galeria').style.display = 'block';
+  renderGaleria();
+}
+function tancarGaleria(){
+  document.getElementById('vista-galeria').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+
+async function renderGaleria(){
+  const grid = document.getElementById('galeria-grid');
+  grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Carregant...</div>';
+  const fotos = await llistarFotos();
+  grid.innerHTML = '';
+  if(!fotos.length){ grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Encara no hi ha fotos.</div>'; return; }
+  fotos.forEach(f => {
+    const url = urlPublica(f.name);
+    const cell = document.createElement('div');
+    cell.style.cssText = 'border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff;';
+    cell.innerHTML = `
+      <div style="height:90px; background-image:url('${url}'); background-size:cover; background-position:center;"></div>
+      <div style="padding:7px 8px;">
+        <div style="font-size:10px; color:var(--text-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${f.name}">${f.name}</div>
+        <button onclick="copiarUrl('${url}')" style="margin-top:5px; width:100%; padding:5px; font-size:11px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; cursor:pointer;">Copiar URL</button>
+      </div>`;
+    grid.appendChild(cell);
+  });
+}
+
+function copiarUrl(url){
+  navigator.clipboard.writeText(url).then(() => toast('URL copiada'));
+}
+
+async function pujarBatch(input){
+  const files = Array.from(input.files || []);
+  if(!files.length) return;
+  const prog = document.getElementById('batch-progres');
+  prog.style.display = 'block';
+  let ok = 0, ko = 0;
+  for(let i=0; i<files.length; i++){
+    prog.textContent = `Pujant ${i+1} de ${files.length}...`;
+    const f = files[i];
+    const net = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
+    try{
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${net}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': f.type,
+          'x-upsert': 'true',
+        },
+        body: f,
+      });
+      if(res.ok) ok++; else ko++;
+    }catch(e){ ko++; }
+  }
+  prog.textContent = `Fet: ${ok} pujades` + (ko ? `, ${ko} errors` : '');
+  input.value = '';
+  renderGaleria();
+}
+
+// ---- SELECTOR GALERIA (dins formulari) ----
+function obrirSelectorGaleria(){
+  document.getElementById('modal-galeria').style.display = 'block';
+  renderSelectorGaleria();
+}
+function tancarSelectorGaleria(){
+  document.getElementById('modal-galeria').style.display = 'none';
+}
+async function renderSelectorGaleria(){
+  const grid = document.getElementById('selector-galeria-grid');
+  grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Carregant...</div>';
+  const fotos = await llistarFotos();
+  grid.innerHTML = '';
+  if(!fotos.length){ grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Encara no hi ha fotos. Puja-les des del botó Fotos de la llista.</div>'; return; }
+  fotos.forEach(f => {
+    const url = urlPublica(f.name);
+    const cell = document.createElement('div');
+    cell.style.cssText = 'border:2px solid transparent; border-radius:10px; overflow:hidden; cursor:pointer;';
+    cell.onmouseover = () => cell.style.borderColor = 'var(--blau)';
+    cell.onmouseout = () => cell.style.borderColor = 'transparent';
+    cell.onclick = () => triarFotoGaleria(url);
+    cell.innerHTML = `<div style="height:85px; background-image:url('${url}'); background-size:cover; background-position:center;"></div>`;
+    grid.appendChild(cell);
+  });
+}
+function triarFotoGaleria(url){
+  fotoGaleriaUrl = url;
+  fotoFile = null;
+  fotoGaleriaUrl = null;
+  document.getElementById('f-foto').value = '';
+  document.getElementById('foto-preview').src = url;
+  document.getElementById('foto-preview').style.display = 'block';
+  document.getElementById('foto-placeholder').style.display = 'none';
+  tancarSelectorGaleria();
+  toast('Foto seleccionada');
+}
 function previewFoto(input) {
   if (input.files && input.files[0]) {
     fotoFile = input.files[0];
+    fotoGaleriaUrl = null;
     const reader = new FileReader();
     reader.onload = (e) => {
       document.getElementById('foto-preview').src = e.target.result;
@@ -725,7 +879,9 @@ async function desarEsdeveniment(estat) {
 
   // Pujar foto si n'hi ha
   let foto_url = null;
-  if (fotoFile) {
+  if (fotoGaleriaUrl) {
+    foto_url = fotoGaleriaUrl;
+  } else if (fotoFile) {
     try {
       const ext = fotoFile.name.split('.').pop();
       const path = `esdeveniments/${Date.now()}.${ext}`;
@@ -809,6 +965,7 @@ function mostrarForm() {
 
 function tornarLlista() {
   document.getElementById('vista-form').style.display = 'none';
+  document.getElementById('vista-galeria').style.display = 'none';
   document.getElementById('vista-llista').style.display = 'block';
   carregarEsdeveniments();
 }
