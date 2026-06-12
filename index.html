@@ -427,8 +427,8 @@ function gxRenderAgenda(){
   var first = gxEvents[0];
   var cat = gxCatInfo(first.categoria);
   destacat.innerHTML =
-    '<div onclick="gxOpenFicha(\\''+first.id+'\\')" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">'+
-    '<div style="height:166px; position:relative; background-image:'+(first.foto_url? 'url(\\''+first.foto_url+'\\')' : cat.color_gradient)+'; background-size:cover; background-position:center; display:flex; align-items:flex-end;">'+
+    '<div onclick="gxOpenFicha(\''+first.id+'\')" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">'+
+    '<div style="height:166px; position:relative; background-image:'+(first.foto_url? 'url(\''+first.foto_url+'\')' : cat.color_gradient)+'; background-size:cover; background-position:center; display:flex; align-items:flex-end;">'+
     '<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>'+
     '<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">'+cat.nom.toUpperCase()+'</div>'+
     '<div style="position:relative; padding:15px 16px; color:#fff;">'+
@@ -449,7 +449,7 @@ function gxRenderAgenda(){
     card.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
     card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
     card.innerHTML =
-      '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\\''+ev.foto_url+'\\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
+      '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\''+ev.foto_url+'\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
       '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(ev.hora)||'Tot el dia')+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+(ev.lloc_nom||'')+'</div></div>';
     grid.appendChild(card);
   }
