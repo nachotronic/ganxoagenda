@@ -346,7 +346,6 @@ var gxNomesNens = false;
 var gxPagina = 0;
 var gxFichaStack = [];
 var gxFichaCurrentId = null;
-var gxScrollAbans = 0;
 
 function gxToISO(d){
   var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -668,9 +667,6 @@ function gxOpenFicha(id, fromFicha){
     });
   }
 
-  if(document.getElementById('gx-ficha').style.display!=='block'){
-    gxScrollAbans = window.scrollY || document.documentElement.scrollTop || 0;
-  }
   document.getElementById('gx-ficha').style.display='block';
   document.getElementById('gx-ficha').scrollTop=0;
   requestAnimationFrame(function(){
@@ -691,7 +687,7 @@ function gxCloseFicha(){
   } else {
     document.getElementById('gx-ficha').style.display='none';
     gxFichaCurrentId = null;
-    window.scrollTo(0, gxScrollAbans||0);
+    window.scrollTo(0, 0);
   }
 }
 
