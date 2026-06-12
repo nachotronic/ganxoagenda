@@ -174,6 +174,18 @@
 </div>
 </div>
 
+<!-- cicle/festival -->
+<div onclick="event.stopPropagation()" style="margin:14px 16px 0; background:#103b52; color:#fff; border-radius:12px; padding:11px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+<div style="display:flex; align-items:center; gap:9px;"><i class="ti ti-stars" style="font-size:17px;"></i><div style="font-size:12.5px;">Part de: <strong>Festa de la Mar</strong></div></div>
+<i class="ti ti-chevron-right" style="font-size:16px;"></i>
+</div>
+
+<!-- avís meteo -->
+<div style="margin:11px 16px 0; background:#fef3e2; border:1px solid #f4ddb0; border-radius:12px; padding:11px 14px; display:flex; align-items:center; gap:10px;">
+<i class="ti ti-cloud-rain" style="font-size:18px; color:#c98a1f;"></i>
+<div style="font-size:12px; color:#7a5a17; line-height:1.4;">Esdeveniment a l'aire lliure. Avís de pluja per a aquesta tarda — pot patir canvis.</div>
+</div>
+
 <!-- dades ràpides -->
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:16px;">
 <div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
@@ -184,9 +196,13 @@
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-map-pin" style="font-size:18px; color:#103b52;"></i></div>
 <div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">On</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Port · Club de Rem</div></div>
 </div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px; grid-column:1 / -1;">
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-ticket" style="font-size:18px; color:#103b52;"></i></div>
 <div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Preu</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Entrada lliure</div></div>
+</div>
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-building-community" style="font-size:18px; color:#103b52;"></i></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Organitza</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Club de Rem</div></div>
 </div>
 </div>
 
@@ -211,13 +227,36 @@
 </div>
 
 <!-- accions -->
-<div style="padding:4px 16px 24px; display:flex; flex-direction:column; gap:10px;">
+<div style="padding:0 16px 18px; display:flex; flex-direction:column; gap:10px;">
 <div style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-<div style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</div>
+<a href="https://wa.me/?text=%E2%9B%B5%20Regata%20de%20llaguts%20catalans%0ADij%2011%20%C2%B7%2019%3A00%0APort%20%C2%B7%20Club%20de%20Rem%0Ahttps%3A%2F%2Fganxoagenda.cat" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
 <div style="background:#fff; border:1px solid #e4e0d7; color:#103b52; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-calendar-plus" style="font-size:16px;"></i>Al calendari</div>
 </div>
 </div>
+
+<!-- altres plans aquest dia -->
+<div style="padding:0 16px 6px;">
+<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Altres plans aquest dia</div>
+<div style="display:flex; flex-direction:column; gap:9px;">
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"></div>
+<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">18:00</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">Visita guiada al Monestir</div></div>
+<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>
+</div>
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:linear-gradient(125deg,#3d8f6a,#1d5e44);"></div>
+<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">20:30</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">Tast de vins a la plaça</div></div>
+<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>
+</div>
+</div>
+</div>
+
+<!-- enllaç cap de setmana -->
+<div onclick="event.stopPropagation()" style="padding:0 16px 24px;">
+<div style="display:flex; align-items:center; justify-content:center; gap:6px; color:#103b52; font-size:12.5px; font-weight:700; padding:11px; border:1px dashed #c9c2b4; border-radius:11px; cursor:pointer;">Veure tots els plans del cap de setmana<i class="ti ti-arrow-right" style="font-size:14px;"></i></div>
+</div>
+
 
 </div>
 <!-- fi fitxa -->
