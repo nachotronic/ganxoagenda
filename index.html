@@ -673,7 +673,7 @@ function gxOpenFicha(id){
   // altres plans aquest dia
   var altres = document.getElementById('gx-f-altres');
   altres.innerHTML='';
-  var others = gxEvents.filter(function(e){ return e.id!==ev.id; });
+  var others = gxEvents.filter(function(e){ return e.id!==ev.id; }).slice(0,4);
   if(others.length===0){
     document.getElementById('gx-f-altres-wrap').style.display='none';
   } else {
