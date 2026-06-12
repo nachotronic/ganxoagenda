@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -70,39 +71,17 @@
 <div id="gx-page-agenda" style="padding:16px 16px 20px;">
 <div style="display:flex; align-items:baseline; justify-content:space-between; margin:0 2px 13px;">
 <div style="font-size:15px; font-weight:600; color:#1d2b27;">Avui a Sant Feliu</div>
-<div style="font-size:14px; font-weight:600; color:#1d2b27;">dijous 11</div>
+<div id="gx-avui-data" style="font-size:14px; font-weight:600; color:#1d2b27;">—</div>
 </div>
 
-<!-- destacat -->
-<div onclick="gxOpenFicha()" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">
-<div style="height:166px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; align-items:flex-end;">
-<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>
-<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">ESPORTS</div>
-<div style="position:relative; padding:15px 16px; color:#fff;">
-<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">19:00</div>
-<div style="font-size:21px; font-weight:900; letter-spacing:-.5px; line-height:1.1; font-family:var(--font-serif);">Regata de llaguts catalans</div>
-</div>
-</div>
-<div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">
-<div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>Port · Club de Rem</div>
-<div onclick="event.stopPropagation()" style="display:flex; gap:7px;">
-<div style="width:33px; height:33px; border-radius:9px; border:1px solid #e4e0d7; display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-bell" style="font-size:15px;"></i></div>
-<div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>
-</div>
-</div>
-</div>
+<div id="gx-agenda-loading" style="text-align:center; padding:30px 0; color:#8a8478; font-size:13px;">Carregant...</div>
+<div id="gx-agenda-buit" style="display:none; text-align:center; padding:30px 16px; color:#8a8478; font-size:13px; background:#fff; border:1px solid #e4e0d7; border-radius:13px;">Avui no hi ha esdeveniments publicats.</div>
 
-<!-- dues columnes -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden;">
-<div style="height:90px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">CULTURA</div></div>
-<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">18:00</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">Visita guiada al Monestir</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">Monestir</div></div>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden;">
-<div style="height:90px; position:relative; background-image:linear-gradient(125deg,#3d8f6a,#1d5e44);"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">GASTRO</div></div>
-<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">20:30</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">Tast de vins a la plaça</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">Plaça del Mercat</div></div>
-</div>
-</div>
+<!-- destacat (es genera dinàmicament) -->
+<div id="gx-agenda-destacat"></div>
+
+<!-- dues columnes (es genera dinàmicament) -->
+<div id="gx-agenda-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
 </div>
 
 <!-- pàgina família -->
@@ -133,7 +112,7 @@
 
 <!-- ===== VISTA VISITANT ===== -->
 <div id="gx-vis" style="display:none; padding:18px 16px 20px;">
-<div style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16);">
+<div onclick="gxOpenGuia()" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">
 <div style="height:158px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; align-items:flex-end;">
 <div style="position:absolute; inset:0; background:linear-gradient(transparent 36%, rgba(0,0,0,.6));"></div>
 <div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px;">GUIA</div>
@@ -162,26 +141,26 @@
 <div id="gx-ficha" style="display:none; position:absolute; inset:0; background:#faf8f3; z-index:50; overflow-y:auto;">
 
 <!-- foto capçalera -->
-<div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
+<div id="gx-f-header" style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
 <div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
 <div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
 <div onclick="gxCloseFicha()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
 <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-heart" style="font-size:18px;"></i></div>
 </div>
 <div style="position:relative; padding:15px 18px;">
-<div style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">ESPORTS</div>
-<div style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Regata de llaguts catalans</div>
+<div id="gx-f-cat" style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">ESPORTS</div>
+<div id="gx-f-title" style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Regata de llaguts catalans</div>
 </div>
 </div>
 
 <!-- cicle/festival -->
-<div onclick="event.stopPropagation()" style="margin:14px 16px 0; background:#103b52; color:#fff; border-radius:12px; padding:11px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
-<div style="display:flex; align-items:center; gap:9px;"><i class="ti ti-stars" style="font-size:17px;"></i><div style="font-size:12.5px;">Part de: <strong>Festa de la Mar</strong></div></div>
+<div id="gx-f-cicle" onclick="event.stopPropagation()" style="display:none; margin:14px 16px 0; background:#103b52; color:#fff; border-radius:12px; padding:11px 14px; align-items:center; justify-content:space-between; cursor:pointer;">
+<div style="display:flex; align-items:center; gap:9px;"><i class="ti ti-stars" style="font-size:17px;"></i><div style="font-size:12.5px;">Part de: <strong id="gx-f-cicle-nom">Festa de la Mar</strong></div></div>
 <i class="ti ti-chevron-right" style="font-size:16px;"></i>
 </div>
 
 <!-- avís meteo -->
-<div style="margin:11px 16px 0; background:#fef3e2; border:1px solid #f4ddb0; border-radius:12px; padding:11px 14px; display:flex; align-items:center; gap:10px;">
+<div id="gx-f-alert" style="display:none; margin:11px 16px 0; background:#fef3e2; border:1px solid #f4ddb0; border-radius:12px; padding:11px 14px; align-items:center; gap:10px;">
 <i class="ti ti-cloud-rain" style="font-size:18px; color:#c98a1f;"></i>
 <div style="font-size:12px; color:#7a5a17; line-height:1.4;">Esdeveniment a l'aire lliure. Avís de pluja per a aquesta tarda — pot patir canvis.</div>
 </div>
@@ -190,26 +169,26 @@
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:16px;">
 <div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-calendar-event" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Quan</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Dij 11 · 19:00</div></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Quan</div><div id="gx-f-quan" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Dij 11 · 19:00</div></div>
 </div>
 <div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-map-pin" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">On</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Port · Club de Rem</div></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">On</div><div id="gx-f-on" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Port · Club de Rem</div></div>
 </div>
 <div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-ticket" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Preu</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Entrada lliure</div></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Preu</div><div id="gx-f-preu" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Entrada lliure</div></div>
 </div>
 <div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
 <div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-building-community" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Organitza</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Club de Rem</div></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Organitza</div><div id="gx-f-organitza" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Club de Rem</div></div>
 </div>
 </div>
 
 <!-- descripció -->
 <div style="padding:0 16px 18px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Descripció</div>
-<div style="font-size:13.5px; line-height:1.6; color:#3d4a47;">La tradicional regata de llaguts de vela llatina torna al passeig del mar. Embarcacions de tota la costa competeixen davant del Club de Rem Llop de Mar, amb sortida des del port a partir de les 19:00. Activitat oberta al públic, amb zona habilitada per seguir la cursa des del passeig.</div>
+<div id="gx-f-desc" style="font-size:13.5px; line-height:1.6; color:#3d4a47;">La tradicional regata de llaguts de vela llatina torna al passeig del mar.</div>
 </div>
 
 <!-- mapa -->
@@ -220,7 +199,7 @@
 <i class="ti ti-map-pin" style="font-size:30px; color:#d85a30; position:absolute; top:50%; left:50%; transform:translate(-50%,-100%);"></i>
 </div>
 <div onclick="event.stopPropagation()" style="background:#fff; padding:11px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
-<div style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
+<div id="gx-f-lloc-map" style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
 <div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
 </div>
 </div>
@@ -230,26 +209,15 @@
 <div style="padding:0 16px 18px; display:flex; flex-direction:column; gap:10px;">
 <div style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-<a href="https://wa.me/?text=%E2%9B%B5%20Regata%20de%20llaguts%20catalans%0ADij%2011%20%C2%B7%2019%3A00%0APort%20%C2%B7%20Club%20de%20Rem%0Ahttps%3A%2F%2Fganxoagenda.cat" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
+<a id="gx-f-whatsapp" href="#" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
 <div style="background:#fff; border:1px solid #e4e0d7; color:#103b52; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-calendar-plus" style="font-size:16px;"></i>Al calendari</div>
 </div>
 </div>
 
 <!-- altres plans aquest dia -->
-<div style="padding:0 16px 6px;">
+<div id="gx-f-altres-wrap" style="padding:0 16px 6px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Altres plans aquest dia</div>
-<div style="display:flex; flex-direction:column; gap:9px;">
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;">
-<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"></div>
-<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">18:00</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">Visita guiada al Monestir</div></div>
-<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;">
-<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:linear-gradient(125deg,#3d8f6a,#1d5e44);"></div>
-<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">20:30</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">Tast de vins a la plaça</div></div>
-<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>
-</div>
-</div>
+<div id="gx-f-altres" style="display:flex; flex-direction:column; gap:9px;"></div>
 </div>
 
 <!-- enllaç cap de setmana -->
@@ -257,9 +225,104 @@
 <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:#103b52; font-size:12.5px; font-weight:700; padding:11px; border:1px dashed #c9c2b4; border-radius:11px; cursor:pointer;">Veure tots els plans del cap de setmana<i class="ti ti-arrow-right" style="font-size:14px;"></i></div>
 </div>
 
-
 </div>
 <!-- fi fitxa -->
+
+<!-- ===== FITXA DE GUIA (EVERGREEN) ===== -->
+<div id="gx-guia" style="display:none; position:absolute; inset:0; background:#faf8f3; z-index:50; overflow-y:auto;">
+
+<!-- foto capçalera -->
+<div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; flex-direction:column; justify-content:space-between;">
+<div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
+<div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
+<div onclick="gxCloseGuia()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
+<div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-heart" style="font-size:18px;"></i></div>
+</div>
+<div style="position:relative; padding:15px 18px;">
+<div style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">GUIA</div>
+<div style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Sant Feliu en 48 hores</div>
+</div>
+</div>
+
+<!-- intro -->
+<div style="padding:16px 16px 0;">
+<div style="font-size:13.5px; line-height:1.6; color:#3d4a47;">Tot l'essencial per descobrir Sant Feliu de Guíxols en un cap de setmana: platja, passeig, monestir, gastronomia i una escapada pel Camí de Ronda.</div>
+</div>
+
+<!-- dia 1 -->
+<div style="padding:18px 16px 0;">
+<div style="font-size:11px; font-weight:700; color:#103b52; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Dia 1 · El cor del poble</div>
+
+<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Porta Ferrada · Monestir</div></div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-sun" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Matí</strong> — Comença al Monestir de Sant Feliu, nucli històric de la vila. Passeja per la Plaça del Monestir i la Porta Ferrada, la portalada romànica que dona nom al festival d'estiu.</div>
+</div>
+
+<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Passeig del Mar</div></div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-walk" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Migdia</strong> — Baixa fins al Passeig del Mar, amb les seves icòniques arcades de farola i el mirador sobre la platja. Bon moment per dinar a una terrassa amb vistes.</div>
+</div>
+
+<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#36b3c9,#0d6e8e);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Platja de Sant Feliu</div></div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-umbrella" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Tarda</strong> — Temps de platja: ampla i urbana, amb tots els serveis. Si busques tranquil·litat, camina cap a l'extrem de llevant, a tocar del port.</div>
+</div>
+
+<div style="display:flex; gap:11px; margin-bottom:6px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-moon" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Nit</strong> — Sopar de peix fresc a la zona del port o a la Plaça del Mercat, i una passejada nocturna pel passeig il·luminat.</div>
+</div>
+</div>
+
+<!-- dia 2 -->
+<div style="padding:22px 16px 0;">
+<div style="font-size:11px; font-weight:700; color:#103b52; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Dia 2 · Camí de Ronda i cales</div>
+
+<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#5da876,#2c6e43);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Camí de Ronda</div></div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-sun" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Matí</strong> — Comença l'etapa del Camí de Ronda cap a S'Agaró: un recorregut espectacular vora els penya-segats, amb vistes a cales amagades com Sant Pol.</div>
+</div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-walk" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Migdia</strong> — Para a la Cala Sant Pol o continua fins als Jardins de Cap Roig. Bany a una cala recòndita abans de tornar.</div>
+</div>
+
+<div style="display:flex; gap:11px; margin-bottom:14px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-building-bank" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Tarda</strong> — Torna cap al centre i visita el Museu d'Història de la Ciutat, ideal per entendre el passat industrial (suro) i mariner del poble.</div>
+</div>
+
+<div style="display:flex; gap:11px; margin-bottom:6px;">
+<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-moon" style="font-size:15px;"></i></div>
+<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Nit</strong> — Acaba el cap de setmana amb un gelat al passeig, mentre es pon el sol darrere la badia.</div>
+</div>
+</div>
+
+<!-- altres guies -->
+<div style="padding:22px 16px 0;">
+<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">També et pot interessar</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#36b3c9,#0d6e8e); cursor:pointer;"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">Les 5 millors cales</div></div>
+<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515); cursor:pointer;"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">On menjar peix fresc</div></div>
+</div>
+</div>
+
+<!-- compartir -->
+<div style="padding:18px 16px 26px;">
+<a href="https://wa.me/?text=%E2%9B%B5%20Sant%20Feliu%20en%2048%20hores%20%E2%80%94%20guia%20a%20Ganxoagenda%0Ahttps%3A%2F%2Fganxoagenda.cat" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:17px;"></i>Compartir aquesta guia</a>
+</div>
+
+</div>
+<!-- fi guia -->
 
 </div>
 
@@ -282,13 +345,178 @@ function gxToggleMeteo(){
   if(d.style.display==='none'){d.style.display='flex';c.className='ti ti-chevron-up';}
   else{d.style.display='none';c.className='ti ti-chevron-down';}
 }
-function gxOpenFicha(){
+function gxOpenGuia(){
+  document.getElementById('gx-guia').style.display='block';
+  document.getElementById('gx-guia').scrollTop=0;
+}
+function gxCloseGuia(){
+  document.getElementById('gx-guia').style.display='none';
+}
+
+/* ===== SUPABASE ===== */
+var GX_SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
+var GX_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
+var gxSupabase = supabase.createClient(GX_SUPABASE_URL, GX_SUPABASE_KEY);
+
+var gxCategories = {};   // slug -> {nom, color_gradient, icona}
+var gxEvents = [];       // events d'avui carregats
+var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
+
+var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
+
+function gxTodayISO(){
+  var d = new Date();
+  var mm = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+mm+'-'+dd;
+}
+function gxFormatDataCurta(dataISO){
+  if(!dataISO) return '';
+  var d = new Date(dataISO+'T00:00:00');
+  return GX_DIES[d.getDay()] + ' ' + d.getDate();
+}
+function gxFormatHora(hora){
+  if(!hora) return '';
+  return hora.slice(0,5);
+}
+
+async function gxInit(){
+  // data d'avui a la capçalera
+  var today = new Date();
+  document.getElementById('gx-avui-data').textContent = GX_DIES[today.getDay()] + ' ' + today.getDate();
+
+  // carrega categories
+  try{
+    var catRes = await gxSupabase.from('categories').select('*');
+    if(catRes.data){
+      catRes.data.forEach(function(c){ gxCategories[c.slug] = c; });
+    }
+  }catch(e){ console.error('Error categories', e); }
+
+  // carrega esdeveniments d'avui
+  try{
+    var todayISO = gxTodayISO();
+    var evRes = await gxSupabase.from('esdeveniments')
+      .select('*')
+      .eq('data', todayISO)
+      .eq('estat','publicat')
+      .order('hora', {ascending:true});
+    if(evRes.error){ console.error(evRes.error); }
+    gxEvents = evRes.data || [];
+  }catch(e){ console.error('Error esdeveniments', e); }
+
+  gxRenderAgenda();
+}
+
+function gxCatInfo(slug){
+  return gxCategories[slug] || {nom: slug||'', color_gradient: GX_DEFAULT_GRADIENT, icona:''};
+}
+
+function gxRenderAgenda(){
+  document.getElementById('gx-agenda-loading').style.display='none';
+  var destacat = document.getElementById('gx-agenda-destacat');
+  var grid = document.getElementById('gx-agenda-grid');
+  destacat.innerHTML=''; grid.innerHTML='';
+
+  if(!gxEvents.length){
+    document.getElementById('gx-agenda-buit').style.display='block';
+    return;
+  }
+  document.getElementById('gx-agenda-buit').style.display='none';
+
+  var first = gxEvents[0];
+  var cat = gxCatInfo(first.categoria);
+  destacat.innerHTML =
+    '<div onclick="gxOpenFicha(\\''+first.id+'\\')" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">'+
+    '<div style="height:166px; position:relative; background-image:'+(first.foto_url? 'url(\\''+first.foto_url+'\\')' : cat.color_gradient)+'; background-size:cover; background-position:center; display:flex; align-items:flex-end;">'+
+    '<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>'+
+    '<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">'+cat.nom.toUpperCase()+'</div>'+
+    '<div style="position:relative; padding:15px 16px; color:#fff;">'+
+    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(gxFormatHora(first.hora)||'Tot el dia')+'</div>'+
+    '<div style="font-size:21px; font-weight:900; letter-spacing:-.5px; line-height:1.1; font-family:var(--font-serif);">'+first.titol+'</div>'+
+    '</div></div>'+
+    '<div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">'+
+    '<div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>'+(first.lloc_nom||'')+'</div>'+
+    '<div onclick="event.stopPropagation()" style="display:flex; gap:7px;">'+
+    '<div style="width:33px; height:33px; border-radius:9px; border:1px solid #e4e0d7; display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-bell" style="font-size:15px;"></i></div>'+
+    '<div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>'+
+    '</div></div></div>';
+
+  for(var i=1;i<gxEvents.length;i++){
+    var ev = gxEvents[i];
+    var c = gxCatInfo(ev.categoria);
+    var card = document.createElement('div');
+    card.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
+    card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
+    card.innerHTML =
+      '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\\''+ev.foto_url+'\\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
+      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(ev.hora)||'Tot el dia')+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+(ev.lloc_nom||'')+'</div></div>';
+    grid.appendChild(card);
+  }
+}
+
+function gxOpenFicha(id){
+  var ev = gxEvents.find(function(e){ return e.id===id; });
+  if(!ev) return;
+  var cat = gxCatInfo(ev.categoria);
+
+  document.getElementById('gx-f-header').style.backgroundImage = ev.foto_url ? "url('"+ev.foto_url+"')" : cat.color_gradient;
+  document.getElementById('gx-f-header').style.backgroundSize = 'cover';
+  document.getElementById('gx-f-header').style.backgroundPosition = 'center';
+  document.getElementById('gx-f-cat').textContent = cat.nom.toUpperCase();
+  document.getElementById('gx-f-title').textContent = ev.titol;
+  document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora ? (' · '+gxFormatHora(ev.hora)) : '');
+  document.getElementById('gx-f-on').textContent = ev.lloc_nom || '—';
+  document.getElementById('gx-f-lloc-map').textContent = ev.lloc_nom || '—';
+  document.getElementById('gx-f-preu').textContent = ev.preu_text || 'Entrada lliure';
+  document.getElementById('gx-f-organitza').textContent = ev.organitza || '—';
+  document.getElementById('gx-f-desc').textContent = ev.descripcio || '';
+
+  // cicle
+  var cicleEl = document.getElementById('gx-f-cicle');
+  if(ev.cicle_id){
+    cicleEl.style.display='flex';
+  } else {
+    cicleEl.style.display='none';
+  }
+
+  // avís meteo: només per a categories a l'aire lliure
+  var outdoor = ['rem','vela','platja','senderisme','festa_major','fira','futbol','padel','basquet'];
+  document.getElementById('gx-f-alert').style.display = (outdoor.indexOf(ev.categoria)>-1) ? 'flex' : 'none';
+
+  // whatsapp
+  var msg = '⛵ '+ev.titol+'\\n'+gxFormatDataCurta(ev.data)+(ev.hora?(' · '+gxFormatHora(ev.hora)):'')+'\\n'+(ev.lloc_nom||'')+'\\nhttps://ganxoagenda.cat';
+  document.getElementById('gx-f-whatsapp').href = 'https://wa.me/?text='+encodeURIComponent(msg);
+
+  // altres plans aquest dia
+  var altres = document.getElementById('gx-f-altres');
+  altres.innerHTML='';
+  var others = gxEvents.filter(function(e){ return e.id!==ev.id; });
+  if(others.length===0){
+    document.getElementById('gx-f-altres-wrap').style.display='none';
+  } else {
+    document.getElementById('gx-f-altres-wrap').style.display='block';
+    others.forEach(function(o){
+      var oc = gxCatInfo(o.categoria);
+      var row = document.createElement('div');
+      row.onclick = function(){ gxOpenFicha(o.id); };
+      row.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;';
+      row.innerHTML =
+        '<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:'+(o.foto_url? "url('"+o.foto_url+"')" : oc.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
+        '<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(o.hora)||'Tot el dia')+'</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">'+o.titol+'</div></div>'+
+        '<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>';
+      altres.appendChild(row);
+    });
+  }
+
   document.getElementById('gx-ficha').style.display='block';
   document.getElementById('gx-ficha').scrollTop=0;
 }
 function gxCloseFicha(){
   document.getElementById('gx-ficha').style.display='none';
 }
+
+gxInit();
 </script>
 </body>
 </html>
