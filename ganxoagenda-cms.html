@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ganxoagenda · Gestor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --blau: #103b52;
+  --blau-clar: #1a5570;
+  --fons: #faf8f3;
+  --fons-2: #f3f0e9;
+  --text: #1d2b27;
+  --text-sec: #6b7780;
+  --accent: #d85a30;
+  --verd: #1d8a4e;
+  --vermell: #c0392b;
+  --border: #e4e0d7;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text); min-height:100vh; }
+
+/* ---- LOGIN ---- */
+#login-screen {
+  display:flex; align-items:center; justify-content:center; min-height:100vh;
+  background: linear-gradient(135deg, #103b52 0%, #1a5570 100%);
+}
+.login-box {
+  background:#fff; border-radius:16px; padding:40px 36px; width:360px; max-width:90%;
+  box-shadow:0 12px 40px rgba(0,0,0,.2);
+}
+.login-box h1 {
+  font-family:var(--font-serif); font-size:24px; font-weight:900;
+  color:var(--blau); margin-bottom:6px;
+}
+.login-box p { font-size:13px; color:var(--text-sec); margin-bottom:24px; }
+.login-box input {
+  width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:8px;
+  font-family:var(--font-sans); font-size:14px; margin-bottom:12px; outline:none;
+  transition: border-color .2s;
+}
+.login-box input:focus { border-color:var(--blau); }
+.login-box .btn-login {
+  width:100%; padding:12px; border:none; border-radius:8px;
+  background:var(--blau); color:#fff; font-family:var(--font-sans);
+  font-size:14px; font-weight:600; cursor:pointer; margin-top:4px;
+  transition: background .2s;
+}
+.login-box .btn-login:hover { background:var(--blau-clar); }
+#login-error {
+  color:var(--vermell); font-size:12px; margin-top:10px; display:none;
+}
+
+/* ---- LAYOUT ---- */
+#app-screen { display:none; }
+.topbar {
+  background:var(--blau); color:#fff; padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.topbar h1 {
+  font-family:var(--font-serif); font-size:18px; font-weight:900; letter-spacing:-.3px;
+}
+.topbar .user-info {
+  display:flex; align-items:center; gap:12px; font-size:13px;
+}
+.topbar button {
+  background:rgba(255,255,255,.15); border:none; color:#fff;
+  padding:6px 14px; border-radius:6px; font-family:var(--font-sans);
+  font-size:12px; cursor:pointer; transition: background .2s;
+}
+.topbar button:hover { background:rgba(255,255,255,.25); }
+
+.main { max-width:900px; margin:0 auto; padding:24px; }
+
+/* ---- LLISTA ---- */
+#vista-llista {}
+.llista-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px;
+}
+.llista-header h2 { font-family:var(--font-serif); font-size:22px; font-weight:600; }
+.btn-nou {
+  background:var(--blau); color:#fff; border:none; border-radius:8px;
+  padding:10px 20px; font-family:var(--font-sans); font-size:14px;
+  font-weight:600; cursor:pointer; transition: background .2s;
+}
+.btn-nou:hover { background:var(--blau-clar); }
+
+.filtre-bar {
+  display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;
+}
+.filtre-btn {
+  padding:7px 14px; border-radius:20px; border:1px solid var(--border);
+  background:#fff; font-family:var(--font-sans); font-size:12px;
+  font-weight:500; cursor:pointer; color:var(--text-sec);
+  transition: all .2s;
+}
+.filtre-btn.actiu {
+  background:var(--blau); color:#fff; border-color:var(--blau);
+}
+
+.event-card {
+  background:#fff; border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; margin-bottom:10px; display:flex; align-items:center;
+  gap:14px; cursor:pointer; transition: box-shadow .2s, border-color .2s;
+}
+.event-card:hover { box-shadow:0 2px 12px rgba(16,59,82,.08); border-color:#ccc; }
+.event-card .data-col {
+  text-align:center; min-width:48px; flex-shrink:0;
+  border-right:1px solid var(--border); padding-right:14px;
+}
+.event-card .data-col .dia { font-size:20px; font-weight:700; color:var(--blau); }
+.event-card .data-col .mes { font-size:11px; color:var(--text-sec); text-transform:uppercase; }
+.event-card .info { flex:1; }
+.event-card .info .titol { font-size:15px; font-weight:600; margin-bottom:3px; }
+.event-card .info .meta { font-size:12px; color:var(--text-sec); display:flex; gap:12px; flex-wrap:wrap; }
+.event-card .estat-badge {
+  font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px;
+  text-transform:uppercase; letter-spacing:.3px; flex-shrink:0;
+}
+.estat-publicat { background:#e6f4ec; color:#1d8a4e; }
+.estat-esborrany { background:#fef3e0; color:#b87a1b; }
+.estat-pendent { background:#eee; color:#888; }
+
+.llista-buida {
+  text-align:center; padding:60px 20px; color:var(--text-sec);
+}
+.llista-buida .emoji { font-size:48px; margin-bottom:12px; }
+.llista-buida p { font-size:14px; }
+
+/* ---- FORMULARI ---- */
+#vista-form { display:none; }
+.form-header {
+  display:flex; align-items:center; gap:12px; margin-bottom:24px;
+}
+.form-header .btn-tornar {
+  background:none; border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; font-family:var(--font-sans); font-size:13px;
+  cursor:pointer; color:var(--text-sec); transition: all .2s;
+}
+.form-header .btn-tornar:hover { background:var(--fons-2); }
+.form-header h2 { font-family:var(--font-serif); font-size:20px; font-weight:600; }
+
+.form-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  background:#fff; border:1px solid var(--border); border-radius:12px;
+  padding:24px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+
+.camp label {
+  display:block; font-size:12px; font-weight:600; color:var(--text-sec);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;
+}
+.camp input, .camp select, .camp textarea {
+  width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+  font-family:var(--font-sans); font-size:14px; outline:none;
+  transition: border-color .2s; background:#fff;
+}
+.camp input:focus, .camp select:focus, .camp textarea:focus {
+  border-color:var(--blau);
+}
+.camp textarea { resize:vertical; min-height:100px; }
+
+/* Categories com a pastilles */
+.cat-pills { display:flex; flex-wrap:wrap; gap:8px; }
+.cat-pill {
+  padding:8px 16px; border-radius:20px; border:1.5px solid var(--border);
+  font-family:var(--font-sans); font-size:13px; font-weight:500;
+  cursor:pointer; transition: all .2s; background:#fff; color:var(--text);
+}
+.cat-pill.selected { border-color:var(--blau); background:var(--blau); color:#fff; }
+.cat-pill:hover:not(.selected) { background:var(--fons-2); }
+
+/* Foto upload */
+.foto-zone {
+  border:2px dashed var(--border); border-radius:10px; padding:24px;
+  text-align:center; cursor:pointer; transition: all .2s;
+  position:relative; min-height:120px;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+}
+.foto-zone:hover { border-color:var(--blau); background:rgba(16,59,82,.02); }
+.foto-zone .placeholder { color:var(--text-sec); font-size:13px; }
+.foto-zone .placeholder .icon { font-size:28px; margin-bottom:6px; display:block; }
+.foto-zone img {
+  max-width:100%; max-height:200px; border-radius:8px; object-fit:cover;
+}
+.foto-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+
+/* Toggle familiar */
+.toggle-row {
+  display:flex; align-items:center; gap:10px;
+}
+.toggle {
+  width:40px; height:22px; background:var(--border); border-radius:11px;
+  position:relative; cursor:pointer; transition: background .2s;
+  flex-shrink:0;
+}
+.toggle.on { background:var(--verd); }
+.toggle .knob {
+  width:18px; height:18px; background:#fff; border-radius:50%;
+  position:absolute; top:2px; left:2px; transition: left .2s;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+.toggle.on .knob { left:20px; }
+
+/* Accions del form */
+.form-actions {
+  display:flex; gap:10px; justify-content:flex-end; margin-top:20px;
+}
+.btn-esborrany {
+  padding:11px 22px; border:1px solid var(--border); border-radius:8px;
+  background:#fff; font-family:var(--font-sans); font-size:14px;
+  font-weight:500; cursor:pointer; color:var(--text);
+  transition: all .2s;
+}
+.btn-esborrany:hover { background:var(--fons-2); }
+.btn-publicar {
+  padding:11px 22px; border:none; border-radius:8px;
+  background:var(--verd); color:#fff; font-family:var(--font-sans);
+  font-size:14px; font-weight:600; cursor:pointer;
+  transition: background .2s;
+}
+.btn-publicar:hover { background:#17753f; }
+.btn-eliminar {
+  padding:11px 22px; border:1px solid var(--vermell); border-radius:8px;
+  background:#fff; color:var(--vermell); font-family:var(--font-sans);
+  font-size:14px; font-weight:500; cursor:pointer; margin-right:auto;
+  transition: all .2s;
+}
+.btn-eliminar:hover { background:#fdeaea; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:24px; right:24px; background:var(--blau);
+  color:#fff; padding:12px 20px; border-radius:10px; font-size:14px;
+  font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,.2);
+  transform:translateY(80px); opacity:0; transition: all .3s;
+  z-index:200;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.error { background:var(--vermell); }
+
+/* Responsive */
+@media (max-width:640px) {
+  .form-grid { grid-template-columns:1fr; }
+  .main { padding:16px; }
+  .llista-header { flex-direction:column; gap:12px; align-items:flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Ganxoagenda</h1>
+    <p>Gestor d'esdeveniments</p>
+    <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+    <input type="password" id="login-pass" placeholder="Contrasenya" autocomplete="current-password">
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app-screen">
+  <div class="topbar">
+    <h1>Ganxoagenda — Gestor</h1>
+    <div class="user-info">
+      <span id="user-email"></span>
+      <button onclick="doLogout()">Sortir</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- LLISTA -->
+    <div id="vista-llista">
+      <div class="llista-header">
+        <h2>Esdeveniments</h2>
+        <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
+      </div>
+      <div class="filtre-bar" id="filtre-bar"></div>
+      <div id="llista-events"></div>
+    </div>
+
+    <!-- FORMULARI -->
+    <div id="vista-form">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tornarLlista()">← Tornar</button>
+        <h2 id="form-titol">Nou esdeveniment</h2>
+      </div>
+
+      <div class="form-grid">
+        <!-- Títol -->
+        <div class="camp full">
+          <label>Títol</label>
+          <input type="text" id="f-titol" placeholder="Ex: Regata de llaguts catalans">
+        </div>
+
+        <!-- Categoria -->
+        <div class="camp full">
+          <label>Categoria</label>
+          <div class="cat-pills" id="f-categories"></div>
+        </div>
+
+        <!-- Data -->
+        <div class="camp">
+          <label>Data</label>
+          <input type="date" id="f-data">
+        </div>
+
+        <!-- Hora inici -->
+        <div class="camp">
+          <label>Hora d'inici</label>
+          <input type="time" id="f-hora-inici">
+        </div>
+
+        <!-- Lloc -->
+        <div class="camp">
+          <label>Lloc</label>
+          <select id="f-lloc">
+            <option value="">— Tria un lloc —</option>
+          </select>
+        </div>
+
+        <!-- Hora fi -->
+        <div class="camp">
+          <label>Hora de fi (opcional)</label>
+          <input type="time" id="f-hora-fi">
+        </div>
+
+        <!-- Preu text -->
+        <div class="camp">
+          <label>Preu (text lliure)</label>
+          <input type="text" id="f-preu-text" placeholder="Ex: Entrada lliure / 5 €">
+        </div>
+
+        <!-- URL entrades -->
+        <div class="camp">
+          <label>Enllaç entrades (opcional)</label>
+          <input type="url" id="f-url-entrades" placeholder="https://...">
+        </div>
+
+        <!-- Cicle -->
+        <div class="camp full">
+          <label>Pertany a un cicle? (opcional)</label>
+          <select id="f-cicle">
+            <option value="">— Cap cicle —</option>
+          </select>
+        </div>
+
+        <!-- Descripció -->
+        <div class="camp full">
+          <label>Descripció</label>
+          <textarea id="f-descripcio" placeholder="Descripció de l'esdeveniment..."></textarea>
+        </div>
+
+        <!-- Foto -->
+        <div class="camp full">
+          <label>Foto</label>
+          <div class="foto-zone" id="foto-zone" onclick="document.getElementById('f-foto').click()">
+            <div class="placeholder" id="foto-placeholder">
+              <span class="icon">📷</span>
+              Arrossega o clica per triar una imatge
+            </div>
+            <img id="foto-preview" style="display:none;">
+            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)">
+          </div>
+        </div>
+
+        <!-- Familiar + destacat -->
+        <div class="camp">
+          <label>Activitat familiar</label>
+          <div class="toggle-row">
+            <div class="toggle" id="tog-familiar" onclick="toggleSwitch(this)"><div class="knob"></div></div>
+            <span style="font-size:13px; color:var(--text-sec);">Apareix a "En família"</span>
+          </div>
+          <div id="edat-row" style="margin-top:10px; display:none;">
+            <input type="text" id="f-edat" placeholder="Ex: a partir de 6 anys">
+          </div>
+        </div>
+
+        <div class="camp">
+          <label>Esdeveniment destacat</label>
+          <div class="toggle-row">
+            <div class="toggle" id="tog-destacat" onclick="toggleSwitch(this)"><div class="knob"></div></div>
+            <span style="font-size:13px; color:var(--text-sec);">Targeta gran a l'agenda</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-eliminar" id="btn-eliminar" style="display:none;" onclick="eliminarEsdeveniment()">Eliminar</button>
+        <button class="btn-esborrany" onclick="desarEsdeveniment('esborrany')">Desar esborrany</button>
+        <button class="btn-publicar" onclick="desarEsdeveniment('publicat')">Publicar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓ — Substitueix amb les teves dades de Supabase
+// ============================================================
+const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
+
+// ============================================================
+// SUPABASE CLIENT MÍNIM (sense SDK, fetch directe)
+// ============================================================
+let accessToken = null;
+let currentUser = null;
+
+const headers = () => ({
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+});
+
+async function sbFetch(path, opts = {}) {
+  const url = SUPABASE_URL + path;
+  const res = await fetch(url, { headers: headers(), ...opts });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.msg || res.statusText);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function sbAuth(endpoint, body) {
+  const res = await fetch(SUPABASE_URL + '/auth/v1/' + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || 'Error d\'autenticació');
+  return data;
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  try {
+    const data = await sbAuth('token?grant_type=password', { email, password: pass });
+    accessToken = data.access_token;
+    currentUser = data.user;
+    localStorage.setItem('gx_token', accessToken);
+    localStorage.setItem('gx_refresh', data.refresh_token);
+    localStorage.setItem('gx_user', JSON.stringify(data.user));
+    showApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  accessToken = null; currentUser = null;
+  localStorage.removeItem('gx_token');
+  localStorage.removeItem('gx_refresh');
+  localStorage.removeItem('gx_user');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function tryAutoLogin() {
+  const token = localStorage.getItem('gx_token');
+  const user = localStorage.getItem('gx_user');
+  if (token && user) {
+    accessToken = token;
+    currentUser = JSON.parse(user);
+    try {
+      // Verificar que el token encara funciona
+      await sbFetch('/rest/v1/categories?select=id&limit=1');
+      showApp();
+    } catch {
+      // Token caducat, intentar refresh
+      const refresh = localStorage.getItem('gx_refresh');
+      if (refresh) {
+        try {
+          const data = await sbAuth('token?grant_type=refresh_token', { refresh_token: refresh });
+          accessToken = data.access_token;
+          currentUser = data.user;
+          localStorage.setItem('gx_token', accessToken);
+          localStorage.setItem('gx_refresh', data.refresh_token);
+          localStorage.setItem('gx_user', JSON.stringify(data.user));
+          showApp();
+        } catch { doLogout(); }
+      } else { doLogout(); }
+    }
+  }
+}
+
+// ============================================================
+// APP
+// ============================================================
+let categories = [];
+let llocs = [];
+let cicles = [];
+let editingId = null;
+let filtreCategoria = null;
+
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('user-email').textContent = currentUser.email;
+
+  // Carregar dades auxiliars
+  categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
+  llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
+  cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
+
+  renderFiltres();
+  renderSelectLlocs();
+  renderSelectCicles();
+  renderCatPills();
+  await carregarEsdeveniments();
+}
+
+// ---- FILTRES ----
+function renderFiltres() {
+  const bar = document.getElementById('filtre-bar');
+  let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
+  categories.forEach(c => {
+    html += `<button class="filtre-btn" onclick="filtrar('${c.id}', this)">${c.nom}</button>`;
+  });
+  bar.innerHTML = html;
+}
+
+function filtrar(catId, btn) {
+  filtreCategoria = catId;
+  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu'));
+  btn.classList.add('actiu');
+  carregarEsdeveniments();
+}
+
+// ---- LLISTA ----
+const MESOS = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+
+async function carregarEsdeveniments() {
+  let query = '/rest/v1/esdeveniments?select=*,categories(nom,slug,color_gradient),llocs(nom)&order=data.desc,hora_inici';
+  if (filtreCategoria) query += `&categoria_id=eq.${filtreCategoria}`;
+
+  const events = await sbFetch(query);
+  const container = document.getElementById('llista-events');
+
+  if (!events || events.length === 0) {
+    container.innerHTML = `
+      <div class="llista-buida">
+        <div class="emoji">🦉</div>
+        <p>Encara no hi ha cap esdeveniment.<br>Crea'n un amb el botó de dalt!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = events.map(e => {
+    const d = new Date(e.data + 'T00:00:00');
+    const dia = d.getDate();
+    const mes = MESOS[d.getMonth()];
+    const catNom = e.categories?.nom || '';
+    const llocNom = e.llocs?.nom || '';
+    const hora = e.hora_inici ? e.hora_inici.slice(0,5) : '';
+    const estatClass = 'estat-' + e.estat;
+
+    return `
+      <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
+        <div class="data-col">
+          <div class="dia">${dia}</div>
+          <div class="mes">${mes}</div>
+        </div>
+        <div class="info">
+          <div class="titol">${esc(e.titol)}</div>
+          <div class="meta">
+            ${catNom ? `<span>${catNom}</span>` : ''}
+            ${hora ? `<span>${hora}</span>` : ''}
+            ${llocNom ? `<span>${llocNom}</span>` : ''}
+          </div>
+        </div>
+        <span class="estat-badge ${estatClass}">${e.estat}</span>
+      </div>`;
+  }).join('');
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ---- FORMULARI: selectors ----
+function renderSelectLlocs() {
+  const sel = document.getElementById('f-lloc');
+  sel.innerHTML = '<option value="">— Tria un lloc —</option>';
+  llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${esc(l.nom)}</option>`);
+}
+
+function renderSelectCicles() {
+  const sel = document.getElementById('f-cicle');
+  sel.innerHTML = '<option value="">— Cap cicle —</option>';
+  cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${esc(c.nom)}</option>`);
+}
+
+function renderCatPills() {
+  const container = document.getElementById('f-categories');
+  container.innerHTML = categories.map(c =>
+    `<div class="cat-pill" data-id="${c.id}" onclick="selCat(this)">${c.nom}</div>`
+  ).join('');
+}
+
+function selCat(el) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ---- FORMULARI: toggles ----
+function toggleSwitch(el) {
+  el.classList.toggle('on');
+  if (el.id === 'tog-familiar') {
+    document.getElementById('edat-row').style.display = el.classList.contains('on') ? 'block' : 'none';
+  }
+}
+
+// ---- FORMULARI: foto ----
+let fotoFile = null;
+function previewFoto(input) {
+  if (input.files && input.files[0]) {
+    fotoFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('foto-preview').src = e.target.result;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('foto-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ---- NOU ----
+function nouEsdeveniment() {
+  editingId = null;
+  document.getElementById('form-titol').textContent = 'Nou esdeveniment';
+  document.getElementById('btn-eliminar').style.display = 'none';
+  resetForm();
+  mostrarForm();
+}
+
+// ---- EDITAR ----
+async function editarEsdeveniment(id) {
+  editingId = id;
+  document.getElementById('form-titol').textContent = 'Editar esdeveniment';
+  document.getElementById('btn-eliminar').style.display = 'inline-block';
+
+  const evts = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`);
+  if (!evts || evts.length === 0) return;
+  const e = evts[0];
+
+  document.getElementById('f-titol').value = e.titol || '';
+  document.getElementById('f-data').value = e.data || '';
+  document.getElementById('f-hora-inici').value = e.hora_inici || '';
+  document.getElementById('f-hora-fi').value = e.hora_fi || '';
+  document.getElementById('f-lloc').value = e.lloc_id || '';
+  document.getElementById('f-cicle').value = e.cicle_id || '';
+  document.getElementById('f-preu-text').value = e.preu_text || '';
+  document.getElementById('f-url-entrades').value = e.url_entrades || '';
+  document.getElementById('f-descripcio').value = e.descripcio || '';
+  document.getElementById('f-edat').value = e.edat_minima || '';
+
+  // Categoria
+  document.querySelectorAll('.cat-pill').forEach(p => {
+    p.classList.toggle('selected', p.dataset.id === e.categoria_id);
+  });
+
+  // Toggles
+  const togFam = document.getElementById('tog-familiar');
+  togFam.classList.toggle('on', e.familiar);
+  document.getElementById('edat-row').style.display = e.familiar ? 'block' : 'none';
+
+  const togDest = document.getElementById('tog-destacat');
+  togDest.classList.toggle('on', e.destacat);
+
+  // Foto
+  if (e.foto_url) {
+    document.getElementById('foto-preview').src = e.foto_url;
+    document.getElementById('foto-preview').style.display = 'block';
+    document.getElementById('foto-placeholder').style.display = 'none';
+  } else {
+    document.getElementById('foto-preview').style.display = 'none';
+    document.getElementById('foto-placeholder').style.display = 'block';
+  }
+  fotoFile = null;
+
+  mostrarForm();
+}
+
+// ---- DESAR ----
+async function desarEsdeveniment(estat) {
+  const titol = document.getElementById('f-titol').value.trim();
+  const data = document.getElementById('f-data').value;
+  const catPill = document.querySelector('.cat-pill.selected');
+
+  if (!titol) return toast('Cal un títol', true);
+  if (!data) return toast('Cal una data', true);
+  if (!catPill) return toast('Tria una categoria', true);
+
+  // Pujar foto si n'hi ha
+  let foto_url = null;
+  if (fotoFile) {
+    try {
+      const ext = fotoFile.name.split('.').pop();
+      const path = `esdeveniments/${Date.now()}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${path}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': fotoFile.type,
+        },
+        body: fotoFile,
+      });
+      if (res.ok) {
+        foto_url = `${SUPABASE_URL}/storage/v1/object/public/fotos/${path}`;
+      }
+    } catch (e) {
+      console.warn('Error pujant foto:', e);
+    }
+  }
+
+  const body = {
+    titol,
+    data,
+    categoria_id: catPill.dataset.id,
+    lloc_id: document.getElementById('f-lloc').value || null,
+    cicle_id: document.getElementById('f-cicle').value || null,
+    hora_inici: document.getElementById('f-hora-inici').value || null,
+    hora_fi: document.getElementById('f-hora-fi').value || null,
+    preu_text: document.getElementById('f-preu-text').value || null,
+    url_entrades: document.getElementById('f-url-entrades').value || null,
+    descripcio: document.getElementById('f-descripcio').value || null,
+    familiar: document.getElementById('tog-familiar').classList.contains('on'),
+    edat_minima: document.getElementById('f-edat').value || null,
+    destacat: document.getElementById('tog-destacat').classList.contains('on'),
+    estat,
+    origen: 'manual',
+  };
+  if (foto_url) body.foto_url = foto_url;
+
+  try {
+    if (editingId) {
+      await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      });
+      toast(estat === 'publicat' ? 'Publicat!' : 'Esborrany desat');
+    } else {
+      await sbFetch('/rest/v1/esdeveniments', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { ...headers(), 'Prefer': 'return=minimal' },
+      });
+      toast(estat === 'publicat' ? 'Publicat!' : 'Esborrany desat');
+    }
+    tornarLlista();
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+  }
+}
+
+// ---- ELIMINAR ----
+async function eliminarEsdeveniment() {
+  if (!editingId) return;
+  if (!confirm('Segur que vols eliminar aquest esdeveniment?')) return;
+  try {
+    await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method: 'DELETE' });
+    toast('Eliminat');
+    tornarLlista();
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+  }
+}
+
+// ---- NAVEGACIÓ ----
+function mostrarForm() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-form').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function tornarLlista() {
+  document.getElementById('vista-form').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+  carregarEsdeveniments();
+}
+
+function resetForm() {
+  ['f-titol','f-data','f-hora-inici','f-hora-fi','f-preu-text','f-url-entrades','f-descripcio','f-edat'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-lloc').value = '';
+  document.getElementById('f-cicle').value = '';
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
+  document.getElementById('tog-familiar').classList.remove('on');
+  document.getElementById('tog-destacat').classList.remove('on');
+  document.getElementById('edat-row').style.display = 'none';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-placeholder').style.display = 'block';
+  fotoFile = null;
+}
+
+// ---- TOAST ----
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => el.className = 'toast', 2500);
+}
+
+// ---- INIT ----
+document.addEventListener('DOMContentLoaded', tryAutoLogin);
+
+// Drag & drop foto
+const zone = document.getElementById('foto-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--blau)'; });
+zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; });
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.style.borderColor = 'var(--border)';
+  if (e.dataTransfer.files.length) {
+    document.getElementById('f-foto').files = e.dataTransfer.files;
+    previewFoto(document.getElementById('f-foto'));
+  }
+});
+
+// Login amb Enter
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
