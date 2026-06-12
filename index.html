@@ -74,7 +74,7 @@
 </div>
 
 <!-- destacat -->
-<div style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16);">
+<div onclick="gxOpenFicha()" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">
 <div style="height:166px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; align-items:flex-end;">
 <div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>
 <div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">ESPORTS</div>
@@ -85,7 +85,7 @@
 </div>
 <div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">
 <div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>Port · Club de Rem</div>
-<div style="display:flex; gap:7px;">
+<div onclick="event.stopPropagation()" style="display:flex; gap:7px;">
 <div style="width:33px; height:33px; border-radius:9px; border:1px solid #e4e0d7; display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-bell" style="font-size:15px;"></i></div>
 <div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>
 </div>
@@ -157,6 +157,71 @@
 </div>
 
 </div>
+
+<!-- ===== FITXA D'ESDEVENIMENT ===== -->
+<div id="gx-ficha" style="display:none; position:absolute; inset:0; background:#faf8f3; z-index:50; overflow-y:auto;">
+
+<!-- foto capçalera -->
+<div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
+<div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
+<div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
+<div onclick="gxCloseFicha()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
+<div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-heart" style="font-size:18px;"></i></div>
+</div>
+<div style="position:relative; padding:15px 18px;">
+<div style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">ESPORTS</div>
+<div style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Regata de llaguts catalans</div>
+</div>
+</div>
+
+<!-- dades ràpides -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:16px;">
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-calendar-event" style="font-size:18px; color:#103b52;"></i></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Quan</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Dij 11 · 19:00</div></div>
+</div>
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-map-pin" style="font-size:18px; color:#103b52;"></i></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">On</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Port · Club de Rem</div></div>
+</div>
+<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px; grid-column:1 / -1;">
+<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-ticket" style="font-size:18px; color:#103b52;"></i></div>
+<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Preu</div><div style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Entrada lliure</div></div>
+</div>
+</div>
+
+<!-- descripció -->
+<div style="padding:0 16px 18px;">
+<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Descripció</div>
+<div style="font-size:13.5px; line-height:1.6; color:#3d4a47;">La tradicional regata de llaguts de vela llatina torna al passeig del mar. Embarcacions de tota la costa competeixen davant del Club de Rem Llop de Mar, amb sortida des del port a partir de les 19:00. Activitat oberta al públic, amb zona habilitada per seguir la cursa des del passeig.</div>
+</div>
+
+<!-- mapa -->
+<div style="padding:0 16px 18px;">
+<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">On és</div>
+<div style="border-radius:13px; overflow:hidden; border:1px solid #e4e0d7;">
+<div style="height:120px; background:#e8e4d9; position:relative; background-image:linear-gradient(0deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent);">
+<i class="ti ti-map-pin" style="font-size:30px; color:#d85a30; position:absolute; top:50%; left:50%; transform:translate(-50%,-100%);"></i>
+</div>
+<div onclick="event.stopPropagation()" style="background:#fff; padding:11px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+<div style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
+<div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
+</div>
+</div>
+</div>
+
+<!-- accions -->
+<div style="padding:4px 16px 24px; display:flex; flex-direction:column; gap:10px;">
+<div style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+<div style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</div>
+<div style="background:#fff; border:1px solid #e4e0d7; color:#103b52; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-calendar-plus" style="font-size:16px;"></i>Al calendari</div>
+</div>
+</div>
+
+</div>
+<!-- fi fitxa -->
+
 </div>
 
 <script>
@@ -177,6 +242,13 @@ function gxToggleMeteo(){
   var d=document.getElementById('gx-meteo-detail'), c=document.getElementById('gx-meteo-chev');
   if(d.style.display==='none'){d.style.display='flex';c.className='ti ti-chevron-up';}
   else{d.style.display='none';c.className='ti ti-chevron-down';}
+}
+function gxOpenFicha(){
+  document.getElementById('gx-ficha').style.display='block';
+  document.getElementById('gx-ficha').scrollTop=0;
+}
+function gxCloseFicha(){
+  document.getElementById('gx-ficha').style.display='none';
 }
 </script>
 </body>
