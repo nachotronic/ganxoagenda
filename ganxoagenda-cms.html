@@ -785,9 +785,9 @@ async function renderSelectorGaleria(){
   });
 }
 function triarFotoGaleria(url){
-  fotoGaleriaUrl = url;
-  fotoFile = null;
-  fotoGaleriaUrl = null;
+  fotoGaleriaUrl = url; // Guarda correctamente la URL de la galería
+  fotoFile = null;      // Limpia cualquier archivo local que se hubiera seleccionado
+  
   document.getElementById('f-foto').value = '';
   document.getElementById('foto-preview').src = url;
   document.getElementById('foto-preview').style.display = 'block';
