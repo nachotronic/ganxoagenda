@@ -443,14 +443,11 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
 <script>
 // ============================================================
-// CONFIGURACIÓ — Supabase dades generals
+// CONFIGURACIÓ — Supabase
 // ============================================================
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 
-// ============================================================
-// SUPABASE CLIENT MÍNIM (sense SDK, fetch directe)
-// ============================================================
 let accessToken = null;
 let currentUser = null;
 
@@ -483,7 +480,7 @@ async function sbAuth(endpoint, body) {
 }
 
 // ============================================================
-// AUTH
+// AUTH LÓGICA
 // ============================================================
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
@@ -540,7 +537,7 @@ async function tryAutoLogin() {
 }
 
 // ============================================================
-// APP LÒGICA GENERAL
+// APP LÓGICA GENERAL
 // ============================================================
 let categories = [];
 let llocs = [];
@@ -700,7 +697,123 @@ function netejarFormulari() {
   fotoGaleriaUrl = null;
 }
 
-// ---- GALERIA API ----
+// ---- EDICIÓN Y GUARDADO SUPABASE ----
+async function editarEsdeveniment(id) {
+  editingId = id;
+  netejarFormulari();
+  document.getElementById('form-titol').textContent = 'Editar esdeveniment';
+  document.getElementById('btn-eliminar').style.display = 'block';
+  
+  try {
+    const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`);
+    if(!ev || ev.length === 0) throw new Error('No s\'ha trobat l\'esdeveniment');
+    const e = ev[0];
+
+    document.getElementById('f-titol').value = e.titol || '';
+    document.getElementById('f-data').value = e.data || '';
+    document.getElementById('f-hora-inici').value = e.hora_inici ? e.hora_inici.slice(0,5) : '';
+    document.getElementById('f-hora-fi').value = e.hora_fi ? e.hora_fi.slice(0,5) : '';
+    document.getElementById('f-lloc').value = e.lloc_id || '';
+    document.getElementById('f-preu-text').value = e.preu_text || '';
+    document.getElementById('f-url-entrades').value = e.url_entrades || '';
+    document.getElementById('f-cicle').value = e.cicle_id || '';
+    document.getElementById('f-descripcio').value = e.descripcio || '';
+    document.getElementById('f-edat').value = e.edat_minima || '';
+    document.getElementById('f-ordre').value = e.ordre || 0;
+
+    if(e.categoria_id) {
+      const pill = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`);
+      if(pill) pill.classList.add('selected');
+    }
+    if(e.familiar) {
+      document.getElementById('tog-familiar').classList.add('on');
+      document.getElementById('edat-row').style.display = 'block';
+    }
+    if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
+
+    if(e.foto_url) {
+      document.getElementById('foto-preview').src = e.foto_url;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('foto-placeholder').style.display = 'none';
+      fotoGaleriaUrl = e.foto_url;
+    }
+
+    document.getElementById('vista-llista').style.display = 'none';
+    document.getElementById('vista-form').style.display = 'block';
+  } catch(err) { toast(err.message, true); }
+}
+
+async function desarEsdeveniment(estatDesti) {
+  const titol = document.getElementById('f-titol').value.trim();
+  const data = document.getElementById('f-data').value;
+  if(!titol || !data) return toast('Títol i Data són obligatoris', true);
+
+  const pillSel = document.querySelector('.cat-pill.selected');
+  const categoria_id = pillSel ? pillSel.getAttribute('data-id') : null;
+  const lloc_id = document.getElementById('f-lloc').value || null;
+  const cicle_id = document.getElementById('f-cicle').value || null;
+  
+  let hora_inici = document.getElementById('f-hora-inici').value || null;
+  let hora_fi = document.getElementById('f-hora-fi').value || null;
+  if(hora_inici && hora_inici.length === 5) hora_inici += ':00';
+  if(hora_fi && hora_fi.length === 5) hora_fi += ':00';
+
+  const body = {
+    titol, data, categoria_id, lloc_id, cicle_id, hora_inici, hora_fi,
+    preu_text: document.getElementById('f-preu-text').value.trim() || null,
+    url_entrades: document.getElementById('f-url-entrades').value.trim() || null,
+    descripcio: document.getElementById('f-descripcio').value.trim() || null,
+    edat_minima: document.getElementById('f-edat').value.trim() || null,
+    familiar: document.getElementById('tog-familiar').classList.contains('on'),
+    destacat: document.getElementById('tog-destacat').classList.contains('on'),
+    ordre: parseInt(document.getElementById('f-ordre').value) || 0,
+    estat: estatDesti
+  };
+
+  try {
+    if(fotoFile) {
+      const extension = fotoFile.name.split('.').pop();
+      const nomFitxer = `${Date.now()}.${extension}`;
+      const resUp = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${nomFitxer}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY },
+        body: fotoFile
+      });
+      if(!resUp.ok) throw new Error('Error pujant la imatge');
+      body.foto_url = urlPublica(nomFitxer);
+    } else if(fotoGaleriaUrl) {
+      body.foto_url = fotoGaleriaUrl;
+    } else {
+      body.foto_url = null;
+    }
+
+    if(editingId) {
+      await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, {
+        method: 'PATCH', body: JSON.stringify(body)
+      });
+      toast('Esdeveniment actualitzat correctament');
+    } else {
+      await sbFetch('/rest/v1/esdeveniments', {
+        method: 'POST', body: JSON.stringify(body)
+      });
+      toast('Esdeveniment creat correctament');
+    }
+    tornarLlista();
+    await carregarEsdeveniments();
+  } catch(err) { toast(err.message, true); }
+}
+
+async function eliminarEsdeveniment() {
+  if(!editingId || !confirm('Segur que vols eliminar aquest esdeveniment?')) return;
+  try {
+    await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method: 'DELETE' });
+    toast('Esdeveniment eliminat');
+    tornarLlista();
+    await carregarEsdeveniments();
+  } catch(err) { toast(err.message, true); }
+}
+
+// ---- MULTI-FOTOS GALERIA ----
 async function llistarFotos(){
   const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, {
     method: 'POST',
@@ -783,6 +896,30 @@ function triarFotoGaleria(url) {
   toast('Foto seleccionada');
 }
 
+async function pujarBatch(input) {
+  if(!input.files || input.files.length === 0) return;
+  const pro = document.getElementById('batch-progres');
+  pro.style.display = 'block';
+  pro.textContent = `Pujant 0 de ${input.files.length} fotos...`;
+  
+  for(let i=0; i<input.files.length; i++) {
+    const file = input.files[i];
+    const extension = file.name.split('.').pop();
+    const nomFitxer = `${Date.now()}_batch_${i}.${extension}`;
+    try {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${nomFitxer}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY },
+        body: file
+      });
+      pro.textContent = `Pujant ${i+1} de ${input.files.length} fotos...`;
+    } catch(e) { console.error(e); }
+  }
+  pro.textContent = '✨ Pujada massiva completada!';
+  setTimeout(() => pro.style.display = 'none', 3000);
+  actualitzarGaleriaVista();
+}
+
 // ---- TOAST ----
 function toast(msg, isError) {
   const el = document.getElementById('toast');
@@ -798,6 +935,7 @@ async function procesarConGemini() {
   const contenido = document.getElementById('ia-contenido').value.trim();
   if (!contenido) return toast('Introduce algún texto para analizar', true);
 
+  // 🔴 ¡REMPLAZA ESTO CON TU CLAVE REAL DE GEMINI QUE EMPIEZA POR AIzaSy! 🔴
   const MI_GEMINI_KEY = "AQ.Ab8RN6KzdW-H98VT_6WwBLNstYzWb1BD3RzcFfW9E-yW_wo45A"; 
 
   const loadingEl = document.getElementById('ia-loading');
@@ -837,7 +975,7 @@ async function procesarConGemini() {
       })
     });
 
-    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini');
+    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini (Verifica tu clave)');
 
     const data = await respuesta.json();
     const textoJson = data.candidates[0].content.parts[0].text;
