@@ -315,6 +315,7 @@ function gxPage(p){
     document.getElementById('gx-nav-'+x).style.color = (x===p)?'#103b52':'#b3a89a';
   });
   document.getElementById('gx-filtres-wrap').style.display = (p==='agenda')?'block':'none';
+  gxScrollTop();
 }
 function gxToggleMeteo(){
   var d=document.getElementById('gx-meteo-detail'), c=document.getElementById('gx-meteo-chev');
@@ -679,6 +680,17 @@ function gxOpenFicha(id, fromFicha){
     window.scrollTo(0, Math.max(0, top));
   });
 }
+function gxScrollTop(){
+  requestAnimationFrame(function(){
+    var app = document.getElementById('gx-app');
+    var rect = app.getBoundingClientRect();
+    var top = rect.top + (window.scrollY || window.pageYOffset || 0) - 18;
+    window.scrollTo(0, Math.max(0, top));
+    document.documentElement.scrollTop = Math.max(0, top);
+    document.body.scrollTop = Math.max(0, top);
+    app.scrollTop = 0;
+  });
+}
 function gxCloseFicha(){
   if(gxFichaStack.length){
     var prevId = gxFichaStack.pop();
@@ -687,7 +699,7 @@ function gxCloseFicha(){
   } else {
     document.getElementById('gx-ficha').style.display='none';
     gxFichaCurrentId = null;
-    window.scrollTo(0, 0);
+    gxScrollTop();
   }
 }
 
