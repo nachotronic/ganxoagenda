@@ -408,8 +408,8 @@ function renderCatPills() {
 function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); }
 function toggleSwitch(el) { el.classList.toggle('on'); if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none'; }
 
-function nouEsdeveniment() { editingId = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
-function tornarLlista() { document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
+function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
+function tornarLlista() { iaIdxActual = null; document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
 
 function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
@@ -443,7 +443,46 @@ async function desarEsdeveniment(estatDesti) {
   };
   if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
   else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
+
+  // Mode repàs: si l'event venia de la llista de la IA i encara queden events per revisar,
+  // no tornem al gestor; marquem aquest com a fet i deixem el formulari net per al següent.
+  const llistaIaVisible = document.getElementById('ia-resultados-lista').style.display !== 'none';
+  if(iaIdxActual !== null && llistaIaVisible) {
+    marcarIaItemFet(iaIdxActual, estatDesti);
+    iaIdxActual = null;
+    editingId = null;
+    netejarFormulari();
+    document.getElementById('btn-eliminar').style.display = 'none';
+    carregarEsdeveniments(); // refresca la llista del gestor en segon pla
+    const queden = quedenIaItemsPerRevisar();
+    toast(queden ? 'Publicat! Continua amb el següent ↑' : 'Publicat! Has revisat tots els events.');
+    document.querySelector('#vista-form').scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+
   toast('Guardat!'); tornarLlista(); carregarEsdeveniments();
+}
+
+// Marca un item de la llista IA com a desat (botó verd -> check, fons atenuat)
+function marcarIaItemFet(idx, estatDesti) {
+  const item = document.getElementById('ia-item-' + idx);
+  const btn = document.getElementById('ia-btn-' + idx);
+  if(btn) {
+    btn.textContent = estatDesti === 'publicat' ? '✓ Publicat' : '✓ Esborrany';
+    btn.style.background = '#9aa3a8';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.onclick = null;
+  }
+  if(item) { item.style.opacity = '0.55'; }
+}
+
+function quedenIaItemsPerRevisar() {
+  if(!window.eventosDetectadosIA) return false;
+  return window.eventosDetectadosIA.some((_, i) => {
+    const b = document.getElementById('ia-btn-' + i);
+    return b && !b.disabled;
+  });
 }
 
 async function eliminarEsdeveniment() { if(confirm('Segur?')) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'DELETE' }); tornarLlista(); carregarEsdeveniments(); } }
@@ -466,6 +505,7 @@ function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m;
 // ============================================================
 let iaImatgeBase64 = null;
 let iaImatgeMime = null;
+let iaIdxActual = null;
 
 function ia_onFileSelected(input) {
   const file = input.files && input.files[0];
@@ -568,12 +608,12 @@ async function procesarConGeminiUnPaso() {
         ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
         : '';
       listaItems.innerHTML += `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
+        <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
           <div>
             <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
             ${avisDuplicat}
           </div>
-          <button type="button" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
+          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
         </div>`;
     });
     listaContenedor.style.display = 'block';
@@ -585,6 +625,7 @@ async function procesarConGeminiUnPaso() {
 
 function cargarEventoIA(idx) {
   const ev = window.eventosDetectadosIA[idx];
+  iaIdxActual = idx;
   document.getElementById('f-titol').value = ev.titol || '';
   document.getElementById('f-data').value = ev.data || '';
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
