@@ -948,108 +948,161 @@ function toast(msg, isError) {
 }
 
 // ============================================================
-// INTEGRACIÓN AVANZADA CON GEMINI IA (ENTREGA CONTEXTO URL)
+// MOTOR DE IA AVANZADO: RASTREADOR EN DOS PASOS (CRAWLER MULTINIVEL)
 // ============================================================
 async function procesarConGemini() {
-  let origenContenido = document.getElementById('ia-contenido').value.trim();
-  if (!origenContenido) return toast('Introdueix un text o una URL per analitzar', true);
+  let urlAgenda = document.getElementById('ia-contenido').value.trim();
+  if (!urlAgenda) return toast('Introdueix una URL per analitzar', true);
+
+  // Forzar que sea URL, si meten texto plano avisamos
+  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(urlAgenda);
+  if (!esUrl) return toast('Aquest motor requereix una URL de l\'agenda per poder rastrejar les fitxes', true);
 
   const MI_GEMINI_KEY = localStorage.getItem('gx_gemini_key'); 
-  if (!MI_GEMINI_KEY) return toast('Falta la clau API de Gemini. Tanca la sessió i torna a entrar.', true);
+  if (!MI_GEMINI_KEY) return toast('Falta la clau API de Gemini.', true);
 
   const loadingEl = document.getElementById('ia-loading');
   const listaContenedor = document.getElementById('ia-resultados-lista');
   const listaItems = document.getElementById('ia-lista-items');
 
   loadingEl.style.display = 'block';
-  loadingEl.textContent = '🤖 Analitzant dades...';
   listaContenedor.style.display = 'none';
   listaItems.innerHTML = '';
+
+  if (!/^https?:\/\//i.test(urlAgenda)) urlAgenda = 'https://' + urlAgenda;
 
   const opcionesLlocs = llocs.map(l => `ID: ${l.id} -> Nom: ${l.nom}`).join('\n');
   const opcionesCategories = categories.map(c => `ID: ${c.id} -> Nom: ${c.nom}`).join('\n');
 
-  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(origenContenido);
-  let textoParaAnalizar = origenContenido;
-  let contextoUrlInfo = "Text manual aportat per l'usuari.";
-
   try {
-    if (esUrl) {
-      loadingEl.textContent = '🌐 Llegint contingut web profund...';
-      if (!/^https?:\/\//i.test(origenContenido)) {
-        origenContenido = 'https://' + origenContenido;
-      }
-      contextoUrlInfo = `Aquesta és una lectura de la URL directa: ${origenContenido}`;
+    // --------------------------------------------------------
+    // FASE 1: LEER LA AGENDA GENERAL Y DETECTAR ENLACES
+    // --------------------------------------------------------
+    loadingEl.textContent = '🌐 Fase 1: Llegint el llistat general de l\'agenda...';
+    const resAgenda = await fetch(`https://r.jina.ai/${urlAgenda}`);
+    if (!resAgenda.ok) throw new Error('No s\'ha pogut extreure la llista general.');
+    const textoAgenda = await resAgenda.text();
 
-      const urlScraper = `https://r.jina.ai/${origenContenido}`;
-      const resScraper = await fetch(urlScraper);
-      if (!resScraper.ok) throw new Error('No s\'ha pogut extreure informació de la URL aportada.');
+    loadingEl.textContent = '🤖 Fase 1: Identificant enllaços de les fitxes...';
+    
+    const promptEnlaces = `
+      Analitza aquest text d'una agenda cultural i cerca els enllaços (URLs) que porten a la fitxa individual o detall de cada esdeveniment.
+      Torna ÚNICAMENT un Array de strings en JSON, sense Markdown, sense \`\`\`json.
+      URL Base de l'agenda per si els enllaços són relatius: ${urlAgenda}
       
-      textoParaAnalizar = await resScraper.text();
-      loadingEl.textContent = '🤖 Gemini està processant les fitxes del web...';
-    }
-
-    const promptSistema = `
-      Actua com un gestor de continguts expert de l'agenda cultural de Sant Feliu de Guíxols (Ganxoagenda).
-      La teva feina és fer un escombrat profund de tota la informació adjunta (que inclou enllaços interns, fitxes barrejades i dades d'esdeveniments) i extreure TOTS els esdeveniments de forma desglossada.
-      Has de respondre ÚNICAMENTE amb un Array d'objectes JSON vàlid. Sense blocs de codi \`\`\`json ni text introductori.
-
-      CONTEXT DE L'ORIGEN (MOLT IMPORTANT):
-      ${contextoUrlInfo}
-
-      REGLA D'OR DEL CONTEXT GEOGRÀFIC:
-      Analitza bé la URL o la procedència del text per entendre on tenen lloc els esdeveniments, encara que el text de la fitxa individual NO ho digui de forma explícita:
-      - Si veus que és la web o agenda de la BIBLIOTECA (conté 'biblioteca'), assumeix immediatament que el lloc és "Biblioteca Pública Octavi Viader i Margarit" excepte si indica una altra cosa de forma clara.
-      - Si veus que prové de PORTAFERRADA (conté 'portaferrada'), dedueix l'espai adequat del festival (Guíxols Arena, Espai Port o Monestir).
-      - Si prové del THYSSEN, el lloc serà "Espai Carmen Thyssen".
-
-      DICCIONARI DE LLOCS DISPONIBLES AL CMS (Utilitza estricament l'ID corresponent):
-      ${opcionesLlocs}
-
-      DICCIONARI DE CATEGORIES DISPONIBLES AL CMS (Utilitza estricament l'ID corresponent):
-      ${opcionesCategories}
-
-      Esquema JSON esperat (Array d'objectes):
-      [
-        {
-          "titol": "Títol net (En català. Ex: nom de l'artista, del taller o de la conferència)",
-          "data": "Data en format estricte YYYY-MM-DD (assumeix l'any 2026)",
-          "hora_inici": "Hora d'inici format HH:MM (Ex: '19:30'), o null si no es detalla",
-          "lloc_id": "L'ID (en format UUID/Text) que millor coincideixi de la llista de LLOCS, basat en el context explicat anteriorment.",
-          "categoria_id": "L'ID que millor s'adapti de la llista de CATEGORIES, o null",
-          "descripcio": "Redacta una descripció atractiva i polida en català que resumeixi perfectament l'esdeveniment.",
-          "preu_text": "Text de preu (Ex: 'Gratuït' o 'A partir de 25 €'), o null",
-          "familiar": true si és una activitat infantil, familiar o tallers per a nens, o false en cas contrari,
-          "edat_minima": "Ex: 'A partir de 4 anys' o null"
-        }
-      ]
-
-      Contingut brut a analitzar i desglossar de forma profunda:
-      ${textoParaAnalizar}
+      Text a analitzar:
+      ${textoAgenda}
     `;
 
     const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
     
-    const respuesta = await fetch(urlGemini, {
+    let resGemini = await fetch(urlGemini, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptSistema }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptEnlaces }] }], generationConfig: { responseMimeType: "application/json" } })
     });
-
-    if (!respuesta.ok) throw new Error('Error en connectar amb la API de Gemini.');
-
-    const data = await respuesta.json();
-    const textoJson = data.candidates[0].content.parts[0].text;
     
-    window.eventosDetectadosIA = JSON.parse(textoJson);
+    if (!resGemini.ok) throw new Error('Error en la Fase 1 de Gemini');
+    let dataGemini = await resGemini.json();
+    let enlacesFichas = JSON.parse(dataGemini.candidates[0].content.parts[0].text);
 
-    if (!Array.isArray(window.eventosDetectadosIA) || window.eventosDetectadosIA.length === 0) {
-      throw new Error('No s\'ha pogut classificar cap esdeveniment vàlid en aquest entorn web.');
+    if (!Array.isArray(enlacesFichas) || enlacesFichas.length === 0) {
+      throw new Error('No s\'ha detectat cap enllaç a fitxes individuals. Potser la web no en té.');
     }
 
+    // Limitem el rastreig a un màxim de 8-10 per seguretat i velocitat
+    if (enlacesFichas.length > 8) {
+      console.log(`Detectades ${enlacesFichas.length} fitxes. Limitem a les 8 primeres per evitar bloquejos.`);
+      enlacesFichas = enlacesFichas.slice(0, 8);
+    }
+
+    // --------------------------------------------------------
+    // FASE 2: RASTREAR CADA FICHA INDIVIDUAL (CON RETARDO)
+    // --------------------------------------------------------
+    let textosRecopilados = "";
+
+    for (let i = 0; i < enlacesFichas.length; i++) {
+      let urlFicha = enlacesFichas[i];
+      loadingEl.textContent = '🕷️ Fase 2: Escanejant fitxa real ' + (i + 1) + ' de ' + enlacesFichas.length + '...';
+      
+      // Si la URL és relativa, la forcem (seguretat extra)
+      if (urlFicha.startsWith('/')) {
+        const urlObj = new URL(urlAgenda);
+        urlFicha = urlObj.origin + urlFicha;
+      }
+
+      try {
+        const resFicha = await fetch(`https://r.jina.ai/${urlFicha}`);
+        if (resFicha.ok) {
+          const textoFicha = await resFicha.text();
+          textosRecopilados += `\n--- CONTINGUT REAL DE LA FITXA INDIVIDUAL (URL: ${urlFicha}) ---\n${textoFicha}\n`;
+        }
+        // Esperem 1.2 segons entre peticions per no saturar Jina ni la web de destí
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      } catch (errFicha) {
+        console.error("Error rastrejant la fitxa: " + urlFicha, errFicha);
+      }
+    }
+
+    // --------------------------------------------------------
+    // FASE 3: PROCESADO DE LOS TEXTOS REALES CON GEMINI
+    // --------------------------------------------------------
+    loadingEl.textContent = '🤖 Fase 3: Processant les descripcions reals amb Gemini...';
+
+    const promptFinal = `
+      Actúa como un gestor de contenidos experto de la agenda cultural de Sant Feliu de Guíxols.
+      A continuación tienes el volcado de texto REAL de varias fichas individuales que hemos rastreado. El contenido es verídico, no te inventes NADA.
+      Debes responder ÚNICAMENTE con un Array de objetos JSON perfectamente válido. Sin bloques de código Markdown.
+
+      CONTEXTO DE LA URL DE ORIGEN GENERAL: ${urlAgenda}
+
+      REGLA DEL CONTEXTO GEOGRÀFICO:
+      - Si la URL general contiene 'biblioteca', asume que el lugar por defecto es "Biblioteca Pública Octavi Viader i Margarit" a menos que en la ficha se especifique otro espacio de forma explícita.
+      - Si la URL contiene 'portaferrada', mapea el recinto correcto (Guíxols Arena, Espai Port, Monestir).
+      - Si la URL contiene 'thyssen', el lugar es "Espai Carmen Thyssen".
+
+      DICCIONARIO DE LUGARES DISPONIBLES (Coloca SU ID en 'lloc_id'):
+      ${opcionesLlocs}
+
+      DICCIONARIO DE CATEGORIAS DISPONIBLES (Coloca SU ID en 'categoria_id'):
+      ${opcionesCategories}
+
+      Esquema JSON esperado:
+      [
+        {
+          "titol": "Títol de l'esdeveniment en català",
+          "data": "Fecha estricta YYYY-MM-DD (asume el año 2026)",
+          "hora_inici": "HH:MM o null",
+          "lloc_id": "ID del lugar coincidente o null",
+          "categoria_id": "ID de la categoría coincidente o null",
+          "descripcio": "Redacta la descripció en català BASÁNDOTE ESTRICTAMENTE en los detalles reales del texto de su ficha. No inventes nada.",
+          "preu_text": "Texto de precio o null",
+          "familiar": true o false,
+          "edat_minima": "Texto de edad o null"
+        }
+      ]
+
+      Textos extraídos de las fichas individuales:
+      ${textosRecopilados}
+    `;
+
+    let resFinal = await fetch(urlGemini, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptFinal }] }], generationConfig: { responseMimeType: "application/json" } })
+    });
+
+    if (!resFinal.ok) throw new Error('Error en el processat final de Gemini.');
+    let dataFinal = await resFinal.json();
+    let textoJsonFinal = dataFinal.candidates[0].content.parts[0].text;
+
+    window.eventosDetectadosIA = JSON.parse(textoJsonFinal);
+
+    if (!Array.isArray(window.eventosDetectadosIA) || window.eventosDetectadosIA.length === 0) {
+      throw new Error('No s\'han pogut generar esdeveniments vàlids.');
+    }
+
+    // Renderizar resultados en la lista del CMS
     window.eventosDetectadosIA.forEach((evento, index) => {
       const itemHtml = `
         <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f7f9; padding:8px 12px; border-radius:6px; border:1px solid #cbdbe1;">
@@ -1065,48 +1118,15 @@ async function procesarConGemini() {
     });
 
     listaContenedor.style.display = 'block';
-    toast(`✨ S'han processat ${window.eventosDetectadosIA.length} fitxes de l'entorn correctament!`);
+    toast(`✨ Rastrejades i bolcades ${window.eventosDetectadosIA.length} fitxes reals amb èxit!`);
     document.getElementById('ia-contenido').value = ''; 
 
   } catch (e) {
     console.error(e);
-    toast('Error de l\'Assistent: ' + e.message, true);
+    toast('Error del Rastrejador: ' + e.message, true);
   } finally {
     loadingEl.style.display = 'none';
   }
-}
-
-function cargarEventoIA(index) {
-  if (!window.eventosDetectadosIA || !window.eventosDetectadosIA[index]) return;
-  const eventoIA = window.eventosDetectadosIA[index];
-
-  document.getElementById('f-titol').value = eventoIA.titol || '';
-  document.getElementById('f-data').value = eventoIA.data || '';
-  document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
-  document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
-  document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
-  document.getElementById('f-edat').value = eventoIA.edat_minima || '';
-  
-  // Mapeamos los elementos del select de lugares y de categorías automáticos obtenidos por contexto
-  document.getElementById('f-lloc').value = eventoIA.lloc_id || '';
-  
-  // Mapeamos la categoría seleccionada si la IA la ha detectado
-  if (eventoIA.categoria_id) {
-    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
-    const pill = document.querySelector(`.cat-pill[data-id="${eventoIA.categoria_id}"]`);
-    if (pill) pill.classList.add('selected');
-  }
-
-  const togFam = document.getElementById('tog-familiar');
-  if (eventoIA.familiar) {
-    togFam.classList.add('on');
-    document.getElementById('edat-row').style.display = 'block';
-  } else {
-    togFam.classList.remove('on');
-    document.getElementById('edat-row').style.display = 'none';
-  }
-
-  toast(`Fitxa sincronitzada pel context: "${eventoIA.titol}"`);
 }
 
 // ---- INIT ----
