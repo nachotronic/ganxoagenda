@@ -386,17 +386,18 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
         <!-- Foto -->
         <div class="camp full">
-          <label>Foto</label>
-          <div class="foto-zone" id="foto-zone" onclick="document.getElementById('f-foto').click()">
-            <div class="placeholder" id="foto-placeholder">
-              <span class="icon">📷</span>
-              Arrossega o clica per triar una imatge
-            </div>
-            <img id="foto-preview" style="display:none;">
-            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)">
-          </div>
-          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
-        </div>
+  <label>Foto</label>
+  <div class="foto-zone" id="foto-zone">
+    <div class="placeholder" id="foto-placeholder">
+      <span class="icon">📷</span>
+      Arrossega o clica per triar una imatge
+    </div>
+    <img id="foto-preview" style="display:none;">
+    
+    <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;">
+  </div>
+  <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
+</div>
 
         <!-- Modal selector galeria -->
         <div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;" onclick="if(event.target===this) tancarSelectorGaleria()">
