@@ -191,7 +191,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 .foto-zone img {
   max-width:100%; max-height:200px; border-radius:8px; object-fit:cover;
 }
-.foto-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.foto-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
 
 /* Toggle familiar */
 .toggle-row {
@@ -315,20 +315,20 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
 
       <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Rellenar Fichas con Gemini IA</label>
-        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Pega un programa de texto largo u opiniones, o introduce directamente una URL (ej: https://www.portaferrada.cat/entrades/).</p>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Assistent Intel·ligent Gemini (Mapeig Automàtic per URL)</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text llarg, el programa sencer o la <strong>URL directa de la web</strong> (Ex: de la Biblioteca, de Portaferrada, etc.). L'assistent identificarà d'on prové la informació i assignarà els espais reals.</p>
         
         <div style="display: flex; gap: 10px; flex-direction: column;">
-          <textarea id="ia-contenido" placeholder="Pega texto o una URL web aquí..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
+          <textarea id="ia-contenido" placeholder="Enganxa el text o la URL de l'esdeveniment aquí..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
           
           <div style="display:flex; justify-content: flex-end; align-items:center; gap: 12px;">
-            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); font-weight: 500;">🤖 Gemini está procesando la entrada...</div>
-            <button type="button" onclick="procesarConGemini()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analizar Texto / URL</button>
+            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); font-weight: 500;">🤖 Analitzant contingut...</div>
+            <button type="button" onclick="procesarConGemini()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
           </div>
         </div>
 
         <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
-          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTOS DETECTADOS POR LA IA:</p>
+          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 ESDEVENIMENTS DESGLOSSATS PER LA IA:</p>
           <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
       </div>
@@ -715,7 +715,7 @@ function netejarFormulari() {
   fotoGaleriaUrl = null;
 }
 
-// ---- EDICIÓN Y GUARDADO SUPABASE ----
+// ---- EDICIÓ Y GUARDADO SUPABASE ----
 async function editarEsdeveniment(id) {
   editingId = id;
   netejarFormulari();
@@ -948,63 +948,84 @@ function toast(msg, isError) {
 }
 
 // ============================================================
-// INTEGRACIÓN CON GEMINI IA (SOPORTA TEXTO Y URL)
+// INTEGRACIÓN AVANZADA CON GEMINI IA (ENTREGA CONTEXTO URL)
 // ============================================================
 async function procesarConGemini() {
-  let contenido = document.getElementById('ia-contenido').value.trim();
-  if (!contenido) return toast('Introduce un texto o una URL para analizar', true);
+  let origenContenido = document.getElementById('ia-contenido').value.trim();
+  if (!origenContenido) return toast('Introdueix un text o una URL per analitzar', true);
 
   const MI_GEMINI_KEY = localStorage.getItem('gx_gemini_key'); 
-  if (!MI_GEMINI_KEY) return toast('Falta la clave API de Gemini. Cierra sesión y vuelve a entrar.', true);
+  if (!MI_GEMINI_KEY) return toast('Falta la clau API de Gemini. Tanca la sessió i torna a entrar.', true);
 
   const loadingEl = document.getElementById('ia-loading');
   const listaContenedor = document.getElementById('ia-resultados-lista');
   const listaItems = document.getElementById('ia-lista-items');
 
   loadingEl.style.display = 'block';
-  loadingEl.textContent = '🤖 Analizando entrada...';
+  loadingEl.textContent = '🤖 Analitzant dades...';
   listaContenedor.style.display = 'none';
   listaItems.innerHTML = '';
 
-  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(contenido);
+  const opcionesLlocs = llocs.map(l => `ID: ${l.id} -> Nom: ${l.nom}`).join('\n');
+  const opcionesCategories = categories.map(c => `ID: ${c.id} -> Nom: ${c.nom}`).join('\n');
+
+  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(origenContenido);
+  let textoParaAnalizar = origenContenido;
+  let contextoUrlInfo = "Text manual aportat per l'usuari.";
 
   try {
     if (esUrl) {
-      loadingEl.textContent = '🌐 Leyendo el contenido de la web...';
-      if (!/^https?:\/\//i.test(contenido)) {
-        contenido = 'https://' + contenido;
+      loadingEl.textContent = '🌐 Llegint contingut web profund...';
+      if (!/^https?:\/\//i.test(origenContenido)) {
+        origenContenido = 'https://' + origenContenido;
       }
+      contextoUrlInfo = `Aquesta és una lectura de la URL directa: ${origenContenido}`;
 
-      const urlScraper = `https://r.jina.ai/${contenido}`;
+      const urlScraper = `https://r.jina.ai/${origenContenido}`;
       const resScraper = await fetch(urlScraper);
-      if (!resScraper.ok) throw new Error('No se ha podido extraer la información de esa página web.');
+      if (!resScraper.ok) throw new Error('No s\'ha pogut extreure informació de la URL aportada.');
       
-      contenido = await resScraper.text();
-      loadingEl.textContent = '🤖 Gemini está procesando los datos de la web...';
-    } else {
-      loadingEl.textContent = '🤖 Gemini está procesando el texto...';
+      textoParaAnalizar = await resScraper.text();
+      loadingEl.textContent = '🤖 Gemini està processant les fitxes del web...';
     }
 
     const promptSistema = `
-      Actúa como un asistente analítico riguroso. Tu tarea es extraer TODOS los eventos culturales que encuentres en el texto o volcado de web que te proporcionará el usuario.
-      Debes responder ÚNICAMENTE con un Array de objetos JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
-      Traduce los textos de título y descripción al catalán si vienen en otro idioma. Si un evento dura varios días o contiene varios artistas en una lista, divídelo en eventos separados (uno por día/concierto).
+      Actua com un gestor de continguts expert de l'agenda cultural de Sant Feliu de Guíxols (Ganxoagenda).
+      La teva feina és fer un escombrat profund de tota la informació adjunta (que inclou enllaços interns, fitxes barrejades i dades d'esdeveniments) i extreure TOTS els esdeveniments de forma desglossada.
+      Has de respondre ÚNICAMENTE amb un Array d'objectes JSON vàlid. Sense blocs de codi \`\`\`json ni text introductori.
 
-      Esquema JSON esperado (Un Array de objetos):
+      CONTEXT DE L'ORIGEN (MOLT IMPORTANT):
+      ${contextoUrlInfo}
+
+      REGLA D'OR DEL CONTEXT GEOGRÀFIC:
+      Analitza bé la URL o la procedència del text per entendre on tenen lloc els esdeveniments, encara que el text de la fitxa individual NO ho digui de forma explícita:
+      - Si veus que és la web o agenda de la BIBLIOTECA (conté 'biblioteca'), assumeix immediatament que el lloc és "Biblioteca Pública Octavi Viader i Margarit" excepte si indica una altra cosa de forma clara.
+      - Si veus que prové de PORTAFERRADA (conté 'portaferrada'), dedueix l'espai adequat del festival (Guíxols Arena, Espai Port o Monestir).
+      - Si prové del THYSSEN, el lloc serà "Espai Carmen Thyssen".
+
+      DICCIONARI DE LLOCS DISPONIBLES AL CMS (Utilitza estricament l'ID corresponent):
+      ${opcionesLlocs}
+
+      DICCIONARI DE CATEGORIES DISPONIBLES AL CMS (Utilitza estricament l'ID corresponent):
+      ${opcionesCategories}
+
+      Esquema JSON esperat (Array d'objectes):
       [
         {
-          "titol": "Título limpio y atractivo en catalán (ej: nombre del artista o concierto)",
-          "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
-          "hora_inici": "Hora de inicio en formato HH:MM (ej: '21:00'), o null si no se especifica",
-          "descripcio": "Descripción redactada en catalán de forma clara basándote en la info disponible",
-          "preu_text": "Texto resumido del precio (ej: 'Des de 35 €'). Si no se indica, pon null",
-          "familiar": true si es un evento infantil/familiar o false en caso contrario,
-          "edat_minima": "Texto de edad recomendada si aplica, o null"
+          "titol": "Títol net (En català. Ex: nom de l'artista, del taller o de la conferència)",
+          "data": "Data en format estricte YYYY-MM-DD (assumeix l'any 2026)",
+          "hora_inici": "Hora d'inici format HH:MM (Ex: '19:30'), o null si no es detalla",
+          "lloc_id": "L'ID (en format UUID/Text) que millor coincideixi de la llista de LLOCS, basat en el context explicat anteriorment.",
+          "categoria_id": "L'ID que millor s'adapti de la llista de CATEGORIES, o null",
+          "descripcio": "Redacta una descripció atractiva i polida en català que resumeixi perfectament l'esdeveniment.",
+          "preu_text": "Text de preu (Ex: 'Gratuït' o 'A partir de 25 €'), o null",
+          "familiar": true si és una activitat infantil, familiar o tallers per a nens, o false en cas contrari,
+          "edat_minima": "Ex: 'A partir de 4 anys' o null"
         }
       ]
 
-      Contenido a analizar:
-      ${contenido}
+      Contingut brut a analitzar i desglossar de forma profunda:
+      ${textoParaAnalizar}
     `;
 
     const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
@@ -1014,13 +1035,11 @@ async function procesarConGemini() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: promptSistema }] }],
-        generationConfig: {
-          responseMimeType: "application/json" 
-        }
+        generationConfig: { responseMimeType: "application/json" }
       })
     });
 
-    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini (Verifica tu clave)');
+    if (!respuesta.ok) throw new Error('Error en connectar amb la API de Gemini.');
 
     const data = await respuesta.json();
     const textoJson = data.candidates[0].content.parts[0].text;
@@ -1028,7 +1047,7 @@ async function procesarConGemini() {
     window.eventosDetectadosIA = JSON.parse(textoJson);
 
     if (!Array.isArray(window.eventosDetectadosIA) || window.eventosDetectadosIA.length === 0) {
-      throw new Error('No se han detectado eventos con un formato válido en esta página.');
+      throw new Error('No s\'ha pogut classificar cap esdeveniment vàlid en aquest entorn web.');
     }
 
     window.eventosDetectadosIA.forEach((evento, index) => {
@@ -1038,7 +1057,7 @@ async function procesarConGemini() {
             <strong style="color:var(--blau);">${evento.data || 'Sense data'}</strong> — <span>${evento.titol || 'Sense títol'}</span>
           </div>
           <button type="button" onclick="cargarEventoIA(${index})" style="background:var(--verd); color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600; font-family:var(--font-sans); flex-shrink: 0; margin-left: 10px;">
-            Cargar Ficha
+            Carregar Fitxa
           </button>
         </div>
       `;
@@ -1046,12 +1065,12 @@ async function procesarConGemini() {
     });
 
     listaContenedor.style.display = 'block';
-    toast(`✨ ¡Gemini ha desglosado ${window.eventosDetectadosIA.length} eventos correctamente!`);
+    toast(`✨ S'han processat ${window.eventosDetectadosIA.length} fitxes de l'entorn correctament!`);
     document.getElementById('ia-contenido').value = ''; 
 
   } catch (e) {
     console.error(e);
-    toast('Error del Asistente: ' + e.message, true);
+    toast('Error de l\'Assistent: ' + e.message, true);
   } finally {
     loadingEl.style.display = 'none';
   }
@@ -1067,6 +1086,16 @@ function cargarEventoIA(index) {
   document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
   document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
   document.getElementById('f-edat').value = eventoIA.edat_minima || '';
+  
+  // Mapeamos los elementos del select de lugares y de categorías automáticos obtenidos por contexto
+  document.getElementById('f-lloc').value = eventoIA.lloc_id || '';
+  
+  // Mapeamos la categoría seleccionada si la IA la ha detectado
+  if (eventoIA.categoria_id) {
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
+    const pill = document.querySelector(`.cat-pill[data-id="${eventoIA.categoria_id}"]`);
+    if (pill) pill.classList.add('selected');
+  }
 
   const togFam = document.getElementById('tog-familiar');
   if (eventoIA.familiar) {
@@ -1077,7 +1106,7 @@ function cargarEventoIA(index) {
     document.getElementById('edat-row').style.display = 'none';
   }
 
-  toast(`Ficha rellenada con: "${eventoIA.titol}"`);
+  toast(`Fitxa sincronitzada pel context: "${eventoIA.titol}"`);
 }
 
 // ---- INIT ----
