@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ganxoagenda · Gestor</title>
+<title>Ganxoagenda · Gestor Professional</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,27 +35,17 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
   background:#fff; border-radius:16px; padding:40px 36px; width:360px; max-width:90%;
   box-shadow:0 12px 40px rgba(0,0,0,.2);
 }
-.login-box h1 {
-  font-family:var(--font-serif); font-size:24px; font-weight:900;
-  color:var(--blau); margin-bottom:6px;
-}
+.login-box h1 { font-family:var(--font-serif); font-size:24px; font-weight:900; color:var(--blau); margin-bottom:6px; }
 .login-box p { font-size:13px; color:var(--text-sec); margin-bottom:24px; }
 .login-box input {
   width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:8px;
   font-family:var(--font-sans); font-size:14px; margin-bottom:12px; outline:none;
-  transition: border-color .2s;
 }
-.login-box input:focus { border-color:var(--blau); }
 .login-box .btn-login {
-  width:100%; padding:12px; border:none; border-radius:8px;
-  background:var(--blau); color:#fff; font-family:var(--font-sans);
-  font-size:14px; font-weight:600; cursor:pointer; margin-top:4px;
-  transition: background .2s;
+  width:100%; padding:12px; border:none; border-radius:8px; background:var(--blau); color:#fff;
+  font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer; margin-top:4px;
 }
-.login-box .btn-login:hover { background:var(--blau-clar); }
-#login-error {
-  color:var(--vermell); font-size:12px; margin-top:10px; display:none;
-}
+#login-error { color:var(--vermell); font-size:12px; margin-top:10px; display:none; }
 
 /* ---- LAYOUT ---- */
 #app-screen { display:none; }
@@ -64,195 +54,82 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
   display:flex; align-items:center; justify-content:space-between;
   position:sticky; top:0; z-index:100;
 }
-.topbar h1 {
-  font-family:var(--font-serif); font-size:18px; font-weight:900; letter-spacing:-.3px;
-}
-.topbar .user-info {
-  display:flex; align-items:center; gap:12px; font-size:13px;
-}
+.topbar h1 { font-family:var(--font-serif); font-size:18px; font-weight:900; }
+.topbar .user-info { display:flex; align-items:center; gap:12px; font-size:13px; }
 .topbar button {
-  background:rgba(255,255,255,.15); border:none; color:#fff;
-  padding:6px 14px; border-radius:6px; font-family:var(--font-sans);
-  font-size:12px; cursor:pointer; transition: background .2s;
+  background:rgba(255,255,255,.15); border:none; color:#fff; padding:6px 14px;
+  border-radius:6px; font-family:var(--font-sans); font-size:12px; cursor:pointer;
 }
-.topbar button:hover { background:rgba(255,255,255,.25); }
 
 .main { max-width:900px; margin:0 auto; padding:24px; }
 
 /* ---- LLISTA ---- */
-.llista-header {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:20px;
-}
+.llista-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
 .llista-header h2 { font-family:var(--font-serif); font-size:22px; font-weight:600; }
 .btn-nou {
   background:var(--blau); color:#fff; border:none; border-radius:8px;
-  padding:10px 20px; font-family:var(--font-sans); font-size:14px;
-  font-weight:600; cursor:pointer; transition: background .2s;
+  padding:10px 20px; font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer;
 }
-.btn-nou:hover { background:var(--blau-clar); }
-
-.filtre-bar {
-  display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;
-}
+.filtre-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 .filtre-btn {
-  padding:7px 14px; border-radius:20px; border:1px solid var(--border);
-  background:#fff; font-family:var(--font-sans); font-size:12px;
-  font-weight:500; cursor:pointer; color:var(--text-sec);
-  transition: all .2s;
+  padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:#fff;
+  font-family:var(--font-sans); font-size:12px; font-weight:500; cursor:pointer; color:var(--text-sec);
 }
-.filtre-btn.actiu {
-  background:var(--blau); color:#fff; border-color:var(--blau);
-}
+.filtre-btn.actiu { background:var(--blau); color:#fff; border-color:var(--blau); }
 
 .event-card {
   background:#fff; border:1px solid var(--border); border-radius:var(--radius);
-  padding:16px 18px; margin-bottom:10px; display:flex; align-items:center;
-  gap:14px; cursor:pointer; transition: box-shadow .2s, border-color .2s;
+  padding:16px 18px; margin-bottom:10px; display:flex; align-items:center; gap:14px; cursor:pointer;
 }
-.event-card:hover { box-shadow:0 2px 12px rgba(16,59,82,.08); border-color:#ccc; }
-.event-card .data-col {
-  text-align:center; min-width:48px; flex-shrink:0;
-  border-right:1px solid var(--border); padding-right:14px;
-}
+.event-card .data-col { text-align:center; min-width:48px; flex-shrink:0; border-right:1px solid var(--border); padding-right:14px; }
 .event-card .data-col .dia { font-size:20px; font-weight:700; color:var(--blau); }
 .event-card .data-col .mes { font-size:11px; color:var(--text-sec); text-transform:uppercase; }
 .event-card .info { flex:1; }
 .event-card .info .titol { font-size:15px; font-weight:600; margin-bottom:3px; }
 .event-card .info .meta { font-size:12px; color:var(--text-sec); display:flex; gap:12px; flex-wrap:wrap; }
-.event-card .estat-badge {
-  font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px;
-  text-transform:uppercase; letter-spacing:.3px; flex-shrink:0;
-}
+.event-card .estat-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px; text-transform:uppercase; }
 .estat-publicat { background:#e6f4ec; color:#1d8a4e; }
 .estat-esborrany { background:#fef3e0; color:#b87a1b; }
-.estat-pendent { background:#eee; color:#888; }
-
-.llista-buida {
-  text-align:center; padding:60px 20px; color:var(--text-sec);
-}
-.llista-buida .emoji { font-size:48px; margin-bottom:12px; }
-.llista-buida p { font-size:14px; }
 
 /* ---- FORMULARI ---- */
 #vista-form { display:none; }
-.form-header {
-  display:flex; align-items:center; gap:12px; margin-bottom:24px;
-}
-.form-header .btn-tornar {
-  background:none; border:1px solid var(--border); border-radius:8px;
-  padding:8px 14px; font-family:var(--font-sans); font-size:13px;
-  cursor:pointer; color:var(--text-sec); transition: all .2s;
-}
-.form-header .btn-tornar:hover { background:var(--fons-2); }
+.form-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+.form-header .btn-tornar { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-family:var(--font-sans); font-size:13px; cursor:pointer; color:var(--text-sec); }
 .form-header h2 { font-family:var(--font-serif); font-size:20px; font-weight:600; }
 
-.form-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:16px;
-  background:#fff; border:1px solid var(--border); border-radius:12px;
-  padding:24px;
-}
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:24px; }
 .form-grid .full { grid-column: 1 / -1; }
 
-.camp label {
-  display:block; font-size:12px; font-weight:600; color:var(--text-sec);
-  margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;
-}
-.camp input, .camp select, .camp textarea {
-  width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
-  font-family:var(--font-sans); font-size:14px; outline:none;
-  transition: border-color .2s; background:#fff;
-}
-.camp input:focus, .camp select:focus, .camp textarea:focus {
-  border-color:var(--blau);
-}
+.camp label { display:block; font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:6px; text-transform:uppercase; }
+.camp input, .camp select, .camp textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; outline:none; background:#fff; }
 .camp textarea { resize:vertical; min-height:100px; }
 
-/* Categories com a pastilles */
 .cat-pills { display:flex; flex-wrap:wrap; gap:8px; }
-.cat-pill {
-  padding:8px 16px; border-radius:20px; border:1.5px solid var(--border);
-  font-family:var(--font-sans); font-size:13px; font-weight:500;
-  cursor:pointer; transition: all .2s; background:#fff; color:var(--text);
-}
+.cat-pill { padding:8px 16px; border-radius:20px; border:1.5px solid var(--border); font-family:var(--font-sans); font-size:13px; cursor:pointer; background:#fff; }
 .cat-pill.selected { border-color:var(--blau); background:var(--blau); color:#fff; }
-.cat-pill:hover:not(.selected) { background:var(--fons-2); }
 
-/* Foto upload */
-.foto-zone {
-  border:2px dashed var(--border); border-radius:10px; padding:24px;
-  text-align:center; cursor:pointer; transition: all .2s;
-  position:relative; min-height:120px;
-  display:flex; align-items:center; justify-content:center; flex-direction:column;
-}
-.foto-zone:hover { border-color:var(--blau); background:rgba(16,59,82,.02); }
+.foto-zone { border:2px dashed var(--border); border-radius:10px; padding:24px; text-align:center; cursor:pointer; position:relative; min-height:120px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
 .foto-zone .placeholder { color:var(--text-sec); font-size:13px; }
-.foto-zone .placeholder .icon { font-size:28px; margin-bottom:6px; display:block; }
-.foto-zone img {
-  max-width:100%; max-height:200px; border-radius:8px; object-fit:cover;
-}
-.foto-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.foto-zone img { max-width:100%; max-height:200px; border-radius:8px; object-fit:cover; }
 
-/* Toggle familiar */
-.toggle-row {
-  display:flex; align-items:center; gap:10px;
-}
-.toggle {
-  width:40px; height:22px; background:var(--border); border-radius:11px;
-  position:relative; cursor:pointer; transition: background .2s;
-  flex-shrink:0;
-}
+.toggle-row { display:flex; align-items:center; gap:10px; }
+.toggle { width:40px; height:22px; background:var(--border); border-radius:11px; position:relative; cursor:pointer; }
 .toggle.on { background:var(--verd); }
-.toggle .knob {
-  width:18px; height:18px; background:#fff; border-radius:50%;
-  position:absolute; top:2px; left:2px; transition: left .2s;
-  box-shadow:0 1px 3px rgba(0,0,0,.15);
-}
+.toggle .knob { width:18px; height:18px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; transition: left .2s; }
 .toggle.on .knob { left:20px; }
 
-/* Accions del form */
-.form-actions {
-  display:flex; gap:10px; justify-content:flex-end; margin-top:20px;
-}
-.btn-esborrany {
-  padding:11px 22px; border:1px solid var(--border); border-radius:8px;
-  background:#fff; font-family:var(--font-sans); font-size:14px;
-  font-weight:500; cursor:pointer; color:var(--text);
-  transition: all .2s;
-}
-.btn-esborrany:hover { background:var(--fons-2); }
-.btn-publicar {
-  padding:11px 22px; border:none; border-radius:8px;
-  background:var(--verd); color:#fff; font-family:var(--font-sans);
-  font-size:14px; font-weight:600; cursor:pointer;
-  transition: background .2s;
-}
-.btn-publicar:hover { background:#17753f; }
-.btn-eliminar {
-  padding:11px 22px; border:1px solid var(--vermell); border-radius:8px;
-  background:#fff; color:var(--vermell); font-family:var(--font-sans);
-  font-size:14px; font-weight:500; cursor:pointer; margin-right:auto;
-  transition: all .2s;
-}
-.btn-eliminar:hover { background:#fdeaea; }
+.form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.btn-esborrany { padding:11px 22px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:var(--font-sans); cursor:pointer; }
+.btn-publicar { padding:11px 22px; border:none; border-radius:8px; background:var(--verd); color:#fff; font-family:var(--font-sans); font-weight:600; cursor:pointer; }
+.btn-eliminar { padding:11px 22px; border:1px solid var(--vermell); border-radius:8px; background:#fff; color:var(--vermell); cursor:pointer; margin-right:auto; }
 
-/* Toast */
-.toast {
-  position:fixed; bottom:24px; right:24px; background:var(--blau);
-  color:#fff; padding:12px 20px; border-radius:10px; font-size:14px;
-  font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,.2);
-  transform:translateY(80px); opacity:0; transition: all .3s;
-  z-index:200;
-}
+/* ---- TAULETA DE LLOCS / GESTOR ---- */
+.lloc-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; }
+.lloc-item button { background:none; border:none; color:var(--vermell); font-weight:600; cursor:pointer; font-size:12px; }
+
+.toast { position:fixed; bottom:24px; right:24px; background:var(--blau); color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; transform:translateY(80px); opacity:0; transition: all .3s; z-index:200; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.error { background:var(--vermell); }
-
-/* Responsive */
-@media (max-width:640px) {
-  .form-grid { grid-template-columns:1fr; }
-  .main { padding:16px; }
-  .llista-header { flex-direction:column; gap:12px; align-items:flex-start; }
-}
 </style>
 </head>
 <body>
@@ -261,9 +138,9 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
   <div class="login-box">
     <h1>Ganxoagenda</h1>
     <p>Gestor d'esdeveniments</p>
-    <input type="email" id="login-email" placeholder="Email" autocomplete="email">
-    <input type="password" id="login-pass" placeholder="Contrasenya" autocomplete="current-password">
-    <input type="password" id="login-gemini" placeholder="Clau API Gemini (AIzaSy...)" style="margin-top: 4px; border-color: #cbdbe1;">
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-pass" placeholder="Contrasenya">
+    <input type="password" id="login-gemini" placeholder="Clau API Gemini (AIzaSy...)">
     <button class="btn-login" onclick="doLogin()">Entrar</button>
     <div id="login-error"></div>
   </div>
@@ -280,11 +157,13 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
   <div class="main">
 
+    <!-- SECCIÓ LLISTAT PRINCIPAL -->
     <div id="vista-llista">
       <div class="llista-header">
         <h2>Esdeveniments</h2>
         <div style="display:flex; gap:8px;">
-          <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGaleria()">📷 Fotos</button>
+          <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
+          <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -292,146 +171,89 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       <div id="llista-events"></div>
     </div>
 
+    <!-- SECCIÓ GESTOR DE LUGARES (LLOCS) -->
+    <div id="vista-llocs" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorLlocs()">← Tornar</button>
+        <h2>📍 Gestor de Lugares (Supabase)</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">AFEGIR NOU LLOC:</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="nou-lloc-nom" placeholder="Ex: Teatre Principal de Sant Feliu" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <button class="btn-nou" onclick="crearLlocNou()">Guardar Lloc</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Lugares actuales en la Base de Datos:</h3>
+      <div id="lista-llocs-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GALERIA -->
     <div id="vista-galeria" style="display:none;">
       <div class="form-header">
         <button class="btn-tornar" onclick="tancarGaleria()">← Tornar</button>
         <h2>Galeria de fotos</h2>
       </div>
       <div class="foto-zone" style="margin-bottom:16px;" onclick="document.getElementById('batch-fotos').click()">
-        <div class="placeholder">
-          <span class="icon">⬆️</span>
-          Arrossega aquí o fes clic per pujar diverses fotos alhora
-        </div>
+        <div class="placeholder"><span>⬆️</span> Pujar diverses fotos</div>
         <input type="file" id="batch-fotos" accept="image/*" multiple onchange="pujarBatch(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
       </div>
-      <div id="batch-progres" style="display:none; font-size:13px; color:var(--text-sec); margin-bottom:12px;"></div>
       <div id="galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
     </div>
 
+    <!-- VISTA FORMULARI -->
     <div id="vista-form">
       <div class="form-header">
         <button class="btn-tornar" onclick="tornarLlista()">← Tornar</button>
         <h2 id="form-titol">Nou esdeveniment</h2>
       </div>
 
+      <!-- ASSISTENT INTEL·LIGENT (1 SOLO PASO SEGURO) -->
       <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Assistent Intel·ligent Gemini (Mapeig Automàtic per URL)</label>
-        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text llarg, el programa sencer o la <strong>URL directa de la web</strong> (Ex: de la Biblioteca, de Portaferrada, etc.). L'assistent identificarà d'on prové la informació i assignarà els espais reals.</p>
-        
-        <div style="display: flex; gap: 10px; flex-direction: column;">
-          <textarea id="ia-contenido" placeholder="Enganxa el text o la URL de l'esdeveniment aquí..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
-          
-          <div style="display:flex; justify-content: flex-end; align-items:center; gap: 12px;">
-            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); font-weight: 500;">🤖 Analitzant contingut...</div>
-            <button type="button" onclick="procesarConGemini()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
-          </div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px;">✨ Assistent Intel·ligent Gemini (Mapeig per Context de URL)</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text o la <strong>URL directa</strong>. L'assistent associarà el lloc de Supabase corresponent pel context (Ex: si detecta 'biblioteca' a la URL, assignarà la Biblioteca automàticament).</p>
+        <textarea id="ia-contenido" placeholder="Enganxa la URL o el text aquí..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px;"></textarea>
+        <div style="display:flex; justify-content: flex-end; margin-top:8px;">
+          <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); margin-right:12px; align-self:center;">🤖 Llegint contingut real...</div>
+          <button type="button" onclick="procesarConGeminiUnPaso()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
         </div>
-
         <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
-          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 ESDEVENIMENTS DESGLOSSATS PER LA IA:</p>
+          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS A LA WEB:</p>
           <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
       </div>
 
       <div class="form-grid">
-        <div class="camp full">
-          <label>Títol</label>
-          <input type="text" id="f-titol" placeholder="Ex: Regata de llaguts catalans">
-        </div>
-
-        <div class="camp full">
-          <label>Categoria</label>
-          <div class="cat-pills" id="f-categories"></div>
-        </div>
-
-        <div class="camp">
-          <label>Data</label>
-          <input type="date" id="f-data">
-        </div>
-
-        <div class="camp">
-          <label>Hora d'inici</label>
-          <input type="time" id="f-hora-inici">
-        </div>
-
-        <div class="camp">
-          <label>Lloc</label>
-          <select id="f-lloc">
-            <option value="">— Tria un lloc —</option>
-          </select>
-        </div>
-
-        <div class="camp">
-          <label>Hora de fi (opcional)</label>
-          <input type="time" id="f-hora-fi">
-        </div>
-
-        <div class="camp">
-          <label>Preu (text lliure)</label>
-          <input type="text" id="f-preu-text" placeholder="Ex: Entrada lliure / 5 €">
-        </div>
-
-        <div class="camp">
-          <label>Enllaç entrades (opcional)</label>
-          <input type="url" id="f-url-entrades" placeholder="https://...">
-        </div>
-
-        <div class="camp full">
-          <label>Pertany a un cicle? (opcional)</label>
-          <select id="f-cicle">
-            <option value="">— Cap cicle —</option>
-          </select>
-        </div>
-
-        <div class="camp full">
-          <label>Descripció</label>
-          <textarea id="f-descripcio" placeholder="Descripció de l'esdeveniment..."></textarea>
-        </div>
-
+        <div class="camp full"><label>Títol</label><input type="text" id="f-titol"></div>
+        <div class="camp full"><label>Categoria</label><div class="cat-pills" id="f-categories"></div></div>
+        <div class="camp"><label>Data</label><input type="date" id="f-data"></div>
+        <div class="camp"><label>Hora d'inici</label><input type="time" id="f-hora-inici"></div>
+        <div class="camp"><label>Lloc</label><select id="f-lloc"></select></div>
+        <div class="camp"><label>Hora de fi</label><input type="time" id="f-hora-fi"></div>
+        <div class="camp"><label>Preu</label><input type="text" id="f-preu-text" placeholder="Ex: Gratuït / 15 €"></div>
+        <div class="camp"><label>Enllaç entrades</label><input type="url" id="f-url-entrades"></div>
+        <div class="camp full"><label>Descripció</label><textarea id="f-descripcio"></textarea></div>
+        
         <div class="camp full">
           <label>Foto</label>
           <div class="foto-zone" id="foto-zone">
-            <div class="placeholder" id="foto-placeholder">
-              <span class="icon">📷</span>
-              Arrossega o clica per triar una imatge
-            </div>
+            <div class="placeholder" id="foto-placeholder">📷 Tria o arrossega una foto</div>
             <img id="foto-preview" style="display:none;">
-            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;">
+            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
           </div>
-          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
-        </div>
-
-        <div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;" onclick="if(event.target===this) tancarSelectorGaleria()">
-          <div style="background:#fff; border-radius:14px; max-width:720px; margin:30px auto; padding:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-              <h3 style="margin:0; font-size:16px;">Tria una foto de la galeria</h3>
-              <button onclick="tancarSelectorGaleria()" style="border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-sec);">✕</button>
-            </div>
-            <div id="selector-galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px;"></div>
-          </div>
+          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:6px 12px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; font-size:12px; cursor:pointer;">🖼️ Triar de la galeria</button>
         </div>
 
         <div class="camp">
           <label>Activitat familiar</label>
           <div class="toggle-row">
             <div class="toggle" id="tog-familiar" onclick="toggleSwitch(this)"><div class="knob"></div></div>
-            <span style="font-size:13px; color:var(--text-sec);">Apareix a "En família"</span>
-          </div>
-          <div id="edat-row" style="margin-top:10px; display:none;">
-            <input type="text" id="f-edat" placeholder="Ex: a partir de 6 anys">
+            <input type="text" id="f-edat" placeholder="Edat" style="width:120px; display:none; margin-left:10px;">
           </div>
         </div>
-
         <div class="camp">
-          <label>Esdeveniment destacat</label>
-          <div class="toggle-row">
-            <div class="toggle" id="tog-destacat" onclick="toggleSwitch(this)"><div class="knob"></div></div>
-            <span style="font-size:13px; color:var(--text-sec);">Targeta gran a l'agenda</span>
-          </div>
-          <div style="margin-top:10px;">
-            <label style="font-size:12px; color:var(--text-sec); display:block; margin-bottom:4px;">Ordre (0 = primer)</label>
-            <input type="number" id="f-ordre" value="0" min="0" step="1" style="width:90px;">
-          </div>
+          <label>Destacat</label>
+          <div class="toggle-row"><div class="toggle" id="tog-destacat" onclick="toggleSwitch(this)"><div class="knob"></div></div><input type="number" id="f-ordre" value="0" style="width:70px; margin-left:10px;"></div>
         </div>
       </div>
 
@@ -445,706 +267,281 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
   </div>
 </div>
 
+<div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;">
+  <div style="background:#fff; border-radius:14px; max-width:600px; margin:30px auto; padding:20px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;"><h3 style="margin:0;">Triar de la galeria</h3><button onclick="tancarSelectorGaleria()">✕</button></div>
+    <div id="selector-galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px;"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ============================================================
-// CONFIGURACIÓ — Supabase
-// ============================================================
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 
-let accessToken = null;
-let currentUser = null;
+let accessToken = null, currentUser = null, categories = [], llocs = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
 
-const headers = () => ({
-  'Content-Type': 'application/json',
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
-});
+const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
 async function sbFetch(path, opts = {}) {
-  const url = SUPABASE_URL + path;
-  const res = await fetch(url, { headers: headers(), ...opts });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.msg || res.statusText);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  const res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || res.statusText); }
+  const text = await res.text(); return text ? JSON.parse(text) : null;
 }
 
-async function sbAuth(endpoint, body) {
-  const res = await fetch(SUPABASE_URL + '/auth/v1/' + endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.msg || 'Error d\'autenticació');
-  return data;
-}
-
-// ============================================================
-// AUTH LÓGICA
-// ============================================================
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   const geminiKey = document.getElementById('login-gemini').value.trim();
-  const errEl = document.getElementById('login-error');
-  errEl.style.display = 'none';
-  
-  if (!geminiKey) {
-    errEl.textContent = 'La clau API de Gemini és obligatòria.';
-    errEl.style.display = 'block';
-    return;
-  }
-
+  if (!geminiKey) return alert('La clau API de Gemini és obligatòria.');
   try {
-    const data = await sbAuth('token?grant_type=password', { email, password: pass });
-    accessToken = data.access_token;
-    currentUser = data.user;
-    localStorage.setItem('gx_token', accessToken);
-    localStorage.setItem('gx_refresh', data.refresh_token);
-    localStorage.setItem('gx_user', JSON.stringify(data.user));
-    localStorage.setItem('gx_gemini_key', geminiKey); 
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method:'POST', headers:{ 'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY }, body:JSON.stringify({ email, password:pass }) });
+    const data = await res.json(); if(!res.ok) throw new Error(data.error_description || 'Error');
+    accessToken = data.access_token; currentUser = data.user;
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_user', JSON.stringify(currentUser)); localStorage.setItem('gx_gemini_key', geminiKey);
     showApp();
-  } catch (e) {
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  }
+  } catch (e) { document.getElementById('login-error').textContent = e.message; document.getElementById('login-error').style.display='block'; }
 }
 
-function doLogout() {
-  accessToken = null; currentUser = null;
-  localStorage.removeItem('gx_token');
-  localStorage.removeItem('gx_refresh');
-  localStorage.removeItem('gx_user');
-  localStorage.removeItem('gx_gemini_key');
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
+function doLogout() { localStorage.clear(); location.reload(); }
 
 async function tryAutoLogin() {
-  const token = localStorage.getItem('gx_token');
-  const user = localStorage.getItem('gx_user');
-  const geminiKey = localStorage.getItem('gx_gemini_key');
-  if (token && user && geminiKey) {
-    accessToken = token;
-    currentUser = JSON.parse(user);
-    try {
-      await sbFetch('/rest/v1/categories?select=id&limit=1');
-      showApp();
-    } catch {
-      const refresh = localStorage.getItem('gx_refresh');
-      if (refresh) {
-        try {
-          const data = await sbAuth('token?grant_type=refresh_token', { refresh_token: refresh });
-          accessToken = data.access_token;
-          currentUser = data.user;
-          localStorage.setItem('gx_token', accessToken);
-          localStorage.setItem('gx_refresh', data.refresh_token);
-          localStorage.setItem('gx_user', JSON.stringify(data.user));
-          showApp();
-        } catch { doLogout(); }
-      } else { doLogout(); }
-    }
-  }
+  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user'), gKey = localStorage.getItem('gx_gemini_key');
+  if (token && user && gKey) { accessToken = token; currentUser = JSON.parse(user); showApp(); }
 }
-
-// ============================================================
-// APP LÓGICA GENERAL
-// ============================================================
-let categories = [];
-let llocs = [];
-let cicles = [];
-let editingId = null;
-let filtreCategoria = null;
 
 async function showApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block';
   document.getElementById('user-email').textContent = currentUser.email;
-
   categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
-  llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
-  cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
-
-  renderFiltres();
-  renderSelectLlocs();
-  renderSelectCicles();
-  renderCatPills();
-  await carregarEsdeveniments();
+  await carregarLlocs();
+  renderFiltres(); renderCatPills(); await carregarEsdeveniments();
 }
 
+async function carregarLlocs() {
+  llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
+  const sel = document.getElementById('f-lloc');
+  sel.innerHTML = '<option value="">— Tria un lloc —</option>';
+  llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.nom}</option>`);
+}
+
+// ---- CONTROLADOR DE LUGARES (NUEVA VENTANA) ----
+function obrirGestorLlocs() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-llocs').style.display = 'block';
+  renderListaLugaresGestion();
+}
+function tancarGestorLlocs() {
+  document.getElementById('vista-llocs').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaLugaresGestion() {
+  const container = document.getElementById('lista-llocs-gestion');
+  container.innerHTML = llocs.map(l => `
+    <div class="lloc-item">
+      <span>📍 ${l.nom}</span>
+      <button onclick="eliminarLloc('${l.id}')">Eliminar</button>
+    </div>
+  `).join('');
+}
+async function crearLlocNou() {
+  const nom = document.getElementById('nou-lloc-nom').value.trim();
+  if(!nom) return toast('Escriu el nom del lloc', true);
+  try {
+    await sbFetch('/rest/v1/llocs', { method: 'POST', body: JSON.stringify({ nom }) });
+    document.getElementById('nou-lloc-nom').value = '';
+    toast('Lloc guardat a Supabase!');
+    await carregarLlocs(); renderListaLugaresGestion();
+  } catch(e) { toast('Error o lloc ja existent', true); }
+}
+async function eliminarLloc(id) {
+  if(!confirm('Segur que vols eliminar aquest lloc?')) return;
+  try {
+    await sbFetch(`/rest/v1/llocs?id=eq.${id}`, { method: 'DELETE' });
+    toast('Lloc eliminat');
+    await carregarLlocs(); renderListaLugaresGestion();
+  } catch(e) { toast('No es pot eliminar si està en ús', true); }
+}
+
+// ---- EVENTS LÓGICA Y RENDER ----
 function renderFiltres() {
   const bar = document.getElementById('filtre-bar');
   let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
-  categories.forEach(c => {
-    html += `<button class="filtre-btn" onclick="filtrar('${c.id}', this)">${c.nom}</button>`;
-  });
+  categories.forEach(c => html += `<button class="filtre-btn" onclick="filtrar('${c.id}', this)">${c.nom}</button>`);
   bar.innerHTML = html;
 }
-
 function filtrar(catId, btn) {
-  filtreCategoria = catId;
-  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu'));
-  btn.classList.add('actiu');
-  carregarEsdeveniments();
+  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu')); btn.classList.add('actiu');
+  carregarEsdeveniments(catId);
 }
-
-const MESOS = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
-
-async function carregarEsdeveniments() {
-  let query = '/rest/v1/esdeveniments?select=*,categories(nom,slug,color_gradient),llocs(nom)&order=data.desc,hora_inici';
-  if (filtreCategoria) query += `&categoria_id=eq.${filtreCategoria}`;
-
-  const events = await sbFetch(query);
+async function carregarEsdeveniments(catId = null) {
+  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom)&order=data.desc,hora_inici';
+  if(catId) q += `&categoria_id=eq.${catId}`;
+  const data = await sbFetch(q);
   const container = document.getElementById('llista-events');
-
-  if (!events || events.length === 0) {
-    container.innerHTML = `
-      <div class="llista-buida">
-        <div class="emoji">🦉</div>
-        <p>Encara no hi ha cap esdeveniment.<br>Crea'n un amb el botó de dalt!</p>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = events.map(e => {
-    const d = new Date(e.data + 'T00:00:00');
-    const dia = d.getDate();
-    const mes = MESOS[d.getMonth()];
-    const catNom = e.categories?.nom || '';
-    const llocNom = e.llocs?.nom || '';
-    const hora = e.hora_inici ? e.hora_inici.slice(0,5) : '';
-    const estatClass = 'estat-' + e.estat;
-
-    return `
-      <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
-        <div class="data-col">
-          <div class="dia">${dia}</div>
-          <div class="mes">${mes}</div>
-        </div>
-        <div class="info">
-          <div class="titol">${esc(e.titol)}</div>
-          <div class="meta">
-            ${catNom ? `<span>${catNom}</span>` : ''}
-            ${hora ? `<span>${hora}</span>` : ''}
-            ${llocNom ? `<span>${llocNom}</span>` : ''}
-          </div>
-        </div>
-        <span class="estat-badge ${estatClass}">${e.estat}</span>
-      </div>`;
-  }).join('');
-}
-
-function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-function renderSelectLlocs() {
-  const sel = document.getElementById('f-lloc');
-  sel.innerHTML = '<option value="">— Tria un lloc —</option>';
-  llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${esc(l.nom)}</option>`);
-}
-
-function renderSelectCicles() {
-  const sel = document.getElementById('f-cicle');
-  sel.innerHTML = '<option value="">— Cap cicle —</option>';
-  cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${esc(c.nom)}</option>`);
+  if(!data.length) { container.innerHTML = '<div class="llista-buida">🦉 Cap event creat.</div>'; return; }
+  container.innerHTML = data.map(e => `
+    <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
+      <div class="data-col"><div class="dia">${e.data.split('-')[2]}</div><div class="mes">${e.data.split('-')[1]}</div></div>
+      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span></div></div>
+      <span class="estat-badge estat-${e.estat}">${e.estat}</span>
+    </div>
+  `).join('');
 }
 
 function renderCatPills() {
-  const container = document.getElementById('f-categories');
-  container.innerHTML = categories.map(c =>
-    `<div class="cat-pill" data-id="${c.id}" onclick="selCat(this)">${c.nom}</div>`
-  ).join('');
+  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" onclick="selCat(this)">${c.nom}</div>`).join('');
 }
+function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); }
+function toggleSwitch(el) { el.classList.toggle('on'); if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none'; }
 
-function selCat(el) {
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-function toggleSwitch(el) {
-  el.classList.toggle('on');
-  if (el.id === 'tog-familiar') {
-    document.getElementById('edat-row').style.display = el.classList.contains('on') ? 'block' : 'none';
-  }
-}
-
-let fotoFile = null;
-let fotoGaleriaUrl = null; 
-
-// ---- VISTES NAVEGACIÓ ----
-function nouEsdeveniment() {
-  editingId = null;
-  netejarFormulari();
-  document.getElementById('form-titol').textContent = 'Nou esdeveniment';
-  document.getElementById('btn-eliminar').style.display = 'none';
-  document.getElementById('vista-llista').style.display = 'none';
-  document.getElementById('vista-form').style.display = 'block';
-}
-
-function tornarLlista() {
-  document.getElementById('vista-form').style.display = 'none';
-  document.getElementById('vista-llista').style.display = 'block';
-  document.getElementById('ia-resultados-lista').style.display = 'none';
-}
+function nouEsdeveniment() { editingId = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
+function tornarLlista() { document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
 
 function netejarFormulari() {
-  document.getElementById('f-titol').value = '';
-  document.getElementById('f-data').value = '';
-  document.getElementById('f-hora-inici').value = '';
-  document.getElementById('f-hora-fi').value = '';
-  document.getElementById('f-lloc').value = '';
-  document.getElementById('f-preu-text').value = '';
-  document.getElementById('f-url-entrades').value = '';
-  document.getElementById('f-cicle').value = '';
-  document.getElementById('f-descripcio').value = '';
-  document.getElementById('f-edat').value = '';
-  document.getElementById('f-foto').value = '';
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
-  document.getElementById('tog-familiar').classList.remove('on');
-  document.getElementById('tog-destacat').classList.remove('on');
-  document.getElementById('f-ordre').value = 0;
-  document.getElementById('edat-row').style.display = 'none';
-  document.getElementById('foto-preview').style.display = 'none';
-  document.getElementById('foto-placeholder').style.display = 'block';
-  fotoFile = null;
-  fotoGaleriaUrl = null;
+  document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
+  document.getElementById('f-lloc').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
+  document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; fotoFile = null; fotoGaleriaUrl = null;
 }
 
-// ---- EDICIÓ Y GUARDADO SUPABASE ----
 async function editarEsdeveniment(id) {
-  editingId = id;
-  netejarFormulari();
-  document.getElementById('form-titol').textContent = 'Editar esdeveniment';
-  document.getElementById('btn-eliminar').style.display = 'block';
-  
-  try {
-    const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`);
-    if(!ev || ev.length === 0) throw new Error('No s\'ha trobat l\'esdeveniment');
-    const e = ev[0];
-
-    document.getElementById('f-titol').value = e.titol || '';
-    document.getElementById('f-data').value = e.data || '';
-    document.getElementById('f-hora-inici').value = e.hora_inici ? e.hora_inici.slice(0,5) : '';
-    document.getElementById('f-hora-fi').value = e.hora_fi ? e.hora_fi.slice(0,5) : '';
-    document.getElementById('f-lloc').value = e.lloc_id || '';
-    document.getElementById('f-preu-text').value = e.preu_text || '';
-    document.getElementById('f-url-entrades').value = e.url_entrades || '';
-    document.getElementById('f-cicle').value = e.cicle_id || '';
-    document.getElementById('f-descripcio').value = e.descripcio || '';
-    document.getElementById('f-edat').value = e.edat_minima || '';
-    document.getElementById('f-ordre').value = e.ordre || 0;
-
-    if(e.categoria_id) {
-      const pill = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`);
-      if(pill) pill.classList.add('selected');
-    }
-    if(e.familiar) {
-      document.getElementById('tog-familiar').classList.add('on');
-      document.getElementById('edat-row').style.display = 'block';
-    }
-    if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
-
-    if(e.foto_url) {
-      document.getElementById('foto-preview').src = e.foto_url;
-      document.getElementById('foto-preview').style.display = 'block';
-      document.getElementById('foto-placeholder').style.display = 'none';
-      fotoGaleriaUrl = e.foto_url;
-    }
-
-    document.getElementById('vista-llista').style.display = 'none';
-    document.getElementById('vista-form').style.display = 'block';
-  } catch(err) { toast(err.message, true); }
+  editingId = id; netejarFormulari(); document.getElementById('btn-eliminar').style.display='block';
+  const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
+  document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data;
+  document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
+  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
+  if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
+  if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
+  if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
+  if(e.foto_url) { document.getElementById('foto-preview').src = e.foto_url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; fotoGaleriaUrl = e.foto_url; }
+  document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block';
 }
 
 async function desarEsdeveniment(estatDesti) {
-  const titol = document.getElementById('f-titol').value.trim();
-  const data = document.getElementById('f-data').value;
-  if(!titol || !data) return toast('Títol i Data són obligatoris', true);
-
-  const pillSel = document.querySelector('.cat-pill.selected');
-  const categoria_id = pillSel ? pillSel.getAttribute('data-id') : null;
-  const lloc_id = document.getElementById('f-lloc').value || null;
-  const cicle_id = document.getElementById('f-cicle').value || null;
-  
-  let hora_inici = document.getElementById('f-hora-inici').value || null;
-  let hora_fi = document.getElementById('f-hora-fi').value || null;
-  if(hora_inici && hora_inici.length === 5) hora_inici += ':00';
-  if(hora_fi && hora_fi.length === 5) hora_fi += ':00';
-
+  const titol = document.getElementById('f-titol').value.trim(), data = document.getElementById('f-data').value;
+  if(!titol || !data) return toast('Títol i data obligatoris', true);
+  const pill = document.querySelector('.cat-pill.selected');
   const body = {
-    titol, data, categoria_id, lloc_id, cicle_id, hora_inici, hora_fi,
-    preu_text: document.getElementById('f-preu-text').value.trim() || null,
-    url_entrades: document.getElementById('f-url-entrades').value.trim() || null,
-    descripcio: document.getElementById('f-descripcio').value.trim() || null,
-    edat_minima: document.getElementById('f-edat').value.trim() || null,
-    familiar: document.getElementById('tog-familiar').classList.contains('on'),
-    destacat: document.getElementById('tog-destacat').classList.contains('on'),
-    ordre: parseInt(document.getElementById('f-ordre').value) || 0,
-    estat: estatDesti
+    titol, data, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null,
+    hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
+    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
+    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoGaleriaUrl
   };
-
-  try {
-    if(fotoFile) {
-      const extension = fotoFile.name.split('.').pop();
-      const nomFitxer = `${Date.now()}.${extension}`;
-      const resUp = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${nomFitxer}`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY },
-        body: fotoFile
-      });
-      if(!resUp.ok) throw new Error('Error pujant la imatge');
-      body.foto_url = urlPublica(nomFitxer);
-    } else if(fotoGaleriaUrl) {
-      body.foto_url = fotoGaleriaUrl;
-    } else {
-      body.foto_url = null;
-    }
-
-    if(editingId) {
-      await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, {
-        method: 'PATCH', body: JSON.stringify(body)
-      });
-      toast('Esdeveniment actualitzat correctament');
-    } else {
-      await sbFetch('/rest/v1/esdeveniments', {
-        method: 'POST', body: JSON.stringify(body)
-      });
-      toast('Esdeveniment creat correctament');
-    }
-    tornarLlista();
-    await carregarEsdeveniments();
-  } catch(err) { toast(err.message, true); }
+  if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
+  else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
+  toast('Guardat!'); tornarLlista(); carregarEsdeveniments();
 }
 
-async function eliminarEsdeveniment() {
-  if(!editingId || !confirm('Segur que vols eliminar aquest esdeveniment?')) return;
-  try {
-    await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method: 'DELETE' });
-    toast('Esdeveniment eliminat');
-    tornarLlista();
-    await carregarEsdeveniments();
-  } catch(err) { toast(err.message, true); }
-}
+async function eliminarEsdeveniment() { if(confirm('Segur?')) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'DELETE' }); tornarLlista(); carregarEsdeveniments(); } }
 
-// ---- MULTI-FOTOS GALERIA ----
-async function llistarFotos(){
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + accessToken,
-      'apikey': SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ prefix: '', limit: 200, sortBy: { column: 'created_at', order: 'desc' } }),
-  });
-  if(!res.ok) return [];
-  const items = await res.json();
-  return items.filter(f => f.name && !f.name.endsWith('/') && f.id);
-}
-
-function urlPublica(nom){
-  return `${SUPABASE_URL}/storage/v1/object/public/fotos/${encodeURIComponent(nom).replace(/%2F/g,'/')}`;
-}
-
-function obrirGaleria() {
-  document.getElementById('vista-llista').style.display = 'none';
-  document.getElementById('vista-galeria').style.display = 'block';
-  actualitzarGaleriaVista();
-}
-
-function tancarGaleria() {
-  document.getElementById('vista-galeria').style.display = 'none';
-  document.getElementById('vista-llista').style.display = 'block';
-}
-
-async function actualitzarGaleriaVista() {
-  const fotos = await llistarFotos();
-  const grid = document.getElementById('galeria-grid');
-  if(!fotos.length) { grid.innerHTML = '<p style="color:var(--text-sec); font-size:13px;">No hi ha fotos a la galeria</p>'; return; }
-  grid.innerHTML = fotos.map(f => {
-    const url = urlPublica(f.name);
-    return `<div style="position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
-      <img src="${url}" style="width:100%; height:100%; object-fit:cover;">
-    </div>`;
-  }).join('');
-}
-
-function previewFoto(input) {
-  if (input.files && input.files[0]) {
-    fotoFile = input.files[0];
-    fotoGaleriaUrl = null;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('foto-preview').src = e.target.result;
-      document.getElementById('foto-preview').style.display = 'block';
-      document.getElementById('foto-placeholder').style.display = 'none';
-    }
-    reader.readAsDataURL(fotoFile);
-  }
-}
-
-// ---- SELECTOR FOTOS INDIVIDUAL FORMULARI ----
-function obrirSelectorGaleria() {
-  document.getElementById('modal-galeria').style.display = 'block';
-  actualitzarSelectorGaleria();
-}
-function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display = 'none'; }
-
-async function actualitzarSelectorGaleria() {
-  const fotos = await llistarFotos();
-  const grid = document.getElementById('selector-galeria-grid');
-  grid.innerHTML = fotos.map(f => {
-    const url = urlPublica(f.name);
-    return `<img src="${url}" onclick="triarFotoGaleria('${url}')" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; cursor:pointer; border:1px solid var(--border);">`;
-  }).join('');
-}
-
-function triarFotoGaleria(url) {
-  fotoGaleriaUrl = url;
-  fotoFile = null;
-  document.getElementById('f-foto').value = '';
-  document.getElementById('foto-preview').src = url;
-  document.getElementById('foto-preview').style.display = 'block';
-  document.getElementById('foto-placeholder').style.display = 'none';
-  tancarSelectorGaleria();
-  toast('Foto seleccionada');
-}
-
-async function pujarBatch(input) {
-  if(!input.files || input.files.length === 0) return;
-  const pro = document.getElementById('batch-progres');
-  pro.style.display = 'block';
-  pro.textContent = `Pujant 0 de ${input.files.length} fotos...`;
-  
-  for(let i=0; i<input.files.length; i++) {
-    const file = input.files[i];
-    const extension = file.name.split('.').pop();
-    const nomFitxer = `${Date.now()}_batch_${i}.${extension}`;
-    try {
-      await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${nomFitxer}`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY },
-        body: file
-      });
-      pro.textContent = `Pujant ${i+1} de ${input.files.length} fotos...`;
-    } catch(e) { console.error(e); }
-  }
-  pro.textContent = '✨ Pujada massiva completada!';
-  setTimeout(() => pro.style.display = 'none', 3000);
-  actualitzarGaleriaVista();
-}
-
-// ---- TOAST ----
-function toast(msg, isError) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(() => el.className = 'toast', 2500);
-}
+// ---- AUXILIARS FOTOS ----
+function obrirGaleria() { document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-galeria').style.display='block'; actualitzarGaleriaVista(); }
+function tancarGaleria() { document.getElementById('vista-galeria').style.display='none'; document.getElementById('vista-llista').style.display='block'; }
+async function llistarFotos(){ const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, { method: 'POST', headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ prefix: '', limit: 100 }) }); return res.ok ? res.json() : []; }
+function urlPublica(n){ return `${SUPABASE_URL}/storage/v1/object/public/fotos/${n}`; }
+async function actualitzarGaleriaVista() { const f = await llistarFotos(); document.getElementById('galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px;">`).join(''); }
+function previewFoto(i) { if(i.files&&i.files[0]) { fotoFile=i.files[0]; document.getElementById('foto-preview').src=URL.createObjectURL(fotoFile); document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; } }
+function obrirSelectorGaleria() { document.getElementById('modal-galeria').style.display='block'; actualitzarSelectorGaleria(); }
+function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display='none'; }
+async function actualitzarSelectorGaleria() { const f = await llistarFotos(); document.getElementById('selector-galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" onclick="triarFoto('${urlPublica(x.name)}')" style="width:100%; aspect-ratio:1; object-fit:cover; cursor:pointer;">`).join(''); }
+function triarFoto(url) { fotoGaleriaUrl=url; document.getElementById('foto-preview').src=url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; tancarSelectorGaleria(); }
+function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m; t.className='toast show'+(e?' error':''); setTimeout(()=>t.className='toast',2500); }
 
 // ============================================================
-// MOTOR DE IA AVANZADO: RASTREADOR EN DOS PASOS (CRAWLER MULTINIVEL)
+// ASSISTENT GEMINI (1 SOL PASO: COMPRENSION DE CONTEXTO POR URL)
 // ============================================================
-async function procesarConGemini() {
-  let urlAgenda = document.getElementById('ia-contenido').value.trim();
-  if (!urlAgenda) return toast('Introdueix una URL per analitzar', true);
-
-  // Forzar que sea URL, si meten texto plano avisamos
-  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(urlAgenda);
-  if (!esUrl) return toast('Aquest motor requereix una URL de l\'agenda per poder rastrejar les fitxes', true);
-
-  const MI_GEMINI_KEY = localStorage.getItem('gx_gemini_key'); 
-  if (!MI_GEMINI_KEY) return toast('Falta la clau API de Gemini.', true);
+async function procesarConGeminiUnPaso() {
+  let inputSource = document.getElementById('ia-contenido').value.trim();
+  if(!inputSource) return toast('Enganxa un text o una URL', true);
+  const gKey = localStorage.getItem('gx_gemini_key'); if(!gKey) return toast('Falta API Key', true);
 
   const loadingEl = document.getElementById('ia-loading');
   const listaContenedor = document.getElementById('ia-resultados-lista');
   const listaItems = document.getElementById('ia-lista-items');
 
-  loadingEl.style.display = 'block';
-  listaContenedor.style.display = 'none';
-  listaItems.innerHTML = '';
+  loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
 
-  if (!/^https?:\/\//i.test(urlAgenda)) urlAgenda = 'https://' + urlAgenda;
-
-  const opcionesLlocs = llocs.map(l => `ID: ${l.id} -> Nom: ${l.nom}`).join('\n');
-  const opcionesCategories = categories.map(c => `ID: ${c.id} -> Nom: ${c.nom}`).join('\n');
+  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(inputSource);
+  let textoAnalizar = inputSource;
+  let contextoUrl = "Manual";
 
   try {
-    // --------------------------------------------------------
-    // FASE 1: LEER LA AGENDA GENERAL Y DETECTAR ENLACES
-    // --------------------------------------------------------
-    loadingEl.textContent = '🌐 Fase 1: Llegint el llistat general de l\'agenda...';
-    const resAgenda = await fetch(`https://r.jina.ai/${urlAgenda}`);
-    if (!resAgenda.ok) throw new Error('No s\'ha pogut extreure la llista general.');
-    const textoAgenda = await resAgenda.text();
+    if(esUrl) {
+      if(!/^https?:\/\//i.test(inputSource)) inputSource = 'https://' + inputSource;
+      contextoUrl = `Lectura de la URL directa: ${inputSource}`;
+      const res = await fetch(`https://r.jina.ai/${inputSource}`);
+      if(!res.ok) throw new Error('Jina no ha pogut llegir la web');
+      textoAnalizar = await res.text();
+    }
 
-    loadingEl.textContent = '🤖 Fase 1: Identificant enllaços de les fitxes...';
-    
-    const promptEnlaces = `
-      Analitza aquest text d'una agenda cultural i cerca els enllaços (URLs) que porten a la fitxa individual o detall de cada esdeveniment.
-      Torna ÚNICAMENT un Array de strings en JSON, sense Markdown, sense \`\`\`json.
-      URL Base de l'agenda per si els enllaços són relatius: ${urlAgenda}
+    const opcionesLlocs = llocs.map(l => `ID: ${l.id} -> Nom: ${l.nom}`).join('\n');
+    const opcionesCategories = categories.map(c => `ID: ${c.id} -> Nom: ${c.nom}`).join('\n');
+
+    const prompt = `
+      Actua com un gestor cultural de Sant Feliu de Guíxols per l'agenda Ganxoagenda.
+      Analitza el text adjunt i extreu un array JSON d'esdeveniments reals. 
+      Respon NOMÉS amb l'array JSON vàlid, sense markdown, sense \`\`\`json.
+
+      CONTEXT DE LA URL: ${contextoUrl}
+
+      REGLA DE CONTEXT DE LLOC:
+      - Si la URL o el text conté la paraula 'biblioteca', el camp 'lloc_id' ha de ser per defecte l'ID de la "Biblioteca Pública Octavi Viader i Margarit" excepte si s'especifica un altre lloc real.
+      - Si conté 'portaferrada', deduceix quin espai del festival és (Guíxols Arena, Espai Port, Monestir).
       
-      Text a analitzar:
-      ${textoAgenda}
-    `;
+      REGLA DE FIABILITAT DE DESCRIPCIÓ:
+      - REGLA DE FERRO: Si al text NO hi ha la sinopsi o els detalls de l'event (perquè s'han de llegir obrint una altra fitxa), deixa el camp 'descripcio' completament BUIT ("") o com a "[Completar manualment]". Està totalment PROHIBIT inventar o suposar continguts basant-te només en el títol.
 
-    const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
-    
-    let resGemini = await fetch(urlGemini, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptEnlaces }] }], generationConfig: { responseMimeType: "application/json" } })
-    });
-    
-    if (!resGemini.ok) throw new Error('Error en la Fase 1 de Gemini');
-    let dataGemini = await resGemini.json();
-    let enlacesFichas = JSON.parse(dataGemini.candidates[0].content.parts[0].text);
-
-    if (!Array.isArray(enlacesFichas) || enlacesFichas.length === 0) {
-      throw new Error('No s\'ha detectat cap enllaç a fitxes individuals. Potser la web no en té.');
-    }
-
-    // Limitem el rastreig a un màxim de 8-10 per seguretat i velocitat
-    if (enlacesFichas.length > 8) {
-      console.log(`Detectades ${enlacesFichas.length} fitxes. Limitem a les 8 primeres per evitar bloquejos.`);
-      enlacesFichas = enlacesFichas.slice(0, 8);
-    }
-
-    // --------------------------------------------------------
-    // FASE 2: RASTREAR CADA FICHA INDIVIDUAL (CON RETARDO)
-    // --------------------------------------------------------
-    let textosRecopilados = "";
-
-    for (let i = 0; i < enlacesFichas.length; i++) {
-      let urlFicha = enlacesFichas[i];
-      loadingEl.textContent = '🕷️ Fase 2: Escanejant fitxa real ' + (i + 1) + ' de ' + enlacesFichas.length + '...';
-      
-      // Si la URL és relativa, la forcem (seguretat extra)
-      if (urlFicha.startsWith('/')) {
-        const urlObj = new URL(urlAgenda);
-        urlFicha = urlObj.origin + urlFicha;
-      }
-
-      try {
-        const resFicha = await fetch(`https://r.jina.ai/${urlFicha}`);
-        if (resFicha.ok) {
-          const textoFicha = await resFicha.text();
-          textosRecopilados += `\n--- CONTINGUT REAL DE LA FITXA INDIVIDUAL (URL: ${urlFicha}) ---\n${textoFicha}\n`;
-        }
-        // Esperem 1.2 segons entre peticions per no saturar Jina ni la web de destí
-        await new Promise(resolve => setTimeout(resolve, 1200));
-      } catch (errFicha) {
-        console.error("Error rastrejant la fitxa: " + urlFicha, errFicha);
-      }
-    }
-
-    // --------------------------------------------------------
-    // FASE 3: PROCESADO DE LOS TEXTOS REALES CON GEMINI
-    // --------------------------------------------------------
-    loadingEl.textContent = '🤖 Fase 3: Processant les descripcions reals amb Gemini...';
-
-    const promptFinal = `
-      Actúa como un gestor de contenidos experto de la agenda cultural de Sant Feliu de Guíxols.
-      A continuación tienes el volcado de texto REAL de varias fichas individuales que hemos rastreado. El contenido es verídico, no te inventes NADA.
-      Debes responder ÚNICAMENTE con un Array de objetos JSON perfectamente válido. Sin bloques de código Markdown.
-
-      CONTEXTO DE LA URL DE ORIGEN GENERAL: ${urlAgenda}
-
-      REGLA DEL CONTEXTO GEOGRÀFICO:
-      - Si la URL general contiene 'biblioteca', asume que el lugar por defecto es "Biblioteca Pública Octavi Viader i Margarit" a menos que en la ficha se especifique otro espacio de forma explícita.
-      - Si la URL contiene 'portaferrada', mapea el recinto correcto (Guíxols Arena, Espai Port, Monestir).
-      - Si la URL contiene 'thyssen', el lugar es "Espai Carmen Thyssen".
-
-      DICCIONARIO DE LUGARES DISPONIBLES (Coloca SU ID en 'lloc_id'):
+      LLOCS DISPONIBLES AL CMS (Utilitza l'ID exacte):
       ${opcionesLlocs}
 
-      DICCIONARIO DE CATEGORIAS DISPONIBLES (Coloca SU ID en 'categoria_id'):
+      CATEGORIES DISPONIBLES AL CMS (Utilitza l'ID exacte):
       ${opcionesCategories}
 
-      Esquema JSON esperado:
-      [
-        {
-          "titol": "Títol de l'esdeveniment en català",
-          "data": "Fecha estricta YYYY-MM-DD (asume el año 2026)",
-          "hora_inici": "HH:MM o null",
-          "lloc_id": "ID del lugar coincidente o null",
-          "categoria_id": "ID de la categoría coincidente o null",
-          "descripcio": "Redacta la descripció en català BASÁNDOTE ESTRICTAMENTE en los detalles reales del texto de su ficha. No inventes nada.",
-          "preu_text": "Texto de precio o null",
-          "familiar": true o false,
-          "edat_minima": "Texto de edad o null"
-        }
-      ]
-
-      Textos extraídos de las fichas individuales:
-      ${textosRecopilados}
+      Format esperat:
+      [{"titol":"...", "data":"YYYY-MM-DD", "hora_inici":"HH:MM o null", "lloc_id":"...", "categoria_id":"...", "descripcio":"...", "preu_text":"...", "familiar":true/false, "edat_minima":"..."}]
+      
+      Text a processar:
+      ${textoAnalizar}
     `;
 
-    let resFinal = await fetch(urlGemini, {
+    const resGemini = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${gKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptFinal }] }], generationConfig: { responseMimeType: "application/json" } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
     });
+    if(!resGemini.ok) throw new Error('Error Gemini');
+    const data = await resGemini.json();
+    window.eventosDetectadosIA = JSON.parse(data.candidates[0].content.parts[0].text);
 
-    if (!resFinal.ok) throw new Error('Error en el processat final de Gemini.');
-    let dataFinal = await resFinal.json();
-    let textoJsonFinal = dataFinal.candidates[0].content.parts[0].text;
-
-    window.eventosDetectadosIA = JSON.parse(textoJsonFinal);
-
-    if (!Array.isArray(window.eventosDetectadosIA) || window.eventosDetectadosIA.length === 0) {
-      throw new Error('No s\'han pogut generar esdeveniments vàlids.');
-    }
-
-    // Renderizar resultados en la lista del CMS
-    window.eventosDetectadosIA.forEach((evento, index) => {
-      const itemHtml = `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f7f9; padding:8px 12px; border-radius:6px; border:1px solid #cbdbe1;">
-          <div style="font-size:13px; color: var(--text); text-align: left;">
-            <strong style="color:var(--blau);">${evento.data || 'Sense data'}</strong> — <span>${evento.titol || 'Sense títol'}</span>
-          </div>
-          <button type="button" onclick="cargarEventoIA(${index})" style="background:var(--verd); color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600; font-family:var(--font-sans); flex-shrink: 0; margin-left: 10px;">
-            Carregar Fitxa
-          </button>
-        </div>
-      `;
-      listaItems.innerHTML += itemHtml;
+    window.eventosDetectadosIA.forEach((ev, idx) => {
+      listaItems.innerHTML += `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f7f9; padding:8px; border-radius:6px; border:1px solid #cbdbe1;">
+          <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
+          <button type="button" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Carregar</button>
+        </div>`;
     });
-
-    listaContenedor.style.display = 'block';
-    toast(`✨ Rastrejades i bolcades ${window.eventosDetectadosIA.length} fitxes reals amb èxit!`);
-    document.getElementById('ia-contenido').value = ''; 
-
-  } catch (e) {
-    console.error(e);
-    toast('Error del Rastrejador: ' + e.message, true);
-  } finally {
-    loadingEl.style.display = 'none';
-  }
+    listaContenedor.style.display = 'block'; document.getElementById('ia-contenido').value = '';
+    toast('Fetes!');
+  } catch(e) { toast(e.message, true); } finally { loadingEl.style.display = 'none'; }
 }
 
-// ---- INIT ----
+function cargarEventoIA(idx) {
+  const ev = window.eventosDetectadosIA[idx];
+  document.getElementById('f-titol').value = ev.titol || '';
+  document.getElementById('f-data').value = ev.data || '';
+  document.getElementById('f-hora-inici').value = ev.hora_inici || '';
+  document.getElementById('f-descripcio').value = ev.descripcio || '';
+  document.getElementById('f-preu-text').value = ev.preu_text || '';
+  document.getElementById('f-edat').value = ev.edat_minima || '';
+  document.getElementById('f-lloc').value = ev.lloc_id || '';
+  if(ev.categoria_id) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected')); const p=document.querySelector(`.cat-pill[data-id="${ev.categoria_id}"]`); if(p) p.classList.add('selected'); }
+  const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
+  toast('Dades bolcades al formulari!');
+}
+
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
-
-const zone = document.getElementById('foto-zone');
-if (zone) {
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--blau)'; });
-  zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; });
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.style.borderColor = 'var(--border)';
-    if (e.dataTransfer.files.length) {
-      document.getElementById('f-foto').files = e.dataTransfer.files;
-      previewFoto(document.getElementById('f-foto'));
-    }
-  });
-}
 </script>
 </body>
 </html>
