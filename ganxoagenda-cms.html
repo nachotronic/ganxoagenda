@@ -319,6 +319,118 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <h2 id="form-titol">Nou esdeveniment</h2>
       </div>
 
+      <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Rellenar Ficha con Gemini IA</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Pega el texto de un post, una descripción larga o notas sueltas. La IA rellenará los campos automáticamente.</p>
+        
+        <div style="display: flex; gap: 10px; flex-direction: column;">
+          <textarea id="ia-contenido" placeholder="Ej: ¡Este sábado 25 a las 18:00h os esperamos en la Plaza Mayor para el taller infantil de marionetas! Entrada libre a partir de 4 años..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
+          
+          <div style="display:flex; justify-content: flex-end; align-items:center; gap: 12px;">
+            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); font-weight: 500;">🤖 Gemini está procesando el texto...</div>
+            <button type="button" onclick="procesarConGemini()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analizar Texto</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-grid">
+        ```
+
+---
+
+## 2. La lógica en JavaScript (Directo a la API de Gemini)
+
+Para hacer tus pruebas iniciales de manera rápida y directa **sin configurar un servidor intermedio todavía**, puedes hacer la petición directamente desde el navegador a los servidores de Google usando el nuevo modelo **Gemini 2.5 Flash**. 
+
+> ⚠️ *Nota de seguridad importante:* Hacerlo así expone tu clave en el código si alguien inspecciona el elemento en la web. Úsalo de esta forma únicamente si este panel CMS lo usas tú solo en local o bajo contraseña segura. Más adelante, lo ideal es mover esto a una Edge Function de Supabase.
+
+Ve al final de tu archivo HTML, justo antes de la etiqueta `</script>`, y añade esta función:
+
+```javascript
+// ============================================================
+// INTEGRACIÓN CON GEMINI IA
+// ============================================================
+async function procesarConGemini() {
+  const contenido = document.getElementById('ia-contenido').value.trim();
+  if (!contenido) return toast('Introduce algún texto para analizar', true);
+
+  // 🔴 REMPLAZA ESTO CON TU NUEVA API KEY DE GEMINI 🔴
+  const MI_GEMINI_KEY = "TU_NUEVA_API_KEY_AQUÍ"; 
+
+  const loadingEl = document.getElementById('ia-loading');
+  loadingEl.style.display = 'block';
+
+  // Le damos instrucciones estrictas a Gemini para que nos devuelva un JSON estructurado
+  const promptSistema = `
+    Actúa como un asistente analítico riguroso. Tu tarea es extraer la información de un evento cultural a partir del texto que te proporcionará el usuario.
+    Debes responder ÚNICAMENTE con un objeto JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
+    Traduce los textos de título y descripción al catalán si vienen en otro idioma.
+
+    Esquema JSON esperado:
+    {
+      "titol": "Título limpio y atractivo en catalán",
+      "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
+      "hora_inici": "Hora de inicio en formato HH:MM (ej: '18:00'), o null si no hay",
+      "descripcio": "Descripción redactada en catalán de forma clara",
+      "preu_text": "Texto resumido del precio (ej: 'Gratuït', '5 €'). Si no se indica, pon null",
+      "familiar": true si es un evento infantil/familiar o false en caso contrario,
+      "edat_minima": "Texto de edad recomendada (ej: 'A partir de 4 anys') si aplica, o null"
+    }
+
+    Texto del usuario a analizar:
+    ${contenido}
+  `;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
+    
+    const respuesta = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptSistema }] }],
+        generationConfig: {
+          responseMimeType: "application/json" // Esto obliga a Gemini a responder en JSON puro
+        }
+      })
+    });
+
+    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini');
+
+    const data = await respuesta.json();
+    
+    // Extraemos el texto de la respuesta e intentamos parsearlo a un objeto JS
+    const textoJson = data.candidates[0].content.parts[0].text;
+    const eventoIA = JSON.parse(textoJson);
+
+    // Rellenamos mágicamente los campos de tu formulario existente
+    document.getElementById('f-titol').value = eventoIA.titol || '';
+    document.getElementById('f-data').value = eventoIA.data || '';
+    document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
+    document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
+    document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
+    document.getElementById('f-edat').value = eventoIA.edat_minima || '';
+
+    // Manejo de los interruptores visuales (toggles)
+    const togFam = document.getElementById('tog-familiar');
+    if (eventoIA.familiar) {
+      togFam.classList.add('on');
+      document.getElementById('edat-row').style.display = 'block';
+    } else {
+      togFam.classList.remove('on');
+      document.getElementById('edat-row').style.display = 'none';
+    }
+
+    toast('✨ ¡Campos rellenados por Gemini! Por favor, revísalos antes de guardar.');
+    document.getElementById('ia-contenido').value = ''; // Limpiamos el cuadro de la IA
+
+  } catch (e) {
+    console.error(e);
+    toast('Error del Asistente: ' + e.message, true);
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+
       <div class="form-grid">
         <!-- Títol -->
         <div class="camp full">
