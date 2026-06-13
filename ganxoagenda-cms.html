@@ -80,7 +80,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 .main { max-width:900px; margin:0 auto; padding:24px; }
 
 /* ---- LLISTA ---- */
-#vista-llista {}
 .llista-header {
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:20px;
@@ -258,7 +257,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 </head>
 <body>
 
-<!-- ===== LOGIN ===== -->
 <div id="login-screen">
   <div class="login-box">
     <h1>Ganxoagenda</h1>
@@ -270,7 +268,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
   </div>
 </div>
 
-<!-- ===== APP ===== -->
 <div id="app-screen">
   <div class="topbar">
     <h1>Ganxoagenda — Gestor</h1>
@@ -282,7 +279,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
   <div class="main">
 
-    <!-- LLISTA -->
     <div id="vista-llista">
       <div class="llista-header">
         <h2>Esdeveniments</h2>
@@ -295,7 +291,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       <div id="llista-events"></div>
     </div>
 
-    <!-- GALERIA DE FOTOS -->
     <div id="vista-galeria" style="display:none;">
       <div class="form-header">
         <button class="btn-tornar" onclick="tancarGaleria()">← Tornar</button>
@@ -312,7 +307,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       <div id="galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
     </div>
 
-    <!-- FORMULARI -->
     <div id="vista-form">
       <div class="form-header">
         <button class="btn-tornar" onclick="tornarLlista()">← Tornar</button>
@@ -332,131 +326,28 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           </div>
         </div>
       </div>
-      <div class="form-grid">
-        ```
-
----
-
-## 2. La lógica en JavaScript (Directo a la API de Gemini)
-
-Para hacer tus pruebas iniciales de manera rápida y directa **sin configurar un servidor intermedio todavía**, puedes hacer la petición directamente desde el navegador a los servidores de Google usando el nuevo modelo **Gemini 2.5 Flash**. 
-
-> ⚠️ *Nota de seguridad importante:* Hacerlo así expone tu clave en el código si alguien inspecciona el elemento en la web. Úsalo de esta forma únicamente si este panel CMS lo usas tú solo en local o bajo contraseña segura. Más adelante, lo ideal es mover esto a una Edge Function de Supabase.
-
-Ve al final de tu archivo HTML, justo antes de la etiqueta `</script>`, y añade esta función:
-
-```javascript
-// ============================================================
-// INTEGRACIÓN CON GEMINI IA
-// ============================================================
-async function procesarConGemini() {
-  const contenido = document.getElementById('ia-contenido').value.trim();
-  if (!contenido) return toast('Introduce algún texto para analizar', true);
-
-  // 🔴 REMPLAZA ESTO CON TU NUEVA API KEY DE GEMINI 🔴
-  const MI_GEMINI_KEY = "AQ.Ab8RN6KzdW-H98VT_6WwBLNstYzWb1BD3RzcFfW9E-yW_wo45A"; 
-
-  const loadingEl = document.getElementById('ia-loading');
-  loadingEl.style.display = 'block';
-
-  // Le damos instrucciones estrictas a Gemini para que nos devuelva un JSON estructurado
-  const promptSistema = `
-    Actúa como un asistente analítico riguroso. Tu tarea es extraer la información de un evento cultural a partir del texto que te proporcionará el usuario.
-    Debes responder ÚNICAMENTE con un objeto JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
-    Traduce los textos de título y descripción al catalán si vienen en otro idioma.
-
-    Esquema JSON esperado:
-    {
-      "titol": "Título limpio y atractivo en catalán",
-      "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
-      "hora_inici": "Hora de inicio en formato HH:MM (ej: '18:00'), o null si no hay",
-      "descripcio": "Descripción redactada en catalán de forma clara",
-      "preu_text": "Texto resumido del precio (ej: 'Gratuït', '5 €'). Si no se indica, pon null",
-      "familiar": true si es un evento infantil/familiar o false en caso contrario,
-      "edat_minima": "Texto de edad recomendada (ej: 'A partir de 4 anys') si aplica, o null"
-    }
-
-    Texto del usuario a analizar:
-    ${contenido}
-  `;
-
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
-    
-    const respuesta = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptSistema }] }],
-        generationConfig: {
-          responseMimeType: "application/json" // Esto obliga a Gemini a responder en JSON puro
-        }
-      })
-    });
-
-    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini');
-
-    const data = await respuesta.json();
-    
-    // Extraemos el texto de la respuesta e intentamos parsearlo a un objeto JS
-    const textoJson = data.candidates[0].content.parts[0].text;
-    const eventoIA = JSON.parse(textoJson);
-
-    // Rellenamos mágicamente los campos de tu formulario existente
-    document.getElementById('f-titol').value = eventoIA.titol || '';
-    document.getElementById('f-data').value = eventoIA.data || '';
-    document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
-    document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
-    document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
-    document.getElementById('f-edat').value = eventoIA.edat_minima || '';
-
-    // Manejo de los interruptores visuales (toggles)
-    const togFam = document.getElementById('tog-familiar');
-    if (eventoIA.familiar) {
-      togFam.classList.add('on');
-      document.getElementById('edat-row').style.display = 'block';
-    } else {
-      togFam.classList.remove('on');
-      document.getElementById('edat-row').style.display = 'none';
-    }
-
-    toast('✨ ¡Campos rellenados por Gemini! Por favor, revísalos antes de guardar.');
-    document.getElementById('ia-contenido').value = ''; // Limpiamos el cuadro de la IA
-
-  } catch (e) {
-    console.error(e);
-    toast('Error del Asistente: ' + e.message, true);
-  } finally {
-    loadingEl.style.display = 'none';
-  }
-}
 
       <div class="form-grid">
-        <!-- Títol -->
         <div class="camp full">
           <label>Títol</label>
           <input type="text" id="f-titol" placeholder="Ex: Regata de llaguts catalans">
         </div>
 
-        <!-- Categoria -->
         <div class="camp full">
           <label>Categoria</label>
           <div class="cat-pills" id="f-categories"></div>
         </div>
 
-        <!-- Data -->
         <div class="camp">
           <label>Data</label>
           <input type="date" id="f-data">
         </div>
 
-        <!-- Hora inici -->
         <div class="camp">
           <label>Hora d'inici</label>
           <input type="time" id="f-hora-inici">
         </div>
 
-        <!-- Lloc -->
         <div class="camp">
           <label>Lloc</label>
           <select id="f-lloc">
@@ -464,25 +355,21 @@ async function procesarConGemini() {
           </select>
         </div>
 
-        <!-- Hora fi -->
         <div class="camp">
           <label>Hora de fi (opcional)</label>
           <input type="time" id="f-hora-fi">
         </div>
 
-        <!-- Preu text -->
         <div class="camp">
           <label>Preu (text lliure)</label>
           <input type="text" id="f-preu-text" placeholder="Ex: Entrada lliure / 5 €">
         </div>
 
-        <!-- URL entrades -->
         <div class="camp">
           <label>Enllaç entrades (opcional)</label>
           <input type="url" id="f-url-entrades" placeholder="https://...">
         </div>
 
-        <!-- Cicle -->
         <div class="camp full">
           <label>Pertany a un cicle? (opcional)</label>
           <select id="f-cicle">
@@ -490,28 +377,24 @@ async function procesarConGemini() {
           </select>
         </div>
 
-        <!-- Descripció -->
         <div class="camp full">
           <label>Descripció</label>
           <textarea id="f-descripcio" placeholder="Descripció de l'esdeveniment..."></textarea>
         </div>
 
-        <!-- Foto -->
         <div class="camp full">
-  <label>Foto</label>
-  <div class="foto-zone" id="foto-zone">
-    <div class="placeholder" id="foto-placeholder">
-      <span class="icon">📷</span>
-      Arrossega o clica per triar una imatge
-    </div>
-    <img id="foto-preview" style="display:none;">
-    
-    <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;">
-  </div>
-  <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
-</div>
+          <label>Foto</label>
+          <div class="foto-zone" id="foto-zone">
+            <div class="placeholder" id="foto-placeholder">
+              <span class="icon">📷</span>
+              Arrossega o clica per triar una imatge
+            </div>
+            <img id="foto-preview" style="display:none;">
+            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;">
+          </div>
+          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:8px 14px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:8px; font-size:13px; cursor:pointer;">🖼️ Triar de la galeria</button>
+        </div>
 
-        <!-- Modal selector galeria -->
         <div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;" onclick="if(event.target===this) tancarSelectorGaleria()">
           <div style="background:#fff; border-radius:14px; max-width:720px; margin:30px auto; padding:20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -522,7 +405,6 @@ async function procesarConGemini() {
           </div>
         </div>
 
-        <!-- Familiar + destacat -->
         <div class="camp">
           <label>Activitat familiar</label>
           <div class="toggle-row">
@@ -557,12 +439,11 @@ async function procesarConGemini() {
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ============================================================
-// CONFIGURACIÓ — Substitueix amb les teves dades de Supabase
+// CONFIGURACIÓ — Supabase dades generals
 // ============================================================
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
@@ -639,11 +520,9 @@ async function tryAutoLogin() {
     accessToken = token;
     currentUser = JSON.parse(user);
     try {
-      // Verificar que el token encara funciona
       await sbFetch('/rest/v1/categories?select=id&limit=1');
       showApp();
     } catch {
-      // Token caducat, intentar refresh
       const refresh = localStorage.getItem('gx_refresh');
       if (refresh) {
         try {
@@ -661,7 +540,7 @@ async function tryAutoLogin() {
 }
 
 // ============================================================
-// APP
+// APP LÒGICA GENERAL
 // ============================================================
 let categories = [];
 let llocs = [];
@@ -674,7 +553,6 @@ async function showApp() {
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('user-email').textContent = currentUser.email;
 
-  // Carregar dades auxiliars
   categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
   llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
   cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
@@ -686,7 +564,6 @@ async function showApp() {
   await carregarEsdeveniments();
 }
 
-// ---- FILTRES ----
 function renderFiltres() {
   const bar = document.getElementById('filtre-bar');
   let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
@@ -703,7 +580,6 @@ function filtrar(catId, btn) {
   carregarEsdeveniments();
 }
 
-// ---- LLISTA ----
 const MESOS = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
 
 async function carregarEsdeveniments() {
@@ -752,7 +628,6 @@ async function carregarEsdeveniments() {
 
 function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
-// ---- FORMULARI: selectors ----
 function renderSelectLlocs() {
   const sel = document.getElementById('f-lloc');
   sel.innerHTML = '<option value="">— Tria un lloc —</option>';
@@ -777,7 +652,6 @@ function selCat(el) {
   el.classList.add('selected');
 }
 
-// ---- FORMULARI: toggles ----
 function toggleSwitch(el) {
   el.classList.toggle('on');
   if (el.id === 'tog-familiar') {
@@ -785,11 +659,48 @@ function toggleSwitch(el) {
   }
 }
 
-// ---- FORMULARI: foto ----
 let fotoFile = null;
-let fotoGaleriaUrl = null; // URL triada de la galeria
+let fotoGaleriaUrl = null; 
 
-// ---- GALERIA ----
+// ---- VISTES NAVEGACIÓ ----
+function nouEsdeveniment() {
+  editingId = null;
+  netejarFormulari();
+  document.getElementById('form-titol').textContent = 'Nou esdeveniment';
+  document.getElementById('btn-eliminar').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-form').style.display = 'block';
+}
+
+function tornarLlista() {
+  document.getElementById('vista-form').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+
+function netejarFormulari() {
+  document.getElementById('f-titol').value = '';
+  document.getElementById('f-data').value = '';
+  document.getElementById('f-hora-inici').value = '';
+  document.getElementById('f-hora-fi').value = '';
+  document.getElementById('f-lloc').value = '';
+  document.getElementById('f-preu-text').value = '';
+  document.getElementById('f-url-entrades').value = '';
+  document.getElementById('f-cicle').value = '';
+  document.getElementById('f-descripcio').value = '';
+  document.getElementById('f-edat').value = '';
+  document.getElementById('f-foto').value = '';
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
+  document.getElementById('tog-familiar').classList.remove('on');
+  document.getElementById('tog-destacat').classList.remove('on');
+  document.getElementById('f-ordre').value = 0;
+  document.getElementById('edat-row').style.display = 'none';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-placeholder').style.display = 'block';
+  fotoFile = null;
+  fotoGaleriaUrl = null;
+}
+
+// ---- GALERIA API ----
 async function llistarFotos(){
   const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, {
     method: 'POST',
@@ -809,294 +720,67 @@ function urlPublica(nom){
   return `${SUPABASE_URL}/storage/v1/object/public/fotos/${encodeURIComponent(nom).replace(/%2F/g,'/')}`;
 }
 
-function obrirGaleria(){
+function obrirGaleria() {
   document.getElementById('vista-llista').style.display = 'none';
   document.getElementById('vista-galeria').style.display = 'block';
-  renderGaleria();
+  actualitzarGaleriaVista();
 }
-function tancarGaleria(){
+
+function tancarGaleria() {
   document.getElementById('vista-galeria').style.display = 'none';
   document.getElementById('vista-llista').style.display = 'block';
 }
 
-async function renderGaleria(){
+async function actualitzarGaleriaVista() {
+  const fotos = await llistarFotos();
   const grid = document.getElementById('galeria-grid');
-  grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Carregant...</div>';
-  const fotos = await llistarFotos();
-  grid.innerHTML = '';
-  if(!fotos.length){ grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Encara no hi ha fotos.</div>'; return; }
-  fotos.forEach(f => {
+  if(!fotos.length) { grid.innerHTML = '<p style="color:var(--text-sec); font-size:13px;">No hi ha fotos a la galeria</p>'; return; }
+  grid.innerHTML = fotos.map(f => {
     const url = urlPublica(f.name);
-    const cell = document.createElement('div');
-    cell.style.cssText = 'border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff;';
-    cell.innerHTML = `
-      <div style="height:90px; background-image:url('${url}'); background-size:cover; background-position:center;"></div>
-      <div style="padding:7px 8px;">
-        <div style="font-size:10px; color:var(--text-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${f.name}">${f.name}</div>
-        <button onclick="copiarUrl('${url}')" style="margin-top:5px; width:100%; padding:5px; font-size:11px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; cursor:pointer;">Copiar URL</button>
-      </div>`;
-    grid.appendChild(cell);
-  });
+    return `<div style="position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+      <img src="${url}" style="width:100%; height:100%; object-fit:cover;">
+    </div>`;
+  }).join('');
 }
 
-function copiarUrl(url){
-  navigator.clipboard.writeText(url).then(() => toast('URL copiada'));
-}
-
-async function pujarBatch(input){
-  const files = Array.from(input.files || []);
-  if(!files.length) return;
-  const prog = document.getElementById('batch-progres');
-  prog.style.display = 'block';
-  let ok = 0, ko = 0;
-  for(let i=0; i<files.length; i++){
-    prog.textContent = `Pujant ${i+1} de ${files.length}...`;
-    const f = files[i];
-    const net = f.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
-    try{
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${net}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'apikey': SUPABASE_ANON_KEY,
-          'Content-Type': f.type,
-          'x-upsert': 'true',
-        },
-        body: f,
-      });
-      if(res.ok) ok++; else ko++;
-    }catch(e){ ko++; }
+function previewFoto(input) {
+  if (input.files && input.files[0]) {
+    fotoFile = input.files[0];
+    fotoGaleriaUrl = null;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('foto-preview').src = e.target.result;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('foto-placeholder').style.display = 'none';
+    }
+    reader.readAsDataURL(fotoFile);
   }
-  prog.textContent = `Fet: ${ok} pujades` + (ko ? `, ${ko} errors` : '');
-  input.value = '';
-  renderGaleria();
 }
 
-// ---- SELECTOR GALERIA (dins formulari) ----
-function obrirSelectorGaleria(){
+function obrirSelectorGaleria() {
   document.getElementById('modal-galeria').style.display = 'block';
-  renderSelectorGaleria();
+  actualitzarSelectorGaleria();
 }
-function tancarSelectorGaleria(){
-  document.getElementById('modal-galeria').style.display = 'none';
-}
-async function renderSelectorGaleria(){
-  const grid = document.getElementById('selector-galeria-grid');
-  grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Carregant...</div>';
+function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display = 'none'; }
+
+async function actualitzarSelectorGaleria() {
   const fotos = await llistarFotos();
-  grid.innerHTML = '';
-  if(!fotos.length){ grid.innerHTML = '<div style="color:var(--text-sec); font-size:13px;">Encara no hi ha fotos. Puja-les des del botó Fotos de la llista.</div>'; return; }
-  fotos.forEach(f => {
+  const grid = document.getElementById('selector-galeria-grid');
+  grid.innerHTML = fotos.map(f => {
     const url = urlPublica(f.name);
-    const cell = document.createElement('div');
-    cell.style.cssText = 'border:2px solid transparent; border-radius:10px; overflow:hidden; cursor:pointer;';
-    cell.onmouseover = () => cell.style.borderColor = 'var(--blau)';
-    cell.onmouseout = () => cell.style.borderColor = 'transparent';
-    cell.onclick = () => triarFotoGaleria(url);
-    cell.innerHTML = `<div style="height:85px; background-image:url('${url}'); background-size:cover; background-position:center;"></div>`;
-    grid.appendChild(cell);
-  });
+    return `<img src="${url}" onclick="triarFotoGaleria('${url}')" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; cursor:pointer; border:1px solid var(--border);">`;
+  }).join('');
 }
-function triarFotoGaleria(url){
-  fotoGaleriaUrl = url; // Guarda correctamente la URL de la galería
-  fotoFile = null;      // Limpia cualquier archivo local que se hubiera seleccionado
-  
+
+function triarFotoGaleria(url) {
+  fotoGaleriaUrl = url;
+  fotoFile = null;
   document.getElementById('f-foto').value = '';
   document.getElementById('foto-preview').src = url;
   document.getElementById('foto-preview').style.display = 'block';
   document.getElementById('foto-placeholder').style.display = 'none';
   tancarSelectorGaleria();
   toast('Foto seleccionada');
-}
-function previewFoto(input) {
-  if (input.files && input.files[0]) {
-    fotoFile = input.files[0];
-    fotoGaleriaUrl = null;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      document.getElementById('foto-preview').src = e.target.result;
-      document.getElementById('foto-preview').style.display = 'block';
-      document.getElementById('foto-placeholder').style.display = 'none';
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-// ---- NOU ----
-function nouEsdeveniment() {
-  editingId = null;
-  document.getElementById('form-titol').textContent = 'Nou esdeveniment';
-  document.getElementById('btn-eliminar').style.display = 'none';
-  resetForm();
-  mostrarForm();
-}
-
-// ---- EDITAR ----
-async function editarEsdeveniment(id) {
-  editingId = id;
-  document.getElementById('form-titol').textContent = 'Editar esdeveniment';
-  document.getElementById('btn-eliminar').style.display = 'inline-block';
-
-  const evts = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`);
-  if (!evts || evts.length === 0) return;
-  const e = evts[0];
-
-  document.getElementById('f-titol').value = e.titol || '';
-  document.getElementById('f-data').value = e.data || '';
-  document.getElementById('f-hora-inici').value = e.hora_inici || '';
-  document.getElementById('f-hora-fi').value = e.hora_fi || '';
-  document.getElementById('f-lloc').value = e.lloc_id || '';
-  document.getElementById('f-cicle').value = e.cicle_id || '';
-  document.getElementById('f-preu-text').value = e.preu_text || '';
-  document.getElementById('f-url-entrades').value = e.url_entrades || '';
-  document.getElementById('f-descripcio').value = e.descripcio || '';
-  document.getElementById('f-edat').value = e.edat_minima || '';
-  document.getElementById('f-ordre').value = (e.ordre!=null) ? e.ordre : 0;
-
-  // Categoria
-  document.querySelectorAll('.cat-pill').forEach(p => {
-    p.classList.toggle('selected', p.dataset.id === e.categoria_id);
-  });
-
-  // Toggles
-  const togFam = document.getElementById('tog-familiar');
-  togFam.classList.toggle('on', e.familiar);
-  document.getElementById('edat-row').style.display = e.familiar ? 'block' : 'none';
-
-  const togDest = document.getElementById('tog-destacat');
-  togDest.classList.toggle('on', e.destacat);
-
-  // Foto
-  if (e.foto_url) {
-    document.getElementById('foto-preview').src = e.foto_url;
-    document.getElementById('foto-preview').style.display = 'block';
-    document.getElementById('foto-placeholder').style.display = 'none';
-  } else {
-    document.getElementById('foto-preview').style.display = 'none';
-    document.getElementById('foto-placeholder').style.display = 'block';
-  }
-  fotoFile = null;
-
-  mostrarForm();
-}
-
-// ---- DESAR ----
-async function desarEsdeveniment(estat) {
-  const titol = document.getElementById('f-titol').value.trim();
-  const data = document.getElementById('f-data').value;
-  const catPill = document.querySelector('.cat-pill.selected');
-
-  if (!titol) return toast('Cal un títol', true);
-  if (!data) return toast('Cal una data', true);
-  if (!catPill) return toast('Tria una categoria', true);
-
-  // Pujar foto si n'hi ha
-  let foto_url = null;
-  if (fotoGaleriaUrl) {
-    foto_url = fotoGaleriaUrl;
-  } else if (fotoFile) {
-    try {
-      const ext = fotoFile.name.split('.').pop();
-      const path = `esdeveniments/${Date.now()}.${ext}`;
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/fotos/${path}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'apikey': SUPABASE_ANON_KEY,
-          'Content-Type': fotoFile.type,
-        },
-        body: fotoFile,
-      });
-      if (res.ok) {
-        foto_url = `${SUPABASE_URL}/storage/v1/object/public/fotos/${path}`;
-      }
-    } catch (e) {
-      console.warn('Error pujant foto:', e);
-    }
-  }
-
-  const body = {
-    titol,
-    data,
-    categoria_id: catPill.dataset.id,
-    lloc_id: document.getElementById('f-lloc').value || null,
-    cicle_id: document.getElementById('f-cicle').value || null,
-    hora_inici: document.getElementById('f-hora-inici').value || null,
-    hora_fi: document.getElementById('f-hora-fi').value || null,
-    preu_text: document.getElementById('f-preu-text').value || null,
-    url_entrades: document.getElementById('f-url-entrades').value || null,
-    descripcio: document.getElementById('f-descripcio').value || null,
-    familiar: document.getElementById('tog-familiar').classList.contains('on'),
-    edat_minima: document.getElementById('f-edat').value || null,
-    ordre: parseInt(document.getElementById('f-ordre').value) || 0,
-    destacat: document.getElementById('tog-destacat').classList.contains('on'),
-    estat,
-    origen: 'manual',
-  };
-  if (foto_url) body.foto_url = foto_url;
-
-  try {
-    if (editingId) {
-      await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      });
-      toast(estat === 'publicat' ? 'Publicat!' : 'Esborrany desat');
-    } else {
-      await sbFetch('/rest/v1/esdeveniments', {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { ...headers(), 'Prefer': 'return=minimal' },
-      });
-      toast(estat === 'publicat' ? 'Publicat!' : 'Esborrany desat');
-    }
-    tornarLlista();
-  } catch (e) {
-    toast('Error: ' + e.message, true);
-  }
-}
-
-// ---- ELIMINAR ----
-async function eliminarEsdeveniment() {
-  if (!editingId) return;
-  if (!confirm('Segur que vols eliminar aquest esdeveniment?')) return;
-  try {
-    await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method: 'DELETE' });
-    toast('Eliminat');
-    tornarLlista();
-  } catch (e) {
-    toast('Error: ' + e.message, true);
-  }
-}
-
-// ---- NAVEGACIÓ ----
-function mostrarForm() {
-  document.getElementById('vista-llista').style.display = 'none';
-  document.getElementById('vista-form').style.display = 'block';
-  window.scrollTo(0, 0);
-}
-
-function tornarLlista() {
-  document.getElementById('vista-form').style.display = 'none';
-  document.getElementById('vista-galeria').style.display = 'none';
-  document.getElementById('vista-llista').style.display = 'block';
-  carregarEsdeveniments();
-}
-
-function resetForm() {
-  ['f-titol','f-data','f-hora-inici','f-hora-fi','f-preu-text','f-url-entrades','f-descripcio','f-edat'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('f-lloc').value = '';
-  document.getElementById('f-cicle').value = '';
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected'));
-  document.getElementById('tog-familiar').classList.remove('on');
-  document.getElementById('tog-destacat').classList.remove('on');
-  document.getElementById('f-ordre').value = 0;
-  document.getElementById('edat-row').style.display = 'none';
-  document.getElementById('foto-preview').style.display = 'none';
-  document.getElementById('foto-placeholder').style.display = 'block';
-  fotoFile = null;
 }
 
 // ---- TOAST ----
@@ -1107,26 +791,101 @@ function toast(msg, isError) {
   setTimeout(() => el.className = 'toast', 2500);
 }
 
+// ============================================================
+// INTEGRACIÓN CON GEMINI IA
+// ============================================================
+async function procesarConGemini() {
+  const contenido = document.getElementById('ia-contenido').value.trim();
+  if (!contenido) return toast('Introduce algún texto para analizar', true);
+
+  const MI_GEMINI_KEY = "AQ.Ab8RN6KzdW-H98VT_6WwBLNstYzWb1BD3RzcFfW9E-yW_wo45A"; 
+
+  const loadingEl = document.getElementById('ia-loading');
+  loadingEl.style.display = 'block';
+
+  const promptSistema = `
+    Actúa como un asistente analítico riguroso. Tu tarea es extraer la información de un evento cultural a partir del texto que te proporcionará el usuario.
+    Debes responder ÚNICAMENTE con un objeto JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
+    Traduce los textos de título y descripción al catalán si vienen en otro idioma.
+
+    Esquema JSON esperado:
+    {
+      "titol": "Título limpio y atractivo en catalán",
+      "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
+      "hora_inici": "Hora de inicio en formato HH:MM (ej: '18:00'), o null si no hay",
+      "descripcio": "Descripción redactada en catalán de forma clara",
+      "preu_text": "Texto resumido del precio (ej: 'Gratuït', '5 €'). Si no se indica, pon null",
+      "familiar": true si es un evento infantil/familiar o false en caso contrario,
+      "edat_minima": "Texto de edad recomendada (ej: 'A partir de 4 anys') si aplica, o null"
+    }
+
+    Texto del usuario a analizar:
+    ${contenido}
+  `;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${MI_GEMINI_KEY}`;
+    
+    const respuesta = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptSistema }] }],
+        generationConfig: {
+          responseMimeType: "application/json" 
+        }
+      })
+    });
+
+    if (!respuesta.ok) throw new Error('Error en la comunicación con la API de Gemini');
+
+    const data = await respuesta.json();
+    const textoJson = data.candidates[0].content.parts[0].text;
+    const eventoIA = JSON.parse(textoJson);
+
+    document.getElementById('f-titol').value = eventoIA.titol || '';
+    document.getElementById('f-data').value = eventoIA.data || '';
+    document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
+    document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
+    document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
+    document.getElementById('f-edat').value = eventoIA.edat_minima || '';
+
+    const togFam = document.getElementById('tog-familiar');
+    if (eventoIA.familiar) {
+      togFam.classList.add('on');
+      document.getElementById('edat-row').style.display = 'block';
+    } else {
+      togFam.classList.remove('on');
+      document.getElementById('edat-row').style.display = 'none';
+    }
+
+    toast('✨ ¡Campos rellenados por Gemini! Por favor, revísalos antes de guardar.');
+    document.getElementById('ia-contenido').value = ''; 
+
+  } catch (e) {
+    console.error(e);
+    toast('Error del Asistente: ' + e.message, true);
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
 
-// Drag & drop foto
 const zone = document.getElementById('foto-zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--blau)'; });
-zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; });
-zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.style.borderColor = 'var(--border)';
-  if (e.dataTransfer.files.length) {
-    document.getElementById('f-foto').files = e.dataTransfer.files;
-    previewFoto(document.getElementById('f-foto'));
-  }
-});
-
-// Login amb Enter
-document.getElementById('login-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+if (zone) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--blau)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      document.getElementById('f-foto').files = e.dataTransfer.files;
+      previewFoto(document.getElementById('f-foto'));
+    }
+  });
+}
 </script>
 </body>
 </html>
