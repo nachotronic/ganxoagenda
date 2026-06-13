@@ -140,7 +140,6 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
     <p>Gestor d'esdeveniments</p>
     <input type="email" id="login-email" placeholder="Email">
     <input type="password" id="login-pass" placeholder="Contrasenya">
-    <input type="password" id="login-gemini" placeholder="Clau API Gemini (AIzaSy...)">
     <button class="btn-login" onclick="doLogin()">Entrar</button>
     <div id="login-error"></div>
   </div>
@@ -208,17 +207,27 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <h2 id="form-titol">Nou esdeveniment</h2>
       </div>
 
-      <!-- ASSISTENT INTEL·LIGENT (1 SOLO PASO SEGURO) -->
+      <!-- ASSISTENT INTEL·LIGENT -->
       <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px;">✨ Assistent Intel·ligent Gemini (Mapeig per Context de URL)</label>
-        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text o la <strong>URL directa</strong>. L'assistent associarà el lloc de Supabase corresponent pel context (Ex: si detecta 'biblioteca' a la URL, assignarà la Biblioteca automàticament).</p>
-        <textarea id="ia-contenido" placeholder="Enganxa la URL o el text aquí..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px;"></textarea>
-        <div style="display:flex; justify-content: flex-end; margin-top:8px;">
-          <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); margin-right:12px; align-self:center;">🤖 Llegint contingut real...</div>
-          <button type="button" onclick="procesarConGeminiUnPaso()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px;">✨ Assistent Intel·ligent Gemini</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text, una <strong>URL directa</strong>, o aporta un <strong>cartell (imatge)</strong> — pots enganxar-lo amb Ctrl+V o pujar-lo. L'assistent associarà el lloc i la categoria pel context, i avisarà si l'event sembla duplicat.</p>
+        <textarea id="ia-contenido" placeholder="Enganxa la URL, el text, o una imatge del cartell (Ctrl+V) aquí..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px;"></textarea>
+        <div id="ia-imatge-preview" style="display:none; margin-top:10px; position:relative; max-width:180px;">
+          <img id="ia-imatge-img" style="width:100%; border-radius:8px; border:1px solid var(--border); display:block;">
+          <button type="button" onclick="ia_eliminarImatge()" style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:50%; border:none; background:var(--vermell); color:#fff; cursor:pointer; font-size:12px;">✕</button>
+        </div>
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-top:8px;">
+          <label style="font-size:12px; color:var(--blau-clar); cursor:pointer; border:1px solid var(--blau-clar); padding:7px 12px; border-radius:6px;">
+            🖼️ Pujar cartell
+            <input type="file" id="ia-imatge-input" accept="image/*" onchange="ia_onFileSelected(this)" style="display:none;">
+          </label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau);">🤖 Analitzant...</div>
+            <button type="button" onclick="procesarConGeminiUnPaso()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
+          </div>
         </div>
         <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
-          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS A LA WEB:</p>
+          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS:</p>
           <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
       </div>
@@ -279,6 +288,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 <script>
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
+const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
 let accessToken = null, currentUser = null, categories = [], llocs = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
 
@@ -293,13 +303,11 @@ async function sbFetch(path, opts = {}) {
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
-  const geminiKey = document.getElementById('login-gemini').value.trim();
-  if (!geminiKey) return alert('La clau API de Gemini és obligatòria.');
   try {
     const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method:'POST', headers:{ 'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY }, body:JSON.stringify({ email, password:pass }) });
     const data = await res.json(); if(!res.ok) throw new Error(data.error_description || 'Error');
     accessToken = data.access_token; currentUser = data.user;
-    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_user', JSON.stringify(currentUser)); localStorage.setItem('gx_gemini_key', geminiKey);
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_user', JSON.stringify(currentUser));
     showApp();
   } catch (e) { document.getElementById('login-error').textContent = e.message; document.getElementById('login-error').style.display='block'; }
 }
@@ -307,8 +315,8 @@ async function doLogin() {
 function doLogout() { localStorage.clear(); location.reload(); }
 
 async function tryAutoLogin() {
-  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user'), gKey = localStorage.getItem('gx_gemini_key');
-  if (token && user && gKey) { accessToken = token; currentUser = JSON.parse(user); showApp(); }
+  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user');
+  if (token && user) { accessToken = token; currentUser = JSON.parse(user); showApp(); }
 }
 
 async function showApp() {
@@ -450,12 +458,70 @@ function triarFoto(url) { fotoGaleriaUrl=url; document.getElementById('foto-prev
 function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m; t.className='toast show'+(e?' error':''); setTimeout(()=>t.className='toast',2500); }
 
 // ============================================================
-// ASSISTENT GEMINI (1 SOL PASO: COMPRENSION DE CONTEXTO POR URL)
+// ASSISTENT GEMINI (via Edge Function - clau API al servidor)
 // ============================================================
+let iaImatgeBase64 = null;
+let iaImatgeMime = null;
+
+function ia_onFileSelected(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  ia_carregarImatge(file);
+}
+
+function ia_carregarImatge(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result; // data:image/...;base64,XXXX
+    const base64 = dataUrl.split(',')[1];
+    iaImatgeBase64 = base64;
+    iaImatgeMime = file.type || 'image/jpeg';
+    document.getElementById('ia-imatge-img').src = dataUrl;
+    document.getElementById('ia-imatge-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function ia_eliminarImatge() {
+  iaImatgeBase64 = null; iaImatgeMime = null;
+  document.getElementById('ia-imatge-preview').style.display = 'none';
+  document.getElementById('ia-imatge-img').src = '';
+  document.getElementById('ia-imatge-input').value = '';
+}
+
+// Permet enganxar una imatge del cartell amb Ctrl+V dins del textarea
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('ia-contenido');
+  if (!ta) return;
+  ta.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) { ia_carregarImatge(file); e.preventDefault(); }
+        break;
+      }
+    }
+  });
+});
+
+// Carrega esdeveniments propers (per a deduplicació) - propers 60 dies enrere/endavant
+async function carregarExistentsPerDedup() {
+  try {
+    const avui = new Date();
+    const desde = new Date(avui); desde.setDate(desde.getDate() - 14);
+    const fins = new Date(avui); fins.setDate(fins.getDate() + 90);
+    const fmt = (d) => d.toISOString().slice(0,10);
+    const q = `/rest/v1/esdeveniments?select=titol,data&data=gte.${fmt(desde)}&data=lte.${fmt(fins)}`;
+    const data = await sbFetch(q);
+    return data || [];
+  } catch (e) { return []; }
+}
+
 async function procesarConGeminiUnPaso() {
   let inputSource = document.getElementById('ia-contenido').value.trim();
-  if(!inputSource) return toast('Enganxa un text o una URL', true);
-  const gKey = localStorage.getItem('gx_gemini_key'); if(!gKey) return toast('Falta API Key', true);
+  if (!inputSource && !iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
 
   const loadingEl = document.getElementById('ia-loading');
   const listaContenedor = document.getElementById('ia-resultados-lista');
@@ -463,66 +529,46 @@ async function procesarConGeminiUnPaso() {
 
   loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
 
-  const esUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(inputSource);
-  let textoAnalizar = inputSource;
-  let contextoUrl = "Manual";
+  const esUrl = !!inputSource && /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(inputSource);
 
   try {
-    if(esUrl) {
-      if(!/^https?:\/\//i.test(inputSource)) inputSource = 'https://' + inputSource;
-      contextoUrl = `Lectura de la URL directa: ${inputSource}`;
-      const res = await fetch(`https://r.jina.ai/${inputSource}`);
-      if(!res.ok) throw new Error('Jina no ha pogut llegir la web');
-      textoAnalizar = await res.text();
-    }
+    const existents = await carregarExistentsPerDedup();
 
-    const opcionesLlocs = llocs.map(l => `ID: ${l.id} -> Nom: ${l.nom}`).join('\n');
-    const opcionesCategories = categories.map(c => `ID: ${c.id} -> Nom: ${c.nom}`).join('\n');
+    const body = {
+      llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
+      categories: categories.map(c => ({ id: c.id, nom: c.nom })),
+      existents,
+    };
+    if (esUrl) body.url = inputSource;
+    else if (inputSource) body.texto = inputSource;
+    if (iaImatgeBase64) { body.imagenBase64 = iaImatgeBase64; body.imagenMime = iaImatgeMime; }
 
-    const prompt = `
-      Actua com un gestor cultural de Sant Feliu de Guíxols per l'agenda Ganxoagenda.
-      Analitza el text adjunt i extreu un array JSON d'esdeveniments reals. 
-      Respon NOMÉS amb l'array JSON vàlid, sense markdown, sense \`\`\`json.
-
-      CONTEXT DE LA URL: ${contextoUrl}
-
-      REGLA DE CONTEXT DE LLOC:
-      - Si la URL o el text conté la paraula 'biblioteca', el camp 'lloc_id' ha de ser per defecte l'ID de la "Biblioteca Pública Octavi Viader i Margarit" excepte si s'especifica un altre lloc real.
-      - Si conté 'portaferrada', deduceix quin espai del festival és (Guíxols Arena, Espai Port, Monestir).
-      
-      REGLA DE FIABILITAT DE DESCRIPCIÓ:
-      - REGLA DE FERRO: Si al text NO hi ha la sinopsi o els detalls de l'event (perquè s'han de llegir obrint una altra fitxa), deixa el camp 'descripcio' completament BUIT ("") o com a "[Completar manualment]". Està totalment PROHIBIT inventar o suposar continguts basant-te només en el títol.
-
-      LLOCS DISPONIBLES AL CMS (Utilitza l'ID exacte):
-      ${opcionesLlocs}
-
-      CATEGORIES DISPONIBLES AL CMS (Utilitza l'ID exacte):
-      ${opcionesCategories}
-
-      Format esperat:
-      [{"titol":"...", "data":"YYYY-MM-DD", "hora_inici":"HH:MM o null", "lloc_id":"...", "categoria_id":"...", "descripcio":"...", "preu_text":"...", "familiar":true/false, "edat_minima":"..."}]
-      
-      Text a processar:
-      ${textoAnalizar}
-    `;
-
-    const resGemini = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${gKey}`, {
+    const res = await fetch(GANXO_IA_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY), 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify(body),
     });
-    if(!resGemini.ok) throw new Error('Error Gemini');
-    const data = await resGemini.json();
-    window.eventosDetectadosIA = JSON.parse(data.candidates[0].content.parts[0].text);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error del servidor IA');
+
+    window.eventosDetectadosIA = data.events || [];
 
     window.eventosDetectadosIA.forEach((ev, idx) => {
+      const avisDuplicat = ev.duplicat
+        ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
+        : '';
       listaItems.innerHTML += `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f7f9; padding:8px; border-radius:6px; border:1px solid #cbdbe1;">
-          <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
-          <button type="button" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Carregar</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
+          <div>
+            <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
+            ${avisDuplicat}
+          </div>
+          <button type="button" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
         </div>`;
     });
-    listaContenedor.style.display = 'block'; document.getElementById('ia-contenido').value = '';
+    listaContenedor.style.display = 'block';
+    document.getElementById('ia-contenido').value = '';
+    ia_eliminarImatge();
     toast('Fetes!');
   } catch(e) { toast(e.message, true); } finally { loadingEl.style.display = 'none'; }
 }
@@ -538,7 +584,8 @@ function cargarEventoIA(idx) {
   document.getElementById('f-lloc').value = ev.lloc_id || '';
   if(ev.categoria_id) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected')); const p=document.querySelector(`.cat-pill[data-id="${ev.categoria_id}"]`); if(p) p.classList.add('selected'); }
   const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
-  toast('Dades bolcades al formulari!');
+  if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
+  else toast('Dades bolcades al formulari!');
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
