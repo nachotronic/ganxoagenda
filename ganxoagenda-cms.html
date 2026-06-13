@@ -263,6 +263,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
     <p>Gestor d'esdeveniments</p>
     <input type="email" id="login-email" placeholder="Email" autocomplete="email">
     <input type="password" id="login-pass" placeholder="Contrasenya" autocomplete="current-password">
+    <input type="password" id="login-gemini" placeholder="Clau API Gemini (AIzaSy...)" style="margin-top: 4px; border-color: #cbdbe1;">
     <button class="btn-login" onclick="doLogin()">Entrar</button>
     <div id="login-error"></div>
   </div>
@@ -485,8 +486,16 @@ async function sbAuth(endpoint, body) {
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
+  const geminiKey = document.getElementById('login-gemini').value.trim();
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
+  
+  if (!geminiKey) {
+    errEl.textContent = 'La clau API de Gemini és obligatòria.';
+    errEl.style.display = 'block';
+    return;
+  }
+
   try {
     const data = await sbAuth('token?grant_type=password', { email, password: pass });
     accessToken = data.access_token;
@@ -494,6 +503,7 @@ async function doLogin() {
     localStorage.setItem('gx_token', accessToken);
     localStorage.setItem('gx_refresh', data.refresh_token);
     localStorage.setItem('gx_user', JSON.stringify(data.user));
+    localStorage.setItem('gx_gemini_key', geminiKey); // Guarda la clave en el navegador de forma segura
     showApp();
   } catch (e) {
     errEl.textContent = e.message;
@@ -506,6 +516,7 @@ function doLogout() {
   localStorage.removeItem('gx_token');
   localStorage.removeItem('gx_refresh');
   localStorage.removeItem('gx_user');
+  localStorage.removeItem('gx_gemini_key');
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
@@ -513,7 +524,8 @@ function doLogout() {
 async function tryAutoLogin() {
   const token = localStorage.getItem('gx_token');
   const user = localStorage.getItem('gx_user');
-  if (token && user) {
+  const geminiKey = localStorage.getItem('gx_gemini_key');
+  if (token && user && geminiKey) {
     accessToken = token;
     currentUser = JSON.parse(user);
     try {
@@ -935,8 +947,9 @@ async function procesarConGemini() {
   const contenido = document.getElementById('ia-contenido').value.trim();
   if (!contenido) return toast('Introduce algún texto para analizar', true);
 
-  // 🔴 ¡REMPLAZA ESTO CON TU CLAVE REAL DE GEMINI QUE EMPIEZA POR AIzaSy! 🔴
-  const MI_GEMINI_KEY = "AIzaSyCaXg-Jgp001SK60vnA--n3Lh2IlHohP8s"; 
+  // Recupera la clave que pusiste al iniciar sesión de manera segura
+  const MI_GEMINI_KEY = localStorage.getItem('gx_gemini_key'); 
+  if (!MI_GEMINI_KEY) return toast('Falta la clave API de Gemini. Cierra sesión y vuelve a entrar introduciéndola.', true);
 
   const loadingEl = document.getElementById('ia-loading');
   loadingEl.style.display = 'block';
