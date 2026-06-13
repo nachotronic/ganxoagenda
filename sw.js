@@ -29,19 +29,31 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // No interceptar peticions a Supabase ni a APIs externes (sempre dades fresques)
-  if (url.origin !== self.location.origin) {
+  // No interceptar peticions externes (Supabase, Open-Meteo, etc.)
+  if (url.origin !== self.location.origin) return;
+
+  // HTML: network-first (sempre fresc si hi ha xarxa)
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
+  // Resta (icones, manifest): cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((res) => {
-        // guarda una còpia fresca per a la propera vegada
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return res;
-      }).catch(() => cached);
+      });
     })
   );
 });
