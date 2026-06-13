@@ -226,6 +226,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
             <button type="button" onclick="procesarConGeminiUnPaso()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
           </div>
         </div>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--text-sec); cursor:pointer;">
+          <input type="checkbox" id="ia-aprofundir" style="width:auto; cursor:pointer;">
+          Entrar a les fitxes per completar la descripció <span style="color:var(--accent);">(més lent)</span>
+        </label>
         <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
           <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS:</p>
           <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -527,6 +531,7 @@ async function procesarConGeminiUnPaso() {
   const listaContenedor = document.getElementById('ia-resultados-lista');
   const listaItems = document.getElementById('ia-lista-items');
 
+  loadingEl.textContent = document.getElementById('ia-aprofundir').checked ? '🤖 Llegint fitxes...' : '🤖 Analitzant...';
   loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
 
   const esUrl = !!inputSource && /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(inputSource);
@@ -538,6 +543,7 @@ async function procesarConGeminiUnPaso() {
       llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
       categories: categories.map(c => ({ id: c.id, nom: c.nom })),
       existents,
+      aprofundir: document.getElementById('ia-aprofundir').checked,
     };
     if (esUrl) body.url = inputSource;
     else if (inputSource) body.texto = inputSource;
@@ -552,6 +558,10 @@ async function procesarConGeminiUnPaso() {
     if (!res.ok) throw new Error(data.error || 'Error del servidor IA');
 
     window.eventosDetectadosIA = data.events || [];
+
+    if (data.avisos && data.avisos.length) {
+      listaItems.innerHTML += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${data.avisos.join(' ')}</div>`;
+    }
 
     window.eventosDetectadosIA.forEach((ev, idx) => {
       const avisDuplicat = ev.duplicat
