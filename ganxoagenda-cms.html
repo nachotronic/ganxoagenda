@@ -315,16 +315,21 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
 
       <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Rellenar Ficha con Gemini IA</label>
-        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Pega el texto de un post, una descripción larga o notas sueltas. La IA rellenará los campos automáticamente.</p>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px;">✨ Rellenar Fichas con Gemini IA</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Pega un programa entero, notas o un texto largo. La IA detectará todos los eventos que encuentre.</p>
         
         <div style="display: flex; gap: 10px; flex-direction: column;">
-          <textarea id="ia-contenido" placeholder="Ej: ¡Este sábado 25 a las 18:00h os esperamos en la Plaza Mayor para el taller infantil de marionetas! Entrada libre a partir de 4 años..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
+          <textarea id="ia-contenido" placeholder="Ej: Este fin de semana tenemos agenda llena: viernes 12 a las 20:00h el gran concierto de Jazz en la plaza, y el sábado 13 a las 11:30h taller de marionetas gratuito para niños a partir de 4 años..." style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; min-height:80px; resize:vertical;"></textarea>
           
           <div style="display:flex; justify-content: flex-end; align-items:center; gap: 12px;">
             <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau); font-weight: 500;">🤖 Gemini está procesando el texto...</div>
             <button type="button" onclick="procesarConGemini()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analizar Texto</button>
           </div>
+        </div>
+
+        <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
+          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTOS DETECTADOS POR LA IA:</p>
+          <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
       </div>
 
@@ -503,7 +508,7 @@ async function doLogin() {
     localStorage.setItem('gx_token', accessToken);
     localStorage.setItem('gx_refresh', data.refresh_token);
     localStorage.setItem('gx_user', JSON.stringify(data.user));
-    localStorage.setItem('gx_gemini_key', geminiKey); // Guarda la clave en el navegador de forma segura
+    localStorage.setItem('gx_gemini_key', geminiKey); 
     showApp();
   } catch (e) {
     errEl.textContent = e.message;
@@ -684,6 +689,8 @@ function nouEsdeveniment() {
 function tornarLlista() {
   document.getElementById('vista-form').style.display = 'none';
   document.getElementById('vista-llista').style.display = 'block';
+  // Ocultamos también la lista de la IA al salir de la vista formulario
+  document.getElementById('ia-resultados-lista').style.display = 'none';
 }
 
 function netejarFormulari() {
@@ -882,6 +889,7 @@ function previewFoto(input) {
   }
 }
 
+// ---- SELECTOR FOTOS INDIVIDUAL FORMULARI ----
 function obrirSelectorGaleria() {
   document.getElementById('modal-galeria').style.display = 'block';
   actualitzarSelectorGaleria();
@@ -941,34 +949,40 @@ function toast(msg, isError) {
 }
 
 // ============================================================
-// INTEGRACIÓN CON GEMINI IA
+// INTEGRACIÓN CON GEMINI IA (MÚLTIPLES EVENTOS)
 // ============================================================
 async function procesarConGemini() {
   const contenido = document.getElementById('ia-contenido').value.trim();
   if (!contenido) return toast('Introduce algún texto para analizar', true);
 
-  // Recupera la clave que pusiste al iniciar sesión de manera segura
   const MI_GEMINI_KEY = localStorage.getItem('gx_gemini_key'); 
   if (!MI_GEMINI_KEY) return toast('Falta la clave API de Gemini. Cierra sesión y vuelve a entrar introduciéndola.', true);
 
   const loadingEl = document.getElementById('ia-loading');
+  const listaContenedor = document.getElementById('ia-resultados-lista');
+  const listaItems = document.getElementById('ia-lista-items');
+
   loadingEl.style.display = 'block';
+  listaContenedor.style.display = 'none';
+  listaItems.innerHTML = '';
 
   const promptSistema = `
-    Actúa como un asistente analítico riguroso. Tu tarea es extraer la información de un evento cultural a partir del texto que te proporcionará el usuario.
-    Debes responder ÚNICAMENTE con un objeto JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
-    Traduce los textos de título y descripción al catalán si vienen en otro idioma.
+    Actúa como un asistente analítico riguroso. Tu tarea es extraer TODOS los eventos culturales que encuentres en el texto que te proporcionará el usuario.
+    Debes responder ÚNICAMENTE con un Array de objetos JSON perfectamente válido. No incluyas introducciones, ni explicaciones, ni bloques de código Markdown (no uses \`\`\`json).
+    Traduce los textos de título y descripción al catalán si vienen en otro idioma. Si un evento dura varios días, divídelo en eventos separados (uno por día).
 
-    Esquema JSON esperado:
-    {
-      "titol": "Título limpio y atractivo en catalán",
-      "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
-      "hora_inici": "Hora de inicio en formato HH:MM (ej: '18:00'), o null si no hay",
-      "descripcio": "Descripción redactada en catalán de forma clara",
-      "preu_text": "Texto resumido del precio (ej: 'Gratuït', '5 €'). Si no se indica, pon null",
-      "familiar": true si es un evento infantil/familiar o false en caso contrario,
-      "edat_minima": "Texto de edad recomendada (ej: 'A partir de 4 anys') si aplica, o null"
-    }
+    Esquema JSON esperado (Un Array de objetos):
+    [
+      {
+        "titol": "Título limpio y atractivo en catalán",
+        "data": "Fecha en formato estricto YYYY-MM-DD (asume el año 2026 si no se indica año)",
+        "hora_inici": "Hora de inicio en formato HH:MM (ej: '18:00'), o null si no hay",
+        "descripcio": "Descripción redactada en catalán de forma clara",
+        "preu_text": "Texto resumido del precio (ej: 'Gratuït', '5 €'). Si no se indica, pon null",
+        "familiar": true si es un evento infantil/familiar o false en caso contrario,
+        "edat_minima": "Texto de edad recomendada (ej: 'A partir de 4 anys') si aplica, o null"
+      }
+    ]
 
     Texto del usuario a analizar:
     ${contenido}
@@ -992,25 +1006,31 @@ async function procesarConGemini() {
 
     const data = await respuesta.json();
     const textoJson = data.candidates[0].content.parts[0].text;
-    const eventoIA = JSON.parse(textoJson);
+    
+    // Guardamos los eventos devueltos en una variable global en el navegador
+    window.eventosDetectadosIA = JSON.parse(textoJson);
 
-    document.getElementById('f-titol').value = eventoIA.titol || '';
-    document.getElementById('f-data').value = eventoIA.data || '';
-    document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
-    document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
-    document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
-    document.getElementById('f-edat').value = eventoIA.edat_minima || '';
-
-    const togFam = document.getElementById('tog-familiar');
-    if (eventoIA.familiar) {
-      togFam.classList.add('on');
-      document.getElementById('edat-row').style.display = 'block';
-    } else {
-      togFam.classList.remove('on');
-      document.getElementById('edat-row').style.display = 'none';
+    if (!Array.isArray(window.eventosDetectadosIA) || window.eventosDetectadosIA.length === 0) {
+      throw new Error('No se han detectado eventos con un formato de lista válido.');
     }
 
-    toast('✨ ¡Campos rellenados por Gemini! Por favor, revísalos antes de guardar.');
+    // Recorremos la lista para pintar los botones de carga rápida
+    window.eventosDetectadosIA.forEach((evento, index) => {
+      const itemHtml = `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f7f9; padding:8px 12px; border-radius:6px; border:1px solid #cbdbe1;">
+          <div style="font-size:13px; color: var(--text);">
+            <strong style="color:var(--blau);">${evento.data || 'Sin fecha'}</strong> — <span>${evento.titol || 'Sin título'}</span>
+          </div>
+          <button type="button" onclick="cargarEventoIA(${index})" style="background:var(--verd); color:#fff; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600; font-family:var(--font-sans);">
+            Cargar Ficha
+          </button>
+        </div>
+      `;
+      listaItems.innerHTML += itemHtml;
+    });
+
+    listaContenedor.style.display = 'block';
+    toast(`✨ ¡Gemini ha desglosado ${window.eventosDetectadosIA.length} eventos correctamente!`);
     document.getElementById('ia-contenido').value = ''; 
 
   } catch (e) {
@@ -1019,6 +1039,30 @@ async function procesarConGemini() {
   } finally {
     loadingEl.style.display = 'none';
   }
+}
+
+// Rellena los inputs del formulario principal según el índice seleccionado de la lista
+function cargarEventoIA(index) {
+  if (!window.eventosDetectadosIA || !window.eventosDetectadosIA[index]) return;
+  const eventoIA = window.eventosDetectadosIA[index];
+
+  document.getElementById('f-titol').value = eventoIA.titol || '';
+  document.getElementById('f-data').value = eventoIA.data || '';
+  document.getElementById('f-hora-inici').value = eventoIA.hora_inici || '';
+  document.getElementById('f-descripcio').value = eventoIA.descripcio || '';
+  document.getElementById('f-preu-text').value = eventoIA.preu_text || '';
+  document.getElementById('f-edat').value = eventoIA.edat_minima || '';
+
+  const togFam = document.getElementById('tog-familiar');
+  if (eventoIA.familiar) {
+    togFam.classList.add('on');
+    document.getElementById('edat-row').style.display = 'block';
+  } else {
+    togFam.classList.remove('on');
+    document.getElementById('edat-row').style.display = 'none';
+  }
+
+  toast(`Ficha rellenada con: "${eventoIA.titol}"`);
 }
 
 // ---- INIT ----
