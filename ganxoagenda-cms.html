@@ -318,14 +318,34 @@ const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
-let accessToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
+let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
 
 const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
 async function sbFetch(path, opts = {}) {
-  const res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  let res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  if (res.status === 401 && accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  }
   if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || res.statusText); }
   const text = await res.text(); return text ? JSON.parse(text) : null;
+}
+
+async function refreshAccessToken() {
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await res.json();
+    if (!res.ok) return false;
+    accessToken = data.access_token; refreshToken = data.refresh_token;
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_refresh', refreshToken);
+    return true;
+  } catch (e) { return false; }
 }
 
 async function doLogin() {
@@ -334,8 +354,8 @@ async function doLogin() {
   try {
     const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method:'POST', headers:{ 'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY }, body:JSON.stringify({ email, password:pass }) });
     const data = await res.json(); if(!res.ok) throw new Error(data.error_description || 'Error');
-    accessToken = data.access_token; currentUser = data.user;
-    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_user', JSON.stringify(currentUser));
+    accessToken = data.access_token; refreshToken = data.refresh_token; currentUser = data.user;
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_refresh', refreshToken); localStorage.setItem('gx_user', JSON.stringify(currentUser));
     showApp();
   } catch (e) { document.getElementById('login-error').textContent = e.message; document.getElementById('login-error').style.display='block'; }
 }
@@ -343,8 +363,8 @@ async function doLogin() {
 function doLogout() { localStorage.clear(); location.reload(); }
 
 async function tryAutoLogin() {
-  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user');
-  if (token && user) { accessToken = token; currentUser = JSON.parse(user); showApp(); }
+  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user'), refresh = localStorage.getItem('gx_refresh');
+  if (token && user) { accessToken = token; refreshToken = refresh; currentUser = JSON.parse(user); showApp(); }
 }
 
 async function showApp() {
@@ -440,7 +460,7 @@ async function crearCicleNou() {
     document.getElementById('nou-cicle-color').value = '';
     toast('Cicle guardat a Supabase!');
     await carregarCicles(); renderListaCiclesGestion();
-  } catch(e) { toast('Error o cicle ja existent', true); }
+  } catch(e) { toast(e.message || 'Error o cicle ja existent', true); }
 }
 async function eliminarCicle(id) {
   if(!confirm('Segur que vols eliminar aquest cicle? Els events que en formaven part quedaran sense cicle assignat.')) return;
