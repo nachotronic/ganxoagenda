@@ -563,6 +563,18 @@ async function carregarExistentsPerDedup() {
   } catch (e) { return []; }
 }
 
+// Detecta si el text introduït és una sola URL, sense regex perilloses (evita el bloqueig del navegador).
+// Clau: una URL no conté espais; si n'hi ha, és text per analitzar, no una adreça.
+function semblaUrl(s) {
+  if (!s) return false;
+  const t = s.trim();
+  if (/\s/.test(t)) return false;            // té espais o salts de línia -> és text
+  if (/^https?:\/\//i.test(t)) return true;  // comença per http(s)://
+  if (/^www\./i.test(t)) return true;        // comença per www.
+  // domini simple tipus exemple.cat o exemple.cat/ruta (sense quantificadors imbricats)
+  return /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/[^\s]*)?$/i.test(t);
+}
+
 async function procesarConGeminiUnPaso() {
   let inputSource = document.getElementById('ia-contenido').value.trim();
   if (!inputSource && !iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
@@ -574,7 +586,7 @@ async function procesarConGeminiUnPaso() {
   loadingEl.textContent = document.getElementById('ia-aprofundir').checked ? '🤖 Llegint fitxes...' : '🤖 Analitzant...';
   loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
 
-  const esUrl = !!inputSource && /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?($|\?)/i.test(inputSource);
+  const esUrl = semblaUrl(inputSource);
 
   try {
     const existents = await carregarExistentsPerDedup();
