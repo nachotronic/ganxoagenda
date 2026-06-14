@@ -52,19 +52,21 @@
 </div>
 </div>
 
-<!-- accessos temporals 2x2 -->
-<div id="gx-filtres-wrap" style="background:#fff; padding:13px 14px 14px; border-bottom:1px solid #e4e0d7;">
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:9px;">
-<div id="gx-filtre-avui" onclick="gxFiltrar('avui')" style="font-size:13px; font-weight:600; padding:11px 0; border-radius:11px; background:#103b52; color:#fff; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-sun" style="font-size:15px;"></i>Avui</div>
-<div id="gx-filtre-dema" onclick="gxFiltrar('dema')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Demà</div>
-<div id="gx-filtre-cap" onclick="gxFiltrar('cap')" style="font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Cap de setmana</div>
+<!-- accessos temporals -->
+<div id="gx-filtres-wrap" style="background:#fff; padding:10px 14px 11px; border-bottom:1px solid #e4e0d7;">
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+<div id="gx-filtre-avui" onclick="gxFiltrar('avui')" style="font-size:12px; font-weight:600; padding:9px 0; border-radius:9px; background:#103b52; color:#fff; text-align:center; cursor:pointer;">Avui</div>
+<div id="gx-filtre-dema" onclick="gxFiltrar('dema')" style="font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Demà</div>
+<div id="gx-filtre-cap" onclick="gxFiltrar('cap')" style="font-size:12px; font-weight:500; padding:9px 2px; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; line-height:1.25; cursor:pointer;">Cap de setmana</div>
+</div>
+<div style="margin-top:6px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+<div id="gx-filtre-nens" onclick="gxToggleNens()" style="font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Amb nens</div>
 <div style="display:flex; gap:4px; align-items:stretch;">
-<div onclick="event.stopPropagation(); gxCanviaMes(-1)" style="flex:0 0 30px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-left" style="font-size:15px;"></i></div>
-<div id="gx-filtre-mes" onclick="gxFiltrar('mes')" style="flex:1; font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-calendar" style="font-size:14px;"></i><span id="gx-filtre-mes-text">Al juny</span></div>
-<div onclick="event.stopPropagation(); gxCanviaMes(1)" style="flex:0 0 30px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-right" style="font-size:15px;"></i></div>
+<div onclick="event.stopPropagation(); gxCanviaMes(-1)" style="flex:0 0 26px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-left" style="font-size:14px;"></i></div>
+<div id="gx-filtre-mes" onclick="gxFiltrar('mes')" style="flex:1; font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;"><span id="gx-filtre-mes-text">Juny</span></div>
+<div onclick="event.stopPropagation(); gxCanviaMes(1)" style="flex:0 0 26px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
 </div>
 </div>
-<div id="gx-filtre-nens" onclick="gxToggleNens()" style="margin-top:9px; font-size:13px; font-weight:500; padding:11px 0; border-radius:11px; background:#f3f0e9; color:#5f6b73; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;"><i class="ti ti-baby-carriage" style="font-size:15px;"></i>Amb nens</div>
 </div>
 
 <!-- pàgina agenda -->
@@ -173,6 +175,15 @@
 <div id="gx-f-desc" style="font-size:13.5px; line-height:1.6; color:#3d4a47;">La tradicional regata de llaguts de vela llatina torna al passeig del mar.</div>
 </div>
 
+<!-- accions -->
+<div style="padding:0 16px 18px; display:flex; flex-direction:column; gap:10px;">
+<div style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+<a id="gx-f-whatsapp" href="#" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
+<div style="background:#fff; border:1px solid #e4e0d7; color:#103b52; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-calendar-plus" style="font-size:16px;"></i>Al calendari</div>
+</div>
+</div>
+
 <!-- mapa -->
 <div style="padding:0 16px 18px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">On és</div>
@@ -184,15 +195,6 @@
 <div id="gx-f-lloc-map" style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
 <div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
 </div>
-</div>
-</div>
-
-<!-- accions -->
-<div style="padding:0 16px 18px; display:flex; flex-direction:column; gap:10px;">
-<div style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-<a id="gx-f-whatsapp" href="#" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
-<div style="background:#fff; border:1px solid #e4e0d7; color:#103b52; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;"><i class="ti ti-calendar-plus" style="font-size:16px;"></i>Al calendari</div>
 </div>
 </div>
 
@@ -338,15 +340,19 @@ var gxCategories = {};   // slug -> {nom, color_gradient, icona}
 var gxEvents = [];       // events d'avui carregats
 var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
 var GX_GANXOT_PATH = 'icons/';
-var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'buho_familia.png';
+var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'icon-512.png';
 var GX_GANXOT_MAP = {
+  esports: 'buho_esports.png',
+  cultura: 'buho_teatro.png',
   musica: 'buho_musica.png',
-  cultura: 'buho_teatro.png'
-  // esports, fira, gastro, festa: pendents
+  fira: 'buho_mercat.png',
+  gastro: 'buho_gastro.png',
+  festa: 'buho_nit.png'
 };
 
 var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
 var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+function gxCap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 var gxFiltreActiu = 'avui';
 var gxMesOffset = 0;
 var gxNomesNens = false;
@@ -393,7 +399,7 @@ function gxRangeFor(filtre){
     var base = new Date(today.getFullYear(), today.getMonth()+gxMesOffset, 1);
     var last = new Date(base.getFullYear(), base.getMonth()+1, 0);
     var from = (gxMesOffset===0) ? today : base;
-    return {from:gxToISO(from), to:gxToISO(last), titol:'Al '+GX_MESOS[base.getMonth()]};
+    return {from:gxToISO(from), to:gxToISO(last), titol:'Al '+GX_MESOS[base.getMonth()], mes:gxCap(GX_MESOS[base.getMonth()])};
   }
   // avui (default)
   return {from:gxToISO(today), to:gxToISO(today), titol:'Avui a Sant Feliu'};
@@ -451,7 +457,7 @@ async function gxFiltrar(filtre){
   var range = gxRangeFor(filtre);
   document.getElementById('gx-agenda-titol').textContent = range.titol;
   document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
-  if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.titol; }
+  if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.mes; }
   await gxCarregarRang(range);
 }
 
@@ -517,7 +523,7 @@ async function gxLoadMeteo(){
 async function gxInit(){
   gxLoadMeteo();
   // text del botó "Al <mes actual>"
-  document.getElementById('gx-filtre-mes-text').textContent = 'Al '+GX_MESOS[new Date().getMonth()];
+  document.getElementById('gx-filtre-mes-text').textContent = gxCap(GX_MESOS[new Date().getMonth()]);
   await gxFiltrar('avui');
 
   // obrir fitxa directe si l'enllaç porta ?ev=ID
@@ -631,7 +637,7 @@ function gxOpenFicha(id, fromFicha){
   var ganxotImg = document.getElementById('gx-f-ganxot');
   ganxotWrap.style.background = cat.color_gradient;
   ganxotImg.onerror = function(){ this.onerror=null; this.src = GX_GANXOT_DEFAULT; };
-  ganxotImg.src = GX_GANXOT_PATH + (GX_GANXOT_MAP[(ev.categories && ev.categories.slug) || ''] || 'buho_familia.png');
+  ganxotImg.src = GX_GANXOT_PATH + (ev.familiar ? 'buho_familia.png' : (GX_GANXOT_MAP[(ev.categories && ev.categories.slug) || ''] || 'icon-512.png'));
 
   document.getElementById('gx-f-title').textContent = ev.titol;
   document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : '');
