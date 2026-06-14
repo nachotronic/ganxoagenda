@@ -613,6 +613,7 @@ async function procesarConGeminiUnPaso() {
     if (!res.ok) throw new Error(data.error || ('Error del servidor (HTTP ' + res.status + ')'));
 
     window.eventosDetectadosIA = data.events || [];
+    window.iaUrlBase = data.urlBase || '';
 
     // Cap event trobat: avisem amb pistes en lloc de quedar-nos en blanc
     if (window.eventosDetectadosIA.length === 0) {
@@ -633,20 +634,89 @@ async function procesarConGeminiUnPaso() {
       const avisDuplicat = ev.duplicat
         ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
         : '';
+      const avisPendent = ev.fitxa_pendent
+        ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>`
+        : '';
       listaItems.innerHTML += `
         <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
           <div>
             <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
-            ${avisDuplicat}
+            ${avisDuplicat}${avisPendent}
           </div>
           <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
         </div>`;
     });
+    renderBotoContinuar();
     listaContenedor.style.display = 'block';
     document.getElementById('ia-contenido').value = '';
     ia_eliminarImatge();
     toast('Fetes!');
   } catch(e) { toast(e.message, true); } finally { loadingEl.style.display = 'none'; }
+}
+
+// Mostra (o amaga) el botó per completar les fitxes que han quedat pendents pel límit
+function renderBotoContinuar() {
+  const cont = document.getElementById('ia-lista-items');
+  const previ = document.getElementById('ia-btn-continuar-wrap');
+  if (previ) previ.remove();
+  const pendents = (window.eventosDetectadosIA || []).filter(e => e.fitxa_pendent).length;
+  if (pendents === 0) return;
+  const div = document.createElement('div');
+  div.id = 'ia-btn-continuar-wrap';
+  div.style.cssText = 'margin-top:6px;';
+  div.innerHTML = `<button type="button" id="ia-btn-continuar" onclick="continuarFitxes()" style="width:100%; background:var(--blau-clar); color:#fff; border:none; padding:9px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">⏬ Completar les ${pendents} descripcions restants</button>`;
+  cont.appendChild(div);
+}
+
+// Crida la funció en mode "fitxes" per completar les descripcions pendents
+async function continuarFitxes() {
+  const btn = document.getElementById('ia-btn-continuar');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 Llegint fitxes restants...'; }
+  try {
+    const existents = await carregarExistentsPerDedup();
+    const res = await fetch(GANXO_IA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({
+        mode: 'fitxes',
+        events: window.eventosDetectadosIA,
+        urlBaseInput: window.iaUrlBase || '',
+        existents,
+      }),
+    });
+    const raw = await res.text();
+    let data; try { data = JSON.parse(raw); } catch { throw new Error('Resposta no vàlida (HTTP ' + res.status + ')'); }
+    if (!res.ok) throw new Error(data.error || ('Error del servidor (HTTP ' + res.status + ')'));
+
+    // Conservem l'estat "fet" dels items ja publicats abans de redibuixar
+    const fets = {};
+    (window.eventosDetectadosIA || []).forEach((_, i) => {
+      const b = document.getElementById('ia-btn-' + i);
+      if (b && b.disabled) fets[i] = b.textContent;
+    });
+
+    window.eventosDetectadosIA = data.events || window.eventosDetectadosIA;
+    // redibuixar la llista
+    const listaItems = document.getElementById('ia-lista-items');
+    listaItems.innerHTML = '';
+    window.eventosDetectadosIA.forEach((ev, idx) => {
+      const avisDuplicat = ev.duplicat ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>` : '';
+      const avisPendent = ev.fitxa_pendent ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>` : '';
+      listaItems.innerHTML += `
+        <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
+          <div><span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>${avisDuplicat}${avisPendent}</div>
+          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
+        </div>`;
+    });
+    // restaurar l'estat "fet"
+    Object.keys(fets).forEach(i => marcarIaItemFet(parseInt(i), fets[i].includes('Publicat') ? 'publicat' : 'esborrany'));
+    renderBotoContinuar();
+    toast('Descripcions completades!');
+  } catch (e) {
+    toast(e.message, true);
+    const b = document.getElementById('ia-btn-continuar');
+    if (b) { b.disabled = false; renderBotoContinuar(); }
+  }
 }
 
 function cargarEventoIA(idx) {
