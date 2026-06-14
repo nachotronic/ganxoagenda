@@ -603,7 +603,7 @@ async function procesarConGeminiUnPaso() {
 
     const res = await fetch(GANXO_IA_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY), 'apikey': SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
       body: JSON.stringify(body),
     });
     let data;
