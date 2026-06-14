@@ -455,8 +455,8 @@ async function desarEsdeveniment(estatDesti) {
     document.getElementById('btn-eliminar').style.display = 'none';
     carregarEsdeveniments(); // refresca la llista del gestor en segon pla
     const queden = quedenIaItemsPerRevisar();
-    toast(queden ? 'Publicat! Continua amb el següent ↑' : 'Publicat! Has revisat tots els events.');
-    document.querySelector('#vista-form').scrollIntoView({ behavior:'smooth', block:'start' });
+    toast(queden ? 'Publicat! Continua amb el següent ↓' : 'Publicat! Has revisat tots els events.');
+    document.getElementById('ia-resultados-lista').scrollIntoView({ behavior:'smooth', block:'center' });
     return;
   }
 
@@ -474,7 +474,7 @@ function marcarIaItemFet(idx, estatDesti) {
     btn.disabled = true;
     btn.onclick = null;
   }
-  if(item) { item.style.opacity = '0.55'; }
+  if(item) { item.style.opacity = '0.55'; item.style.outline = 'none'; }
 }
 
 function quedenIaItemsPerRevisar() {
@@ -626,6 +626,12 @@ async function procesarConGeminiUnPaso() {
 function cargarEventoIA(idx) {
   const ev = window.eventosDetectadosIA[idx];
   iaIdxActual = idx;
+  editingId = null; // un event carregat des de la IA sempre és nou (POST), mai una edició
+  document.getElementById('btn-eliminar').style.display = 'none';
+  // ressaltar quin item s'està editant ara
+  document.querySelectorAll('[id^="ia-item-"]').forEach(el => { el.style.outline = 'none'; });
+  const itemActiu = document.getElementById('ia-item-' + idx);
+  if(itemActiu) itemActiu.style.outline = '2px solid var(--blau-clar)';
   document.getElementById('f-titol').value = ev.titol || '';
   document.getElementById('f-data').value = ev.data || '';
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
