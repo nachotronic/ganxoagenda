@@ -127,7 +127,7 @@
 <div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
 <div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
 <div onclick="gxCloseFicha()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
-<div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-heart" style="font-size:18px;"></i></div>
+<div id="gx-f-ganxot-wrap" style="width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;"><img id="gx-f-ganxot" src="" alt="" style="width:58px; height:58px; object-fit:contain; display:block;"></div>
 </div>
 <div style="position:relative; padding:15px 18px;">
 <div id="gx-f-cat" style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">ESPORTS</div>
@@ -337,6 +337,13 @@ var gxSupabase = supabase.createClient(GX_SUPABASE_URL, GX_SUPABASE_KEY);
 var gxCategories = {};   // slug -> {nom, color_gradient, icona}
 var gxEvents = [];       // events d'avui carregats
 var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
+var GX_GANXOT_PATH = 'icons/';
+var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'buho_familia.png';
+var GX_GANXOT_MAP = {
+  musica: 'buho_musica.png',
+  cultura: 'buho_teatro.png'
+  // esports, fira, gastro, festa: pendents
+};
 
 var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
 var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
@@ -618,6 +625,14 @@ function gxOpenFicha(id, fromFicha){
   document.getElementById('gx-f-header').style.backgroundSize = 'cover';
   document.getElementById('gx-f-header').style.backgroundPosition = 'center';
   document.getElementById('gx-f-cat').textContent = cat.nom.toUpperCase();
+
+  // ganxot segons categoria
+  var ganxotWrap = document.getElementById('gx-f-ganxot-wrap');
+  var ganxotImg = document.getElementById('gx-f-ganxot');
+  ganxotWrap.style.background = cat.color_gradient;
+  ganxotImg.onerror = function(){ this.onerror=null; this.src = GX_GANXOT_DEFAULT; };
+  ganxotImg.src = GX_GANXOT_PATH + (GX_GANXOT_MAP[(ev.categories && ev.categories.slug) || ''] || 'buho_familia.png');
+
   document.getElementById('gx-f-title').textContent = ev.titol;
   document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : '');
   document.getElementById('gx-f-on').textContent = gxLlocNom(ev) || '—';
