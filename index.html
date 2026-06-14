@@ -705,10 +705,14 @@ function gxRenderAgenda(){
 
   if(!llista.length){
     var msgs = {avui:'Avui no hi ha esdeveniments publicats.', dema:'Demà no hi ha esdeveniments publicats.', cap:'Aquest cap de setmana no hi ha esdeveniments publicats.', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
+    if(gxNomesNens && (gxFiltreActiu==='avui'||gxFiltreActiu==='dema'||gxFiltreActiu==='cap')){
+      msgs.avui = 'Avui no hi ha esdeveniments familiars publicats.';
+      msgs.dema = 'Demà no hi ha esdeveniments familiars publicats.';
+      msgs.cap = 'Aquest cap de setmana no hi ha esdeveniments familiars publicats.';
+    }
     document.getElementById('gx-agenda-buit').textContent = msgs[gxFiltreActiu] || msgs.avui;
     document.getElementById('gx-agenda-buit').style.display='block';
-    return;
-  }
+  } else {
   document.getElementById('gx-agenda-buit').style.display='none';
 
   if(gxFiltreActiu==='cicle'){
@@ -759,6 +763,7 @@ function gxRenderAgenda(){
     btn.onclick = function(){ gxPagina += 1; gxRenderAgenda(); };
     grid.parentElement.appendChild(btn);
   }
+  } // fi else (llista no buida)
 
   // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
   // exclou els dies ja mostrats al destacat/grid del filtre actiu
