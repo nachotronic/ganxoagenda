@@ -163,6 +163,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div style="display:flex; gap:8px;">
           <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
           <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
+          <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -185,6 +186,28 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
       <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Lugares actuales en la Base de Datos:</h3>
       <div id="lista-llocs-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE CICLES / PROGRAMES -->
+    <div id="vista-cicles" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorCicles()">← Tornar</button>
+        <h2>🎟️ Gestor de Cicles / Programes</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOU CICLE / PROGRAMA:</label>
+        <p style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">Ex: Festa Major 2026, Porta Ferrada, Fira del Conte. Un cop creat, el podràs assignar als esdeveniments des del formulari.</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="text" id="nou-cicle-nom" placeholder="Nom del cicle (Ex: Porta Ferrada 2026)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <textarea id="nou-cicle-descripcio" placeholder="Descripció breu (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px; font-family:var(--font-sans); resize:vertical;"></textarea>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="nou-cicle-color" placeholder="Color (opcional, ex: #d85a30)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            <button class="btn-nou" onclick="crearCicleNou()">Guardar Cicle</button>
+          </div>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Cicles actuals:</h3>
+      <div id="lista-cicles-gestion"></div>
     </div>
 
     <!-- SECCIÓ GALERIA -->
@@ -239,6 +262,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       <div class="form-grid">
         <div class="camp full"><label>Títol</label><input type="text" id="f-titol"></div>
         <div class="camp full"><label>Categoria</label><div class="cat-pills" id="f-categories"></div></div>
+        <div class="camp full"><label>Cicle / Programa</label><select id="f-cicle"><option value="">— Cap cicle —</option></select></div>
         <div class="camp"><label>Data</label><input type="date" id="f-data"></div>
         <div class="camp"><label>Hora d'inici</label><input type="time" id="f-hora-inici"></div>
         <div class="camp"><label>Lloc</label><select id="f-lloc"></select></div>
@@ -294,7 +318,7 @@ const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
-let accessToken = null, currentUser = null, categories = [], llocs = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
+let accessToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
 
 const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
@@ -328,6 +352,7 @@ async function showApp() {
   document.getElementById('user-email').textContent = currentUser.email;
   categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
   await carregarLlocs();
+  await carregarCicles();
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
 }
 
@@ -336,6 +361,13 @@ async function carregarLlocs() {
   const sel = document.getElementById('f-lloc');
   sel.innerHTML = '<option value="">— Tria un lloc —</option>';
   llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.nom}</option>`);
+}
+
+async function carregarCicles() {
+  cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
+  const sel = document.getElementById('f-cicle');
+  sel.innerHTML = '<option value="">— Cap cicle —</option>';
+  cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
 }
 
 // ---- CONTROLADOR DE LUGARES (NUEVA VENTANA) ----
@@ -376,6 +408,49 @@ async function eliminarLloc(id) {
   } catch(e) { toast('No es pot eliminar si està en ús', true); }
 }
 
+// ---- CONTROLADOR DE CICLES / PROGRAMES (NUEVA VENTANA) ----
+function obrirGestorCicles() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-cicles').style.display = 'block';
+  renderListaCiclesGestion();
+}
+function tancarGestorCicles() {
+  document.getElementById('vista-cicles').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaCiclesGestion() {
+  const container = document.getElementById('lista-cicles-gestion');
+  if(!cicles.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap cicle creat.</div>'; return; }
+  container.innerHTML = cicles.map(c => `
+    <div class="lloc-item">
+      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}</span>
+      <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
+    </div>
+  `).join('');
+}
+async function crearCicleNou() {
+  const nom = document.getElementById('nou-cicle-nom').value.trim();
+  const descripcio = document.getElementById('nou-cicle-descripcio').value.trim();
+  const color = document.getElementById('nou-cicle-color').value.trim();
+  if(!nom) return toast('Escriu el nom del cicle', true);
+  try {
+    await sbFetch('/rest/v1/cicles', { method: 'POST', body: JSON.stringify({ nom, descripcio: descripcio || null, color: color || null }) });
+    document.getElementById('nou-cicle-nom').value = '';
+    document.getElementById('nou-cicle-descripcio').value = '';
+    document.getElementById('nou-cicle-color').value = '';
+    toast('Cicle guardat a Supabase!');
+    await carregarCicles(); renderListaCiclesGestion();
+  } catch(e) { toast('Error o cicle ja existent', true); }
+}
+async function eliminarCicle(id) {
+  if(!confirm('Segur que vols eliminar aquest cicle? Els events que en formaven part quedaran sense cicle assignat.')) return;
+  try {
+    await sbFetch(`/rest/v1/cicles?id=eq.${id}`, { method: 'DELETE' });
+    toast('Cicle eliminat');
+    await carregarCicles(); renderListaCiclesGestion();
+  } catch(e) { toast('Error eliminant el cicle', true); }
+}
+
 // ---- EVENTS LÓGICA Y RENDER ----
 function renderFiltres() {
   const bar = document.getElementById('filtre-bar');
@@ -388,7 +463,7 @@ function filtrar(catId, btn) {
   carregarEsdeveniments(catId);
 }
 async function carregarEsdeveniments(catId = null) {
-  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom)&order=data.desc,hora_inici';
+  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color)&order=data.desc,hora_inici';
   if(catId) q += `&categoria_id=eq.${catId}`;
   const data = await sbFetch(q);
   const container = document.getElementById('llista-events');
@@ -396,7 +471,7 @@ async function carregarEsdeveniments(catId = null) {
   container.innerHTML = data.map(e => `
     <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
       <div class="data-col"><div class="dia">${e.data.split('-')[2]}</div><div class="mes">${e.data.split('-')[1]}</div></div>
-      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span></div></div>
+      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}</div></div>
       <span class="estat-badge estat-${e.estat}">${e.estat}</span>
     </div>
   `).join('');
@@ -413,7 +488,7 @@ function tornarLlista() { iaIdxActual = null; document.getElementById('vista-for
 
 function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
-  document.getElementById('f-lloc').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
+  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; fotoFile = null; fotoGaleriaUrl = null;
 }
@@ -423,7 +498,7 @@ async function editarEsdeveniment(id) {
   const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
   document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data;
   document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
-  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
+  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
   if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
   if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
@@ -436,7 +511,7 @@ async function desarEsdeveniment(estatDesti) {
   if(!titol || !data) return toast('Títol i data obligatoris', true);
   const pill = document.querySelector('.cat-pill.selected');
   const body = {
-    titol, data, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null,
+    titol, data, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
     hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
     preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
     familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoGaleriaUrl
@@ -735,6 +810,7 @@ function cargarEventoIA(idx) {
   document.getElementById('f-preu-text').value = ev.preu_text || '';
   document.getElementById('f-edat').value = ev.edat_minima || '';
   document.getElementById('f-lloc').value = ev.lloc_id || '';
+  document.getElementById('f-cicle').value = ev.cicle_id || '';
   if(ev.categoria_id) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected')); const p=document.querySelector(`.cat-pill[data-id="${ev.categoria_id}"]`); if(p) p.classList.add('selected'); }
   const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
   if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
