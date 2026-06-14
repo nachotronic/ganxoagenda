@@ -164,6 +164,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
           <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
           <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
+          <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -200,6 +201,16 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div style="display:flex; flex-direction:column; gap:10px;">
           <input type="text" id="nou-cicle-nom" placeholder="Nom del cicle (Ex: Porta Ferrada 2026)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
           <textarea id="nou-cicle-descripcio" placeholder="Descripció breu (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px; font-family:var(--font-sans); resize:vertical;"></textarea>
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data d'inici</label>
+              <input type="date" id="nou-cicle-data-inici" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data de fi</label>
+              <input type="date" id="nou-cicle-data-fi" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+          </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <input type="text" id="nou-cicle-color" placeholder="Color (opcional, ex: #d85a30)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
             <button class="btn-tornar" id="btn-cancelar-cicle" style="display:none;" onclick="cancelarEdicioCicle()">Cancel·lar</button>
@@ -209,6 +220,26 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
       <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Cicles actuals:</h3>
       <div id="lista-cicles-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE CATEGORIES -->
+    <div id="vista-categories" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorCategories()">← Tornar</button>
+        <h2>🏷️ Gestor de Categories</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label id="categoria-form-titol" style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOVA CATEGORIA:</label>
+        <p style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">L'ordre determina la posició a la llista de categories (de menor a major).</p>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text" id="nova-categoria-nom" placeholder="Nom de la categoria (Ex: Nit)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <input type="number" id="nova-categoria-ordre" placeholder="Ordre" style="width:90px; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <button class="btn-tornar" id="btn-cancelar-categoria" style="display:none;" onclick="cancelarEdicioCategoria()">Cancel·lar</button>
+          <button class="btn-nou" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar Categoria</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Categories actuals:</h3>
+      <div id="lista-categories-gestion"></div>
     </div>
 
     <!-- SECCIÓ GALERIA -->
@@ -297,6 +328,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
       <div class="form-actions">
         <button class="btn-eliminar" id="btn-eliminar" style="display:none;" onclick="eliminarEsdeveniment()">Eliminar</button>
+        <button class="btn-esborrany" id="btn-duplicar-event" style="display:none;" onclick="duplicarEsdeveniment()">Duplicar</button>
         <button class="btn-esborrany" onclick="desarEsdeveniment('esborrany')">Desar esborrany</button>
         <button class="btn-publicar" onclick="desarEsdeveniment('publicat')">Publicar</button>
       </div>
@@ -319,7 +351,7 @@ const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
-let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, editingCicleId = null, fotoFile = null, fotoGaleriaUrl = null;
+let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, editingCicleId = null, editingCategoriaId = null, fotoFile = null, fotoGaleriaUrl = null;
 
 const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
@@ -371,10 +403,14 @@ async function tryAutoLogin() {
 async function showApp() {
   document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block';
   document.getElementById('user-email').textContent = currentUser.email;
-  categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
+  await carregarCategories();
   await carregarLlocs();
   await carregarCicles();
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
+}
+
+async function carregarCategories() {
+  categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
 }
 
 async function carregarLlocs() {
@@ -443,22 +479,29 @@ function tancarGestorCicles() {
 function renderListaCiclesGestion() {
   const container = document.getElementById('lista-cicles-gestion');
   if(!cicles.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap cicle creat.</div>'; return; }
-  container.innerHTML = cicles.map(c => `
+  const fmtData = (d) => d ? d.split('-').reverse().join('/') : '';
+  container.innerHTML = cicles.map(c => {
+    let rang = '';
+    if(c.data_inici || c.data_fi) rang = `<span style="color:var(--text-sec); font-size:12px;"> · ${fmtData(c.data_inici)}${c.data_fi ? ' – ' + fmtData(c.data_fi) : ''}</span>`;
+    return `
     <div class="lloc-item">
-      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}</span>
+      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}</span>
       <span style="display:flex; gap:14px;">
         <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="duplicarCicle('${c.id}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
         <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
       </span>
     </div>
-  `).join('');
+  `}).join('');
 }
 async function guardarCicle() {
   const nom = document.getElementById('nou-cicle-nom').value.trim();
   const descripcio = document.getElementById('nou-cicle-descripcio').value.trim();
   const color = document.getElementById('nou-cicle-color').value.trim();
+  const dataInici = document.getElementById('nou-cicle-data-inici').value;
+  const dataFi = document.getElementById('nou-cicle-data-fi').value;
   if(!nom) return toast('Escriu el nom del cicle', true);
-  const body = { nom, descripcio: descripcio || null, color: color || null };
+  const body = { nom, descripcio: descripcio || null, color: color || null, data_inici: dataInici || null, data_fi: dataFi || null };
   try {
     if(editingCicleId) {
       await sbFetch(`/rest/v1/cicles?id=eq.${editingCicleId}`, { method: 'PATCH', body: JSON.stringify(body) });
@@ -479,10 +522,28 @@ function editarCicle(id) {
   document.getElementById('nou-cicle-nom').value = c.nom || '';
   document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
   document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
+  document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
   document.getElementById('cicle-form-titol').textContent = 'EDITAR CICLE / PROGRAMA:';
   document.getElementById('btn-guardar-cicle').textContent = 'Actualitzar Cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
   document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function duplicarCicle(id) {
+  const c = cicles.find(x => x.id === id);
+  if(!c) return;
+  editingCicleId = null;
+  document.getElementById('nou-cicle-nom').value = (c.nom || '') + ' (còpia)';
+  document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
+  document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
+  document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
+  document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA (duplicat):';
+  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
+  document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+  toast('Cicle duplicat — revisa el nom i les dates abans de desar');
 }
 
 function cancelarEdicioCicle() {
@@ -490,6 +551,8 @@ function cancelarEdicioCicle() {
   document.getElementById('nou-cicle-nom').value = '';
   document.getElementById('nou-cicle-descripcio').value = '';
   document.getElementById('nou-cicle-color').value = '';
+  document.getElementById('nou-cicle-data-inici').value = '';
+  document.getElementById('nou-cicle-data-fi').value = '';
   document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA:';
   document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'none';
@@ -502,6 +565,81 @@ async function eliminarCicle(id) {
     toast('Cicle eliminat');
     await carregarCicles(); renderListaCiclesGestion();
   } catch(e) { toast('Error eliminant el cicle', true); }
+}
+
+// ---- CONTROLADOR DE CATEGORIES (NUEVA VENTANA) ----
+function obrirGestorCategories() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-categories').style.display = 'block';
+  renderListaCategoriesGestion();
+}
+function tancarGestorCategories() {
+  cancelarEdicioCategoria();
+  document.getElementById('vista-categories').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaCategoriesGestion() {
+  const container = document.getElementById('lista-categories-gestion');
+  if(!categories.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap categoria creada.</div>'; return; }
+  container.innerHTML = categories.map(c => `
+    <div class="lloc-item">
+      <span>🏷️ ${c.nom} <span style="color:var(--text-sec); font-size:12px;">· ordre ${c.ordre ?? '—'}</span></span>
+      <span style="display:flex; gap:14px;">
+        <button onclick="editarCategoria('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="eliminarCategoria('${c.id}')">Eliminar</button>
+      </span>
+    </div>
+  `).join('');
+}
+async function guardarCategoria() {
+  const nom = document.getElementById('nova-categoria-nom').value.trim();
+  const ordreVal = document.getElementById('nova-categoria-ordre').value;
+  if(!nom) return toast('Escriu el nom de la categoria', true);
+  const body = { nom };
+  if(ordreVal !== '') body.ordre = parseInt(ordreVal, 10);
+  try {
+    if(editingCategoriaId) {
+      await sbFetch(`/rest/v1/categories?id=eq.${editingCategoriaId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Categoria actualitzada!');
+    } else {
+      if(body.ordre === undefined) {
+        const maxOrdre = categories.reduce((m, c) => Math.max(m, c.ordre ?? 0), 0);
+        body.ordre = maxOrdre + 1;
+      }
+      await sbFetch('/rest/v1/categories', { method: 'POST', body: JSON.stringify(body) });
+      toast('Categoria creada!');
+    }
+    cancelarEdicioCategoria();
+    await carregarCategories(); renderFiltres(); renderCatPills(); renderListaCategoriesGestion();
+  } catch(e) { toast(e.message || 'Error o categoria ja existent', true); }
+}
+function editarCategoria(id) {
+  const c = categories.find(x => x.id === id);
+  if(!c) return;
+  editingCategoriaId = id;
+  document.getElementById('nova-categoria-nom').value = c.nom || '';
+  document.getElementById('nova-categoria-ordre').value = c.ordre ?? '';
+  document.getElementById('categoria-form-titol').textContent = 'EDITAR CATEGORIA:';
+  document.getElementById('btn-guardar-categoria').textContent = 'Actualitzar Categoria';
+  document.getElementById('btn-cancelar-categoria').style.display = 'inline-block';
+  document.getElementById('nova-categoria-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+function cancelarEdicioCategoria() {
+  editingCategoriaId = null;
+  document.getElementById('nova-categoria-nom').value = '';
+  document.getElementById('nova-categoria-ordre').value = '';
+  document.getElementById('categoria-form-titol').textContent = 'NOVA CATEGORIA:';
+  document.getElementById('btn-guardar-categoria').textContent = 'Guardar Categoria';
+  document.getElementById('btn-cancelar-categoria').style.display = 'none';
+}
+async function eliminarCategoria(id) {
+  if(!confirm('Segur que vols eliminar aquesta categoria?')) return;
+  if(editingCategoriaId === id) cancelarEdicioCategoria();
+  try {
+    await sbFetch(`/rest/v1/categories?id=eq.${id}`, { method: 'DELETE' });
+    toast('Categoria eliminada');
+    await carregarCategories(); renderFiltres(); renderCatPills(); renderListaCategoriesGestion();
+  } catch(e) { toast('No es pot eliminar si està en ús', true); }
 }
 
 // ---- EVENTS LÓGICA Y RENDER ----
@@ -536,7 +674,7 @@ function renderCatPills() {
 function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); }
 function toggleSwitch(el) { el.classList.toggle('on'); if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none'; }
 
-function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
+function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('btn-duplicar-event').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
 function tornarLlista() { iaIdxActual = null; document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
 
 function netejarFormulari() {
@@ -547,7 +685,7 @@ function netejarFormulari() {
 }
 
 async function editarEsdeveniment(id) {
-  editingId = id; netejarFormulari(); document.getElementById('btn-eliminar').style.display='block';
+  editingId = id; netejarFormulari(); document.getElementById('btn-eliminar').style.display='block'; document.getElementById('btn-duplicar-event').style.display='inline-block'; document.getElementById('form-titol').textContent = 'Editar esdeveniment';
   const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
   document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data;
   document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
@@ -559,9 +697,28 @@ async function editarEsdeveniment(id) {
   document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block';
 }
 
+// Converteix el formulari (amb les dades de l'event actual ja carregades) en un esdeveniment
+// nou independent: en desar-lo es fa un POST en lloc d'un PATCH sobre l'original.
+function duplicarEsdeveniment() {
+  editingId = null; iaIdxActual = null;
+  document.getElementById('btn-eliminar').style.display = 'none';
+  document.getElementById('btn-duplicar-event').style.display = 'none';
+  document.getElementById('form-titol').textContent = 'Duplicar esdeveniment';
+  toast('Esdeveniment duplicat — canvia la data i desa');
+}
+
 async function desarEsdeveniment(estatDesti) {
   const titol = document.getElementById('f-titol').value.trim(), data = document.getElementById('f-data').value;
   if(!titol || !data) return toast('Títol i data obligatoris', true);
+
+  // Mode repàs IA: ja té el seu propi avís de duplicats (mostrat a la llista d'events trobats),
+  // així que aquí només comprovem quan es desa manualment.
+  const enRevisioIA = iaIdxActual !== null && document.getElementById('ia-resultados-lista').style.display !== 'none';
+  if(!enRevisioIA) {
+    const dup = await comprovarDuplicatManual(titol, data);
+    if(dup && !confirm(`Ja existeix un esdeveniment "${dup.titol}" amb aquesta data (${data}). Vols desar-lo igualment?`)) return;
+  }
+
   const pill = document.querySelector('.cat-pill.selected');
   const body = {
     titol, data, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
@@ -574,13 +731,13 @@ async function desarEsdeveniment(estatDesti) {
 
   // Mode repàs: si l'event venia de la llista de la IA i encara queden events per revisar,
   // no tornem al gestor; marquem aquest com a fet i deixem el formulari net per al següent.
-  const llistaIaVisible = document.getElementById('ia-resultados-lista').style.display !== 'none';
-  if(iaIdxActual !== null && llistaIaVisible) {
+  if(enRevisioIA) {
     marcarIaItemFet(iaIdxActual, estatDesti);
     iaIdxActual = null;
     editingId = null;
     netejarFormulari();
     document.getElementById('btn-eliminar').style.display = 'none';
+    document.getElementById('btn-duplicar-event').style.display = 'none';
     carregarEsdeveniments(); // refresca la llista del gestor en segon pla
     const queden = quedenIaItemsPerRevisar();
     toast(queden ? 'Publicat! Continua amb el següent ↓' : 'Publicat! Has revisat tots els events.');
@@ -689,6 +846,16 @@ async function carregarExistentsPerDedup() {
     const data = await sbFetch(q);
     return data || [];
   } catch (e) { return []; }
+}
+
+// Comprova si ja existeix un esdeveniment amb el mateix títol (sense distingir majúscules) i la mateixa data,
+// excloent el que s'estigui editant. S'usa abans de desar manualment per evitar duplicats accidentals.
+async function comprovarDuplicatManual(titol, data) {
+  try {
+    const q = `/rest/v1/esdeveniments?select=id,titol&data=eq.${data}&titol=ilike.${encodeURIComponent(titol)}`;
+    const existents = await sbFetch(q);
+    return (existents || []).find(e => e.id !== editingId);
+  } catch (e) { return null; }
 }
 
 // Detecta si el text introduït és una sola URL, sense regex perilloses (evita el bloqueig del navegador).
@@ -852,6 +1019,7 @@ function cargarEventoIA(idx) {
   iaIdxActual = idx;
   editingId = null; // un event carregat des de la IA sempre és nou (POST), mai una edició
   document.getElementById('btn-eliminar').style.display = 'none';
+  document.getElementById('btn-duplicar-event').style.display = 'none';
   // ressaltar quin item s'està editant ara
   document.querySelectorAll('[id^="ia-item-"]').forEach(el => { el.style.outline = 'none'; });
   const itemActiu = document.getElementById('ia-item-' + idx);
