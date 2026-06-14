@@ -77,7 +77,10 @@
 </div>
 
 <div id="gx-agenda-loading" style="text-align:center; padding:30px 0; color:#8a8478; font-size:13px;">Carregant...</div>
-<div id="gx-agenda-buit" style="display:none; text-align:center; padding:30px 16px; color:#8a8478; font-size:13px; background:#fff; border:1px solid #e4e0d7; border-radius:13px;">Avui no hi ha esdeveniments publicats.</div>
+<div id="gx-agenda-buit" style="display:none; text-align:center; padding:24px 16px 28px; background:#fff; border:1px solid #e4e0d7; border-radius:16px;">
+<img src="assets/icon-192.png" alt="" style="width:72px; height:72px; object-fit:contain; margin-bottom:10px;">
+<div id="gx-agenda-buit-text" style="font-size:13px; color:#6b7780; line-height:1.5;">Avui no hi ha esdeveniments publicats.</div>
+</div>
 
 <!-- destacat (es genera dinàmicament) -->
 <div id="gx-agenda-destacat"></div>
@@ -704,13 +707,13 @@ function gxRenderAgenda(){
   var llista = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
 
   if(!llista.length){
-    var msgs = {avui:'Avui no hi ha esdeveniments publicats.', dema:'Demà no hi ha esdeveniments publicats.', cap:'Aquest cap de setmana no hi ha esdeveniments publicats.', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
+    var msgs = {avui:'Avui no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', dema:'Demà no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', cap:'Aquest cap de setmana no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
     if(gxNomesNens && (gxFiltreActiu==='avui'||gxFiltreActiu==='dema'||gxFiltreActiu==='cap')){
-      msgs.avui = 'Avui no hi ha esdeveniments familiars publicats.';
-      msgs.dema = 'Demà no hi ha esdeveniments familiars publicats.';
-      msgs.cap = 'Aquest cap de setmana no hi ha esdeveniments familiars publicats.';
+      msgs.avui = 'Avui no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
+      msgs.dema = 'Demà no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
+      msgs.cap = 'Aquest cap de setmana no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
     }
-    document.getElementById('gx-agenda-buit').textContent = msgs[gxFiltreActiu] || msgs.avui;
+    document.getElementById('gx-agenda-buit-text').textContent = msgs[gxFiltreActiu] || msgs.avui;
     document.getElementById('gx-agenda-buit').style.display='block';
   } else {
   document.getElementById('gx-agenda-buit').style.display='none';
