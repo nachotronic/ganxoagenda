@@ -606,10 +606,24 @@ async function procesarConGeminiUnPaso() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY), 'apikey': SUPABASE_ANON_KEY },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error del servidor IA');
+    let data;
+    const rawResp = await res.text();
+    try { data = JSON.parse(rawResp); }
+    catch { throw new Error('Resposta no vàlida del servidor (HTTP ' + res.status + '): ' + rawResp.slice(0, 200)); }
+    if (!res.ok) throw new Error(data.error || ('Error del servidor (HTTP ' + res.status + ')'));
 
     window.eventosDetectadosIA = data.events || [];
+
+    // Cap event trobat: avisem amb pistes en lloc de quedar-nos en blanc
+    if (window.eventosDetectadosIA.length === 0) {
+      const pista = esUrl
+        ? 'No s\'ha trobat cap event a la pàgina. Si la web carrega els events amb JavaScript (com un calendari interactiu), el lector no els pot veure: prova amb la pàgina de llistat, una fitxa concreta, o enganxa el text/cartell.'
+        : 'No s\'ha trobat cap event al text. Revisa que hi hagi títol i data.';
+      listaItems.innerHTML = `<div style="font-size:12px; color:var(--accent);">${pista}</div>`;
+      listaContenedor.style.display = 'block';
+      toast('Cap event trobat', true);
+      return;
+    }
 
     if (data.avisos && data.avisos.length) {
       listaItems.innerHTML += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${data.avisos.join(' ')}</div>`;
