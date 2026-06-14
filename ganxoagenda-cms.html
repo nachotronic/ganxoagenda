@@ -195,14 +195,15 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <h2>🎟️ Gestor de Cicles / Programes</h2>
       </div>
       <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
-        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOU CICLE / PROGRAMA:</label>
+        <label id="cicle-form-titol" style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOU CICLE / PROGRAMA:</label>
         <p style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">Ex: Festa Major 2026, Porta Ferrada, Fira del Conte. Un cop creat, el podràs assignar als esdeveniments des del formulari.</p>
         <div style="display:flex; flex-direction:column; gap:10px;">
           <input type="text" id="nou-cicle-nom" placeholder="Nom del cicle (Ex: Porta Ferrada 2026)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
           <textarea id="nou-cicle-descripcio" placeholder="Descripció breu (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px; font-family:var(--font-sans); resize:vertical;"></textarea>
           <div style="display:flex; gap:10px; align-items:center;">
             <input type="text" id="nou-cicle-color" placeholder="Color (opcional, ex: #d85a30)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
-            <button class="btn-nou" onclick="crearCicleNou()">Guardar Cicle</button>
+            <button class="btn-tornar" id="btn-cancelar-cicle" style="display:none;" onclick="cancelarEdicioCicle()">Cancel·lar</button>
+            <button class="btn-nou" id="btn-guardar-cicle" onclick="guardarCicle()">Guardar Cicle</button>
           </div>
         </div>
       </div>
@@ -318,7 +319,7 @@ const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
-let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, fotoFile = null, fotoGaleriaUrl = null;
+let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, editingCicleId = null, fotoFile = null, fotoGaleriaUrl = null;
 
 const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
@@ -435,6 +436,7 @@ function obrirGestorCicles() {
   renderListaCiclesGestion();
 }
 function tancarGestorCicles() {
+  cancelarEdicioCicle();
   document.getElementById('vista-cicles').style.display = 'none';
   document.getElementById('vista-llista').style.display = 'block';
 }
@@ -444,26 +446,57 @@ function renderListaCiclesGestion() {
   container.innerHTML = cicles.map(c => `
     <div class="lloc-item">
       <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}</span>
-      <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
+      <span style="display:flex; gap:14px;">
+        <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
+      </span>
     </div>
   `).join('');
 }
-async function crearCicleNou() {
+async function guardarCicle() {
   const nom = document.getElementById('nou-cicle-nom').value.trim();
   const descripcio = document.getElementById('nou-cicle-descripcio').value.trim();
   const color = document.getElementById('nou-cicle-color').value.trim();
   if(!nom) return toast('Escriu el nom del cicle', true);
+  const body = { nom, descripcio: descripcio || null, color: color || null };
   try {
-    await sbFetch('/rest/v1/cicles', { method: 'POST', body: JSON.stringify({ nom, descripcio: descripcio || null, color: color || null }) });
-    document.getElementById('nou-cicle-nom').value = '';
-    document.getElementById('nou-cicle-descripcio').value = '';
-    document.getElementById('nou-cicle-color').value = '';
-    toast('Cicle guardat a Supabase!');
+    if(editingCicleId) {
+      await sbFetch(`/rest/v1/cicles?id=eq.${editingCicleId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Cicle actualitzat!');
+    } else {
+      await sbFetch('/rest/v1/cicles', { method: 'POST', body: JSON.stringify(body) });
+      toast('Cicle guardat a Supabase!');
+    }
+    cancelarEdicioCicle();
     await carregarCicles(); renderListaCiclesGestion();
   } catch(e) { toast(e.message || 'Error o cicle ja existent', true); }
 }
+
+function editarCicle(id) {
+  const c = cicles.find(x => x.id === id);
+  if(!c) return;
+  editingCicleId = id;
+  document.getElementById('nou-cicle-nom').value = c.nom || '';
+  document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
+  document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('cicle-form-titol').textContent = 'EDITAR CICLE / PROGRAMA:';
+  document.getElementById('btn-guardar-cicle').textContent = 'Actualitzar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
+  document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function cancelarEdicioCicle() {
+  editingCicleId = null;
+  document.getElementById('nou-cicle-nom').value = '';
+  document.getElementById('nou-cicle-descripcio').value = '';
+  document.getElementById('nou-cicle-color').value = '';
+  document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA:';
+  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'none';
+}
 async function eliminarCicle(id) {
   if(!confirm('Segur que vols eliminar aquest cicle? Els events que en formaven part quedaran sense cicle assignat.')) return;
+  if(editingCicleId === id) cancelarEdicioCicle();
   try {
     await sbFetch(`/rest/v1/cicles?id=eq.${id}`, { method: 'DELETE' });
     toast('Cicle eliminat');
