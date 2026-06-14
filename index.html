@@ -345,6 +345,7 @@ var gxSupabase = supabase.createClient(GX_SUPABASE_URL, GX_SUPABASE_KEY);
 var gxCategories = {};   // slug -> {nom, color_gradient, icona}
 var gxEvents = [];       // events del filtre actiu (avui/demà/cap/mes)
 var gxEventsTots = [];   // tots els esdeveniments futurs (per a la secció "Tots els esdeveniments")
+var gxRangeActiu = null;  // rang {from,to} del filtre actiu
 var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
 var GX_GANXOT_PATH = 'icons/';
 var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'icon-512.png';
@@ -477,6 +478,7 @@ async function gxFiltrar(filtre){
   gxPaginaTots=0;
   gxSetFiltreActiu(filtre);
   var range = gxRangeFor(filtre);
+  gxRangeActiu = range;
   document.getElementById('gx-agenda-titol').textContent = range.titol;
   document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
   if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.mes; }
@@ -759,10 +761,15 @@ function gxRenderAgenda(){
   }
 
   // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
+  // exclou els dies ja mostrats al destacat/grid del filtre actiu
   var totsWrap = document.getElementById('gx-tots-wrap');
   var totsLlista = document.getElementById('gx-tots-llista');
   if((gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap') && gxEventsTots.length){
-    var llistaTots = gxNomesNens ? gxEventsTots.filter(function(e){ return e.familiar; }) : gxEventsTots;
+    var r = gxRangeActiu;
+    var restants = gxEventsTots.filter(function(e){
+      return !(r && e.data>=r.from && e.data<=r.to);
+    });
+    var llistaTots = gxNomesNens ? restants.filter(function(e){ return e.familiar; }) : restants;
     if(llistaTots.length){
       totsWrap.style.display='block';
       gxRenderAgendaLlista(llistaTots, totsLlista, 10);
