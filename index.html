@@ -128,7 +128,7 @@
 </div>
 
 <!-- ===== FITXA D'ESDEVENIMENT ===== -->
-<div id="gx-ficha" style="display:none; position:absolute; inset:0; background:#faf8f3; z-index:50; overflow-y:auto;">
+<div id="gx-ficha" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
 
 <!-- foto capçalera -->
 <div id="gx-f-header" style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
@@ -219,7 +219,7 @@
 <!-- fi fitxa -->
 
 <!-- ===== FITXA DE GUIA (EVERGREEN) ===== -->
-<div id="gx-guia" style="display:none; position:absolute; inset:0; background:#faf8f3; z-index:50; overflow-y:auto;">
+<div id="gx-guia" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
 
 <!-- foto capçalera -->
 <div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; flex-direction:column; justify-content:space-between;">
@@ -439,14 +439,16 @@ async function gxCarregarRang(range){
       .order('destacat', {ascending:false})
       .order('ordre', {ascending:true})
       .order('hora_inici', {ascending:true});
-    // per a "avui" carreguem també tots els esdeveniments futurs (sense límit superior)
-    var to = (gxFiltreActiu==='avui') ? null : range.to;
+    // per a "avui", "dema" i "cap" carreguem també tots els esdeveniments futurs
+    // (sense límit superior) per a la secció "Tots els esdeveniments"
+    var totsFiltres = (gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap');
+    var to = totsFiltres ? null : range.to;
     if(to) query = query.lte('data', to);
     var evRes = await query;
     if(evRes.error){ console.error(evRes.error); }
     gxEventsTots = evRes.data || [];
-    if(gxFiltreActiu==='avui'){
-      gxEvents = gxEventsTots.filter(function(e){ return e.data===range.from; });
+    if(totsFiltres){
+      gxEvents = gxEventsTots.filter(function(e){ return e.data>=range.from && e.data<=range.to; });
     } else {
       gxEvents = gxEventsTots;
     }
@@ -756,20 +758,21 @@ function gxRenderAgenda(){
     grid.parentElement.appendChild(btn);
   }
 
-  // secció "Tots els esdeveniments" (només a la pestanya Avui)
+  // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
   var totsWrap = document.getElementById('gx-tots-wrap');
   var totsLlista = document.getElementById('gx-tots-llista');
-  if(gxFiltreActiu==='avui' && gxEventsTots.length){
+  if((gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap') && gxEventsTots.length){
     var llistaTots = gxNomesNens ? gxEventsTots.filter(function(e){ return e.familiar; }) : gxEventsTots;
     if(llistaTots.length){
       totsWrap.style.display='block';
-      gxRenderAgendaLlista(llistaTots, totsLlista);
+      gxRenderAgendaLlista(llistaTots, totsLlista, 10);
     }
   }
 }
 
-/* Llista cronològica agrupada per dia amb capçalera de data ("Tots els esdeveniments") */
-function gxRenderAgendaLlista(llista, grid){
+/* Llista cronològica agrupada per dia amb capçalera de data ("Tots els esdeveniments").
+   maxItems: si s'indica, limita el total d'elements mostrats i amaga el botó "veure més". */
+function gxRenderAgendaLlista(llista, grid, maxItems){
   grid.style.display='flex';
   grid.style.flexDirection='column';
   grid.style.gap='0';
@@ -785,7 +788,7 @@ function gxRenderAgendaLlista(llista, grid){
 
   // aplanar amb límit de paginació per nombre d'esdeveniments totals
   var count = 0, totalCount = llista.length;
-  var visible = Math.min(totalCount, GX_PAGE*(gxPaginaTots+1));
+  var visible = maxItems ? Math.min(totalCount, maxItems) : Math.min(totalCount, GX_PAGE*(gxPaginaTots+1));
   var today = gxTodayISO();
 
   for(var g=0; g<grups.length; g++){
@@ -818,7 +821,7 @@ function gxRenderAgendaLlista(llista, grid){
     }
   }
 
-  if(totalCount > visible){
+  if(!maxItems && totalCount > visible){
     var btn = document.createElement('div');
     btn.id = 'gx-veure-mes-tots';
     btn.style.cssText = 'text-align:center; padding:12px; margin-top:4px; border:1px dashed #c9c2b4; border-radius:11px; color:#103b52; font-size:13px; font-weight:700; cursor:pointer;';
