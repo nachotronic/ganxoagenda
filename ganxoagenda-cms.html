@@ -1065,7 +1065,10 @@ async function procesarConGeminiUnPaso() {
       const pista = esUrl
         ? 'No s\'ha trobat cap event a la pàgina. Si la web carrega els events amb JavaScript (com un calendari interactiu), el lector no els pot veure: prova amb la pàgina de llistat, una fitxa concreta, o enganxa el text/cartell.'
         : 'No s\'ha trobat cap event al text. Revisa que hi hagi títol i data.';
-      listaItems.innerHTML = `<div style="font-size:12px; color:var(--accent);">${pista}</div>`;
+      const diagnostic = (data.avisos && data.avisos.length)
+        ? `<div style="font-size:11px; color:var(--text-sec); margin-top:8px; word-break:break-word;">${data.avisos.join('<br>')}</div>`
+        : '';
+      listaItems.innerHTML = `<div style="font-size:12px; color:var(--accent);">${pista}</div>${diagnostic}`;
       listaContenedor.style.display = 'block';
       toast('Cap event trobat', true);
       return;
@@ -1224,6 +1227,12 @@ function cargarEventoIA(idx) {
   const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
   if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
   else toast('Dades bolcades al formulari!');
+}
+
+document.addEventListener('DOMContentLoaded', tryAutoLogin);
+</script>
+</body>
+</html>
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
