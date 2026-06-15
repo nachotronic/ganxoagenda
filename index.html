@@ -334,14 +334,18 @@ function gxToggleMeteo(){
   if(d.style.display==='none'){d.style.display='flex';c.className='ti ti-chevron-up';}
   else{d.style.display='none';c.className='ti ti-chevron-down';}
 }
+var gxGuiaOrigen = 'visita';
 function gxOpenGuia(){
+  gxGuiaOrigen = (document.getElementById('gx-page-agenda').style.display!=='none') ? 'agenda' : 'visita';
   document.getElementById('gx-page-agenda').style.display='none';
+  document.getElementById('gx-page-visita').style.display='none';
+  document.getElementById('gx-filtres-wrap').style.display='none';
   document.getElementById('gx-guia').style.display='block';
   window.scrollTo(0, 0);
 }
 function gxCloseGuia(){
   document.getElementById('gx-guia').style.display='none';
-  document.getElementById('gx-page-agenda').style.display='block';
+  gxPage(gxGuiaOrigen);
 }
 
 /* ===== SUPABASE ===== */
@@ -1002,6 +1006,7 @@ function gxOpenFicha(id, fromFicha){
   }
 
   document.getElementById('gx-page-agenda').style.display='none';
+  document.getElementById('gx-filtres-wrap').style.display='none';
   document.getElementById('gx-ficha').style.display='block';
   window.scrollTo(0, 0);
 }
@@ -1013,6 +1018,7 @@ function gxCloseFicha(){
   } else {
     document.getElementById('gx-ficha').style.display='none';
     document.getElementById('gx-page-agenda').style.display='block';
+    document.getElementById('gx-filtres-wrap').style.display='block';
     gxFichaCurrentId = null;
     window.scrollTo(0, 0);
   }
