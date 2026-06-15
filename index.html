@@ -2,1035 +2,1231 @@
 <html lang="ca">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#103b52">
-<title>Ganxoagenda · Sant Feliu de Guíxols</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#103b52">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ganxoagenda · Gestor Professional</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-serif: 'Fraunces', Georgia, "Times New Roman", serif;
-    --color-background-secondary: #d8d2c6;
-    --color-background-primary: #fff;
-    --border-radius-lg: 20px;
-  }
-  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{ font-family:var(--font-sans); background:#cfc9bc; padding:18px 0; color:#1d2b27; }
-  i.ti{ font-style:normal; }
+:root {
+  --font-sans: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --blau: #103b52;
+  --blau-clar: #1a5570;
+  --fons: #faf8f3;
+  --fons-2: #f3f0e9;
+  --text: #1d2b27;
+  --text-sec: #6b7780;
+  --accent: #d85a30;
+  --verd: #1d8a4e;
+  --vermell: #c0392b;
+  --border: #e4e0d7;
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text); min-height:100vh; }
+
+/* ---- LOGIN ---- */
+#login-screen {
+  display:flex; align-items:center; justify-content:center; min-height:100vh;
+  background: linear-gradient(135deg, #103b52 0%, #1a5570 100%);
+}
+.login-box {
+  background:#fff; border-radius:16px; padding:40px 36px; width:360px; max-width:90%;
+  box-shadow:0 12px 40px rgba(0,0,0,.2);
+}
+.login-box h1 { font-family:var(--font-serif); font-size:24px; font-weight:900; color:var(--blau); margin-bottom:6px; }
+.login-box p { font-size:13px; color:var(--text-sec); margin-bottom:24px; }
+.login-box input {
+  width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:8px;
+  font-family:var(--font-sans); font-size:14px; margin-bottom:12px; outline:none;
+}
+.login-box .btn-login {
+  width:100%; padding:12px; border:none; border-radius:8px; background:var(--blau); color:#fff;
+  font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer; margin-top:4px;
+}
+#login-error { color:var(--vermell); font-size:12px; margin-top:10px; display:none; }
+
+/* ---- LAYOUT ---- */
+#app-screen { display:none; }
+.topbar {
+  background:var(--blau); color:#fff; padding:14px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:100;
+}
+.topbar h1 { font-family:var(--font-serif); font-size:18px; font-weight:900; }
+.topbar .user-info { display:flex; align-items:center; gap:12px; font-size:13px; }
+.topbar button {
+  background:rgba(255,255,255,.15); border:none; color:#fff; padding:6px 14px;
+  border-radius:6px; font-family:var(--font-sans); font-size:12px; cursor:pointer;
+}
+
+.main { max-width:900px; margin:0 auto; padding:24px; }
+
+/* ---- LLISTA ---- */
+.llista-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.llista-header h2 { font-family:var(--font-serif); font-size:22px; font-weight:600; }
+.btn-nou {
+  background:var(--blau); color:#fff; border:none; border-radius:8px;
+  padding:10px 20px; font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer;
+}
+.filtre-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.filtre-btn {
+  padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:#fff;
+  font-family:var(--font-sans); font-size:12px; font-weight:500; cursor:pointer; color:var(--text-sec);
+}
+.filtre-btn.actiu { background:var(--blau); color:#fff; border-color:var(--blau); }
+
+.event-card {
+  background:#fff; border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; margin-bottom:10px; display:flex; align-items:center; gap:14px; cursor:pointer;
+}
+.event-card .data-col { text-align:center; min-width:48px; flex-shrink:0; border-right:1px solid var(--border); padding-right:14px; }
+.event-card .data-col .dia { font-size:20px; font-weight:700; color:var(--blau); }
+.event-card .data-col .mes { font-size:11px; color:var(--text-sec); text-transform:uppercase; }
+.event-card .info { flex:1; }
+.event-card .info .titol { font-size:15px; font-weight:600; margin-bottom:3px; }
+.event-card .info .meta { font-size:12px; color:var(--text-sec); display:flex; gap:12px; flex-wrap:wrap; }
+.event-card .estat-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px; text-transform:uppercase; }
+.estat-publicat { background:#e6f4ec; color:#1d8a4e; }
+.estat-esborrany { background:#fef3e0; color:#b87a1b; }
+
+/* ---- FORMULARI ---- */
+#vista-form { display:none; }
+.form-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+.form-header .btn-tornar { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-family:var(--font-sans); font-size:13px; cursor:pointer; color:var(--text-sec); }
+.form-header h2 { font-family:var(--font-serif); font-size:20px; font-weight:600; }
+
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:24px; }
+.form-grid .full { grid-column: 1 / -1; }
+
+.camp label { display:block; font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:6px; text-transform:uppercase; }
+.camp input, .camp select, .camp textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:var(--font-sans); font-size:14px; outline:none; background:#fff; }
+.camp textarea { resize:vertical; min-height:100px; }
+
+.cat-pills { display:flex; flex-wrap:wrap; gap:8px; }
+.cat-pill { padding:8px 16px; border-radius:20px; border:1.5px solid var(--border); font-family:var(--font-sans); font-size:13px; cursor:pointer; background:#fff; }
+.cat-pill.selected { border-color:var(--blau); background:var(--blau); color:#fff; }
+
+.foto-zone { border:2px dashed var(--border); border-radius:10px; padding:24px; text-align:center; cursor:pointer; position:relative; min-height:120px; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+.foto-zone .placeholder { color:var(--text-sec); font-size:13px; }
+.foto-zone img { max-width:100%; max-height:200px; border-radius:8px; object-fit:cover; }
+
+.toggle-row { display:flex; align-items:center; gap:10px; }
+.toggle { width:40px; height:22px; background:var(--border); border-radius:11px; position:relative; cursor:pointer; }
+.toggle.on { background:var(--verd); }
+.toggle .knob { width:18px; height:18px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; transition: left .2s; }
+.toggle.on .knob { left:20px; }
+
+.form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.btn-esborrany { padding:11px 22px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:var(--font-sans); cursor:pointer; }
+.btn-publicar { padding:11px 22px; border:none; border-radius:8px; background:var(--verd); color:#fff; font-family:var(--font-sans); font-weight:600; cursor:pointer; }
+.btn-eliminar { padding:11px 22px; border:1px solid var(--vermell); border-radius:8px; background:#fff; color:var(--vermell); cursor:pointer; margin-right:auto; }
+
+/* ---- TAULETA DE LLOCS / GESTOR ---- */
+.lloc-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#fff; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; }
+.lloc-item button { background:none; border:none; color:var(--vermell); font-weight:600; cursor:pointer; font-size:12px; }
+
+.toast { position:fixed; bottom:24px; right:24px; background:var(--blau); color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; transform:translateY(80px); opacity:0; transition: all .3s; z-index:200; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.error { background:var(--vermell); }
 </style>
 </head>
 <body>
-<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem; display:flex; justify-content:center;">
-<div id="gx-app" style="width:340px; max-width:100%; background:#faf8f3; border-radius:26px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,.20); position:relative; min-height:780px; font-family:var(--font-sans);">
 
-<!-- capçalera -->
-<div style="background:#103b52; color:#fff;">
-<img src="assets/header.jpg" alt="Ganxoagenda" style="width:100%; display:block;">
-<div style="padding:11px 18px 13px;">
-<!-- meteo plegable -->
-<div onclick="gxToggleMeteo()" style="display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding-top:11px; border-top:1px solid rgba(255,255,255,.13); cursor:pointer;">
-<div style="display:flex; align-items:center; gap:9px;">
-<img id="gx-meteo-icon" src="assets/meteo-icon-default.png" style="width:36px; height:36px; object-fit:contain; background:#fff; border-radius:50%; padding:4px; box-sizing:border-box;">
-<div id="gx-meteo-temp" style="font-size:16px; font-weight:500;">—°</div>
-<div id="gx-meteo-desc" style="font-size:12px; opacity:.75;">Carregant...</div>
-</div>
-<div style="display:flex; align-items:center; gap:5px; font-size:11px; opacity:.8;">Temps per dies<i id="gx-meteo-chev" class="ti ti-chevron-down" style="font-size:16px;"></i></div>
-</div>
-<div id="gx-meteo-detail" style="display:none; margin-top:11px; flex-direction:column; gap:2px;">
-<div id="gx-meteo-dia-0" style="display:flex; align-items:center; padding:8px 10px; background:rgba(255,255,255,.10); border-radius:9px;"><div style="width:58px; font-size:12px; font-weight:600;">Avui</div><i class="ti ti-sun" style="font-size:17px; width:26px; text-align:center;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
-<div id="gx-meteo-dia-1" style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">Demà</div><i class="ti ti-cloud" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
-<div id="gx-meteo-dia-2" style="display:flex; align-items:center; padding:8px 10px; border-radius:9px;"><div style="width:58px; font-size:12px;">—</div><i class="ti ti-cloud" style="font-size:17px; width:26px; text-align:center; opacity:.9;"></i><div style="flex:1; font-size:11.5px; opacity:.9;">—</div><div style="font-size:10.5px; opacity:.8;"></div></div>
-</div>
-</div>
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Ganxoagenda</h1>
+    <p>Gestor d'esdeveniments</p>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-pass" placeholder="Contrasenya">
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div id="login-error"></div>
+  </div>
 </div>
 
-<!-- accessos temporals -->
-<div id="gx-filtres-wrap" style="background:#fff; padding:10px 14px 11px; border-bottom:1px solid #e4e0d7;">
-<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
-<div id="gx-filtre-avui" onclick="gxFiltrar('avui')" style="font-size:12px; font-weight:600; padding:9px 0; border-radius:9px; background:#103b52; color:#fff; text-align:center; cursor:pointer;">Avui</div>
-<div id="gx-filtre-dema" onclick="gxFiltrar('dema')" style="font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Demà</div>
-<div id="gx-filtre-cap" onclick="gxFiltrar('cap')" style="font-size:12px; font-weight:500; padding:9px 2px; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; line-height:1.25; cursor:pointer;">Cap de setmana</div>
-</div>
-<div style="margin-top:6px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-<div id="gx-filtre-nens" onclick="gxToggleNens()" style="font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;">Amb nens</div>
-<div style="display:flex; gap:4px; align-items:stretch;">
-<div onclick="event.stopPropagation(); gxCanviaMes(-1)" style="flex:0 0 26px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-left" style="font-size:14px;"></i></div>
-<div id="gx-filtre-mes" onclick="gxFiltrar('mes')" style="flex:1; font-size:12px; font-weight:500; padding:9px 0; border-radius:9px; background:#f3f0e9; color:#5f6b73; text-align:center; cursor:pointer;"><span id="gx-filtre-mes-text">Juny</span></div>
-<div onclick="event.stopPropagation(); gxCanviaMes(1)" style="flex:0 0 26px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:#f3f0e9; color:#5f6b73; cursor:pointer;"><i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
-</div>
-</div>
+<div id="app-screen">
+  <div class="topbar">
+    <h1>Ganxoagenda — Gestor</h1>
+    <div class="user-info">
+      <span id="user-email"></span>
+      <button onclick="doLogout()">Sortir</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- SECCIÓ LLISTAT PRINCIPAL -->
+    <div id="vista-llista">
+      <div class="llista-header">
+        <h2>Esdeveniments</h2>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
+          <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
+          <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
+          <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
+          <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
+        </div>
+      </div>
+      <div class="filtre-bar" id="filtre-bar"></div>
+      <div id="llista-events"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE LUGARES (LLOCS) -->
+    <div id="vista-llocs" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorLlocs()">← Tornar</button>
+        <h2>📍 Gestor de Lugares (Supabase)</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">AFEGIR NOU LLOC:</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="nou-lloc-nom" placeholder="Ex: Teatre Principal de Sant Feliu" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <button class="btn-nou" onclick="crearLlocNou()">Guardar Lloc</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Lugares actuales en la Base de Datos:</h3>
+      <div id="lista-llocs-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE CICLES / PROGRAMES -->
+    <div id="vista-cicles" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorCicles()">← Tornar</button>
+        <h2>🎟️ Gestor de Cicles / Programes</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label id="cicle-form-titol" style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOU CICLE / PROGRAMA:</label>
+        <p style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">Ex: Festa Major 2026, Porta Ferrada, Fira del Conte. Un cop creat, el podràs assignar als esdeveniments des del formulari.</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="text" id="nou-cicle-nom" placeholder="Nom del cicle (Ex: Porta Ferrada 2026)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <textarea id="nou-cicle-descripcio" placeholder="Descripció breu (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px; font-family:var(--font-sans); resize:vertical;"></textarea>
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data d'inici</label>
+              <input type="date" id="nou-cicle-data-inici" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <div style="flex:1;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data de fi</label>
+              <input type="date" id="nou-cicle-data-fi" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="nou-cicle-color" placeholder="Color (opcional, ex: #d85a30)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            <button class="btn-tornar" id="btn-cancelar-cicle" style="display:none;" onclick="cancelarEdicioCicle()">Cancel·lar</button>
+            <button class="btn-nou" id="btn-guardar-cicle" onclick="guardarCicle()">Guardar Cicle</button>
+          </div>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Cicles actuals:</h3>
+      <div id="lista-cicles-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE CATEGORIES -->
+    <div id="vista-categories" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorCategories()">← Tornar</button>
+        <h2>🏷️ Gestor de Categories</h2>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label id="categoria-form-titol" style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">NOVA CATEGORIA:</label>
+        <p style="font-size:12px; color:var(--text-sec); margin-bottom:10px;">L'ordre determina la posició a la llista de categories (de menor a major).</p>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text" id="nova-categoria-nom" placeholder="Nom de la categoria (Ex: Nit)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <input type="number" id="nova-categoria-ordre" placeholder="Ordre" style="width:90px; padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <button class="btn-tornar" id="btn-cancelar-categoria" style="display:none;" onclick="cancelarEdicioCategoria()">Cancel·lar</button>
+          <button class="btn-nou" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar Categoria</button>
+        </div>
+      </div>
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Categories actuals:</h3>
+      <div id="lista-categories-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GALERIA -->
+    <div id="vista-galeria" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGaleria()">← Tornar</button>
+        <h2>Galeria de fotos</h2>
+      </div>
+      <div class="foto-zone" style="margin-bottom:16px;" onclick="document.getElementById('batch-fotos').click()">
+        <div class="placeholder"><span>⬆️</span> Pujar diverses fotos</div>
+        <input type="file" id="batch-fotos" accept="image/*" multiple onchange="pujarBatch(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+      </div>
+      <div id="galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
+    </div>
+
+    <!-- VISTA FORMULARI -->
+    <div id="vista-form">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tornarLlista()">← Tornar</button>
+        <h2 id="form-titol">Nou esdeveniment</h2>
+      </div>
+
+      <!-- ASSISTENT INTEL·LIGENT -->
+      <div style="background: #eef5f8; border: 1px solid #cbdbe1; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--blau); margin-bottom:6px;">✨ Assistent Intel·ligent Gemini</label>
+        <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 12px;">Enganxa un text, una <strong>URL directa</strong>, o aporta un <strong>cartell (imatge)</strong> — pots enganxar-lo amb Ctrl+V o pujar-lo. L'assistent associarà el lloc i la categoria pel context, i avisarà si l'event sembla duplicat.</p>
+        <textarea id="ia-contenido" placeholder="Enganxa la URL, el text, o una imatge del cartell (Ctrl+V) aquí..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px;"></textarea>
+        <div id="ia-imatge-preview" style="display:none; margin-top:10px; position:relative; max-width:180px;">
+          <img id="ia-imatge-img" style="width:100%; border-radius:8px; border:1px solid var(--border); display:block;">
+          <button type="button" onclick="ia_eliminarImatge()" style="position:absolute; top:-8px; right:-8px; width:24px; height:24px; border-radius:50%; border:none; background:var(--vermell); color:#fff; cursor:pointer; font-size:12px;">✕</button>
+        </div>
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-top:8px;">
+          <label style="font-size:12px; color:var(--blau-clar); cursor:pointer; border:1px solid var(--blau-clar); padding:7px 12px; border-radius:6px;">
+            🖼️ Pujar cartell
+            <input type="file" id="ia-imatge-input" accept="image/*" onchange="ia_onFileSelected(this)" style="display:none;">
+          </label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div id="ia-loading" style="display:none; font-size: 13px; color: var(--blau);">🤖 Analitzant...</div>
+            <button type="button" onclick="procesarConGeminiUnPaso()" class="btn-nou" style="background: var(--blau-clar); padding: 8px 16px;">Analitzar amb IA</button>
+          </div>
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--text-sec); cursor:pointer;">
+          <input type="checkbox" id="ia-aprofundir" style="width:auto; cursor:pointer;">
+          Entrar a les fitxes per completar la descripció <span style="color:var(--accent);">(més lent)</span>
+        </label>
+        <div id="ia-usage-info" style="font-size:11px; color:var(--text-sec); margin-top:6px;"></div>
+        <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
+          <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS:</p>
+          <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="camp full"><label>Títol</label><input type="text" id="f-titol"></div>
+        <div class="camp full"><label>Categoria</label><div class="cat-pills" id="f-categories"></div></div>
+        <div class="camp full"><label>Cicle / Programa</label><select id="f-cicle"><option value="">— Cap cicle —</option></select></div>
+        <div class="camp"><label>Data</label><input type="date" id="f-data"></div>
+        <div class="camp"><label>Hora d'inici</label><input type="time" id="f-hora-inici"></div>
+        <div class="camp full"><label>Data de fi <span style="text-transform:none; font-weight:400;">(opcional — per a esdeveniments de diversos dies, com exposicions)</span></label><input type="date" id="f-data-fi"></div>
+        <div class="camp"><label>Lloc</label><select id="f-lloc"></select></div>
+        <div class="camp"><label>Hora de fi</label><input type="time" id="f-hora-fi"></div>
+        <div class="camp"><label>Preu</label><input type="text" id="f-preu-text" placeholder="Ex: Gratuït / 15 €"></div>
+        <div class="camp"><label>Enllaç entrades</label><input type="url" id="f-url-entrades"></div>
+        <div class="camp full"><label>Descripció</label><textarea id="f-descripcio"></textarea></div>
+        
+        <div class="camp full">
+          <label>Foto</label>
+          <div class="foto-zone" id="foto-zone">
+            <div class="placeholder" id="foto-placeholder">📷 Tria o arrossega una foto</div>
+            <img id="foto-preview" style="display:none;">
+            <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
+          </div>
+          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:6px 12px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; font-size:12px; cursor:pointer;">🖼️ Triar de la galeria</button>
+        </div>
+
+        <div class="camp">
+          <label>Activitat familiar</label>
+          <div class="toggle-row">
+            <div class="toggle" id="tog-familiar" onclick="toggleSwitch(this)"><div class="knob"></div></div>
+            <input type="text" id="f-edat" placeholder="Edat" style="width:120px; display:none; margin-left:10px;">
+          </div>
+        </div>
+        <div class="camp">
+          <label>Destacat</label>
+          <div class="toggle-row"><div class="toggle" id="tog-destacat" onclick="toggleSwitch(this)"><div class="knob"></div></div><input type="number" id="f-ordre" value="0" style="width:70px; margin-left:10px;"></div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-eliminar" id="btn-eliminar" style="display:none;" onclick="eliminarEsdeveniment()">Eliminar</button>
+        <button class="btn-esborrany" id="btn-duplicar-event" style="display:none;" onclick="duplicarEsdeveniment()">Duplicar</button>
+        <button class="btn-esborrany" onclick="desarEsdeveniment('esborrany')">Desar esborrany</button>
+        <button class="btn-publicar" onclick="desarEsdeveniment('publicat')">Publicar</button>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- pàgina agenda -->
-<div id="gx-page-agenda" style="padding:16px 16px 20px;">
-<div style="display:flex; align-items:baseline; justify-content:space-between; margin:0 2px 13px;">
-<div id="gx-agenda-titol" style="font-size:15px; font-weight:600; color:#1d2b27;">Avui a Sant Feliu</div>
-<div id="gx-avui-data" style="font-size:14px; font-weight:600; color:#1d2b27;">—</div>
+<div id="modal-galeria" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; padding:20px; overflow-y:auto;">
+  <div style="background:#fff; border-radius:14px; max-width:600px; margin:30px auto; padding:20px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px;"><h3 style="margin:0;">Triar de la galeria</h3><button onclick="tancarSelectorGaleria()">✕</button></div>
+    <div id="selector-galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px;"></div>
+  </div>
 </div>
 
-<div id="gx-agenda-loading" style="text-align:center; padding:30px 0; color:#8a8478; font-size:13px;">Carregant...</div>
-<div id="gx-agenda-buit" style="display:none; text-align:center; padding:24px 16px 28px; background:#fff; border:1px solid #e4e0d7; border-radius:16px;">
-<img src="assets/icon-192.png" alt="" style="width:72px; height:72px; object-fit:contain; margin-bottom:10px;">
-<div id="gx-agenda-buit-text" style="font-size:13px; color:#6b7780; line-height:1.5;">Avui no hi ha esdeveniments publicats.</div>
-</div>
-
-<!-- destacat (es genera dinàmicament) -->
-<div id="gx-agenda-destacat"></div>
-
-<!-- dues columnes (es genera dinàmicament) -->
-<div id="gx-agenda-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
-
-<!-- tots els esdeveniments (llista per dies, només a "Avui") -->
-<div id="gx-tots-wrap" style="display:none; margin-top:22px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 11px;">Tots els esdeveniments</div>
-<div id="gx-tots-llista"></div>
-</div>
-</div>
-
-<!-- pàgina pràctic -->
-<div id="gx-page-practic" style="display:none; padding:16px 16px 20px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 13px;">Informació útil</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:12px; overflow:hidden;">
-<div style="display:flex; align-items:center; gap:13px; padding:13px 15px; border-bottom:1px solid #ece8df;"><div style="width:38px; height:38px; border-radius:11px; background:#eef3f5; display:flex; align-items:center; justify-content:center;"><i class="ti ti-plus" style="font-size:18px; color:#103b52;"></i></div><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Farmàcia de guàrdia</div><div style="font-size:12px; color:#8a8478;">Avui · Farmàcia Sant Joan</div></div><i class="ti ti-chevron-right" style="color:#c3bcae;"></i></div>
-<div style="display:flex; align-items:center; gap:13px; padding:13px 15px; border-bottom:1px solid #ece8df;"><div style="width:38px; height:38px; border-radius:11px; background:#eef3f5; display:flex; align-items:center; justify-content:center;"><i class="ti ti-bus" style="font-size:18px; color:#103b52;"></i></div><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Bus i tren</div><div style="font-size:12px; color:#8a8478;">Horaris cap a Girona i Barcelona</div></div><i class="ti ti-chevron-right" style="color:#c3bcae;"></i></div>
-<div style="display:flex; align-items:center; gap:13px; padding:13px 15px;"><div style="width:38px; height:38px; border-radius:11px; background:#eef3f5; display:flex; align-items:center; justify-content:center;"><i class="ti ti-recycle" style="font-size:18px; color:#103b52;"></i></div><div style="flex:1;"><div style="font-size:14px; font-weight:600;">Recollida de residus</div><div style="font-size:12px; color:#8a8478;">Avui: orgànica</div></div><i class="ti ti-chevron-right" style="color:#c3bcae;"></i></div>
-</div>
-</div>
-
-<!-- pàgina de visita -->
-<div id="gx-page-visita" style="display:none; padding:16px 16px 20px;">
-<div onclick="gxOpenGuia()" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">
-<div style="height:158px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; align-items:flex-end;">
-<div style="position:absolute; inset:0; background:linear-gradient(transparent 36%, rgba(0,0,0,.6));"></div>
-<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px;">GUIA</div>
-<div style="position:relative; padding:15px 16px; color:#fff;"><div style="font-size:21px; font-weight:900; line-height:1.08; letter-spacing:-.5px; font-family:var(--font-serif);">Sant Feliu en 48 hores</div><div style="font-size:12px; opacity:.9; margin-top:4px;">Tot l'essencial si véns un cap de setmana</div></div>
-</div>
-</div>
-<div style="font-size:11px; font-weight:700; color:#103b52; text-transform:uppercase; letter-spacing:.8px; margin:0 2px 12px;">Descobreix</div>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#36b3c9,#0d6e8e);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">Les 5 millors cales</div></div>
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#5da876,#2c6e43);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">El camí de ronda</div></div>
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">On menjar peix fresc</div></div>
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#9a7b52,#5a3e1e);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">El Monestir</div></div>
-</div>
-</div>
-
-<!-- barra inferior -->
-<div style="background:#fff; border-top:1px solid #e4e0d7; display:flex; padding:9px 0 11px;">
-<div id="gx-nav-agenda" onclick="gxPage('agenda')" style="flex:1; text-align:center; color:#103b52; cursor:pointer;"><i class="ti ti-calendar-event" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">Agenda</div></div>
-<div id="gx-nav-visita" onclick="gxPage('visita')" style="flex:1; text-align:center; color:#b3a89a; cursor:pointer;"><i class="ti ti-compass" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">De visita</div></div>
-<div id="gx-nav-practic" onclick="gxPage('practic')" style="flex:1; text-align:center; color:#b3a89a; cursor:pointer;"><i class="ti ti-info-circle" style="font-size:21px;"></i><div style="font-size:10px; font-weight:500; margin-top:2px;">Pràctic</div></div>
-</div>
-
-<!-- ===== FITXA D'ESDEVENIMENT ===== -->
-<div id="gx-ficha" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
-
-<!-- foto capçalera -->
-<div id="gx-f-header" style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
-<div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
-<div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
-<div style="display:flex; gap:8px;">
-<div onclick="gxCloseFicha()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
-<div onclick="gxAnarInici()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-home" style="font-size:18px;"></i></div>
-</div>
-<div id="gx-f-ganxot-wrap" style="width:58px; height:60px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;"><img id="gx-f-ganxot" src="" alt="" style="width:60px; height:60px; object-fit:contain; display:block;"></div>
-</div>
-<div style="position:relative; padding:15px 18px;">
-<div id="gx-f-cat" style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">ESPORTS</div>
-<div id="gx-f-title" style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Regata de llaguts catalans</div>
-</div>
-</div>
-
-<!-- cicle/festival -->
-<div id="gx-f-cicle" onclick="gxVeureCicle()" style="display:none; margin:14px 16px 0; background:#103b52; color:#fff; border-radius:12px; padding:11px 14px; align-items:center; justify-content:space-between; cursor:pointer;">
-<div style="display:flex; align-items:center; gap:9px;"><i class="ti ti-stars" style="font-size:17px;"></i><div style="font-size:12.5px;">Part de: <strong id="gx-f-cicle-nom">Festa de la Mar</strong></div></div>
-<i class="ti ti-chevron-right" style="font-size:16px;"></i>
-</div>
-
-<!-- avís meteo -->
-<div id="gx-f-alert" style="display:none; margin:11px 16px 0; background:#fef3e2; border:1px solid #f4ddb0; border-radius:12px; padding:11px 14px; align-items:center; gap:10px;">
-<i class="ti ti-cloud-rain" style="font-size:18px; color:#c98a1f;"></i>
-<div style="font-size:12px; color:#7a5a17; line-height:1.4;">Esdeveniment a l'aire lliure. Avís de pluja per a aquesta tarda — pot patir canvis.</div>
-</div>
-
-<!-- dades ràpides -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:16px;">
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
-<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-calendar-event" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Quan</div><div id="gx-f-quan" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Dij 11 · 19:00</div></div>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
-<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-map-pin" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">On</div><div id="gx-f-on" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Port · Club de Rem</div></div>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
-<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-ticket" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Preu</div><div id="gx-f-preu" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Entrada lliure</div></div>
-</div>
-<div style="background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:12px 13px; display:flex; align-items:center; gap:11px;">
-<div style="width:38px; height:38px; border-radius:10px; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="ti ti-building-community" style="font-size:18px; color:#103b52;"></i></div>
-<div><div style="font-size:10px; color:#8a8478; text-transform:uppercase; letter-spacing:.4px;">Organitza</div><div id="gx-f-organitza" style="font-size:13px; font-weight:700; color:#1d2b27; margin-top:2px;">Club de Rem</div></div>
-</div>
-</div>
-
-<!-- descripció -->
-<div style="padding:0 16px 18px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Descripció</div>
-<div id="gx-f-desc" style="font-size:13.5px; line-height:1.6; color:#3d4a47;">La tradicional regata de llaguts de vela llatina torna al passeig del mar.</div>
-</div>
-
-<!-- accions -->
-<div style="padding:0 16px 18px; display:flex; flex-direction:column; gap:10px;">
-<div id="gx-f-recorda" onclick="gxToggleRecorda(gxFichaCurrentId, this)" style="background:#103b52; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m'ho</div>
-<a id="gx-f-whatsapp" href="#" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:12px; text-align:center; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:16px;"></i>Compartir</a>
-</div>
-
-<!-- mapa -->
-<div style="padding:0 16px 18px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">On és</div>
-<a id="gx-f-mapa-link" href="#" target="_blank" style="display:block; border-radius:13px; overflow:hidden; border:1px solid #e4e0d7; text-decoration:none;">
-<div id="gx-f-mapa-img" style="height:120px; background:#e8e4d9; position:relative; background-image:linear-gradient(0deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent); background-size:cover; background-position:center;">
-<i class="ti ti-map-pin" style="font-size:30px; color:#d85a30; position:absolute; top:50%; left:50%; transform:translate(-50%,-100%);"></i>
-</div>
-<div style="background:#fff; padding:11px 14px; display:flex; align-items:center; justify-content:space-between;">
-<div id="gx-f-lloc-map" style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
-<div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
-</div>
-</a>
-</div>
-
-<!-- altres plans aquest dia -->
-<div id="gx-f-altres-wrap" style="padding:0 16px 6px;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Altres plans aquest dia</div>
-<div id="gx-f-altres" style="display:flex; flex-direction:column; gap:9px;"></div>
-</div>
-
-<!-- enllaç cap de setmana -->
-<div id="gx-f-veure-cap" onclick="gxVeureCapSetmana()" style="padding:0 16px 24px;">
-<div style="display:flex; align-items:center; justify-content:center; gap:6px; color:#103b52; font-size:12.5px; font-weight:700; padding:11px; border:1px dashed #c9c2b4; border-radius:11px; cursor:pointer;">Veure tots els plans del cap de setmana<i class="ti ti-arrow-right" style="font-size:14px;"></i></div>
-</div>
-
-</div>
-<!-- fi fitxa -->
-
-<!-- ===== FITXA DE GUIA (EVERGREEN) ===== -->
-<div id="gx-guia" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
-
-<!-- foto capçalera -->
-<div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; flex-direction:column; justify-content:space-between;">
-<div style="position:absolute; inset:0; background:linear-gradient(transparent 40%, rgba(0,0,0,.65));"></div>
-<div style="position:relative; display:flex; justify-content:space-between; padding:15px;">
-<div onclick="gxCloseGuia()" style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52; cursor:pointer;"><i class="ti ti-arrow-left" style="font-size:18px;"></i></div>
-<div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; color:#103b52;"><i class="ti ti-heart" style="font-size:18px;"></i></div>
-</div>
-<div style="position:relative; padding:15px 18px;">
-<div style="font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px; display:inline-block; margin-bottom:9px;">GUIA</div>
-<div style="font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.1; font-family:var(--font-serif); color:#fff;">Sant Feliu en 48 hores</div>
-</div>
-</div>
-
-<!-- intro -->
-<div style="padding:16px 16px 0;">
-<div style="font-size:13.5px; line-height:1.6; color:#3d4a47;">Tot l'essencial per descobrir Sant Feliu de Guíxols en un cap de setmana: platja, passeig, monestir, gastronomia i una escapada pel Camí de Ronda.</div>
-</div>
-
-<!-- dia 1 -->
-<div style="padding:18px 16px 0;">
-<div style="font-size:11px; font-weight:700; color:#103b52; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Dia 1 · El cor del poble</div>
-
-<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Porta Ferrada · Monestir</div></div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-sun" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Matí</strong> — Comença al Monestir de Sant Feliu, nucli històric de la vila. Passeja per la Plaça del Monestir i la Porta Ferrada, la portalada romànica que dona nom al festival d'estiu.</div>
-</div>
-
-<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Passeig del Mar</div></div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-walk" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Migdia</strong> — Baixa fins al Passeig del Mar, amb les seves icòniques arcades de farola i el mirador sobre la platja. Bon moment per dinar a una terrassa amb vistes.</div>
-</div>
-
-<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#36b3c9,#0d6e8e);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Platja de Sant Feliu</div></div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-umbrella" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Tarda</strong> — Temps de platja: ampla i urbana, amb tots els serveis. Si busques tranquil·litat, camina cap a l'extrem de llevant, a tocar del port.</div>
-</div>
-
-<div style="display:flex; gap:11px; margin-bottom:6px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-moon" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Nit</strong> — Sopar de peix fresc a la zona del port o a la Plaça del Mercat, i una passejada nocturna pel passeig il·luminat.</div>
-</div>
-</div>
-
-<!-- dia 2 -->
-<div style="padding:22px 16px 0;">
-<div style="font-size:11px; font-weight:700; color:#103b52; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">Dia 2 · Camí de Ronda i cales</div>
-
-<div style="border-radius:13px; overflow:hidden; height:120px; margin-bottom:11px; position:relative; background-image:linear-gradient(125deg,#5da876,#2c6e43);"><div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,.45));"></div><div style="position:absolute; bottom:9px; left:11px; color:#fff; font-size:13px; font-weight:700;">Camí de Ronda</div></div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-sun" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Matí</strong> — Comença l'etapa del Camí de Ronda cap a S'Agaró: un recorregut espectacular vora els penya-segats, amb vistes a cales amagades com Sant Pol.</div>
-</div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-walk" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Migdia</strong> — Para a la Cala Sant Pol o continua fins als Jardins de Cap Roig. Bany a una cala recòndita abans de tornar.</div>
-</div>
-
-<div style="display:flex; gap:11px; margin-bottom:14px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-building-bank" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Tarda</strong> — Torna cap al centre i visita el Museu d'Història de la Ciutat, ideal per entendre el passat industrial (suro) i mariner del poble.</div>
-</div>
-
-<div style="display:flex; gap:11px; margin-bottom:6px;">
-<div style="width:30px; height:30px; border-radius:50%; background:#eef3f5; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#103b52;"><i class="ti ti-moon" style="font-size:15px;"></i></div>
-<div style="font-size:13px; line-height:1.55; color:#3d4a47;"><strong>Nit</strong> — Acaba el cap de setmana amb un gelat al passeig, mentre es pon el sol darrere la badia.</div>
-</div>
-</div>
-
-<!-- altres guies -->
-<div style="padding:22px 16px 0;">
-<div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">També et pot interessar</div>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#36b3c9,#0d6e8e); cursor:pointer;"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">Les 5 millors cales</div></div>
-<div style="border-radius:13px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); height:100px; position:relative; background-image:linear-gradient(125deg,#b07a2e,#6e4515); cursor:pointer;"><div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,.5));"></div><div style="position:absolute; bottom:8px; left:9px; right:9px; color:#fff; font-size:13.5px; font-weight:900; font-family:var(--font-serif); line-height:1.15; letter-spacing:-.3px;">On menjar peix fresc</div></div>
-</div>
-</div>
-
-<!-- compartir -->
-<div style="padding:18px 16px 26px;">
-<a href="https://wa.me/?text=%E2%9B%B5%20Sant%20Feliu%20en%2048%20hores%20%E2%80%94%20guia%20a%20Ganxoagenda%0Ahttps%3A%2F%2Fganxoagenda.cat" target="_blank" style="background:#1d8a4e; color:#fff; border-radius:11px; padding:13px; text-align:center; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; text-decoration:none;"><i class="ti ti-brand-whatsapp" style="font-size:17px;"></i>Compartir aquesta guia</a>
-</div>
-
-</div>
-<!-- fi guia -->
-
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-function gxPage(p){
-  ['agenda','visita','practic'].forEach(function(x){
-    document.getElementById('gx-page-'+x).style.display = (x===p)?'block':'none';
-    document.getElementById('gx-nav-'+x).style.color = (x===p)?'#103b52':'#b3a89a';
-  });
-  document.getElementById('gx-filtres-wrap').style.display = (p==='agenda')?'block':'none';
-}
-function gxToggleMeteo(){
-  var d=document.getElementById('gx-meteo-detail'), c=document.getElementById('gx-meteo-chev');
-  if(d.style.display==='none'){d.style.display='flex';c.className='ti ti-chevron-up';}
-  else{d.style.display='none';c.className='ti ti-chevron-down';}
-}
-function gxOpenGuia(){
-  document.getElementById('gx-guia').style.display='block';
-  document.getElementById('gx-guia').scrollTop=0;
-}
-function gxCloseGuia(){
-  document.getElementById('gx-guia').style.display='none';
-}
+const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
+const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
 
-/* ===== SUPABASE ===== */
-var GX_SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
-var GX_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
-var gxSupabase = supabase.createClient(GX_SUPABASE_URL, GX_SUPABASE_KEY);
+let accessToken = null, refreshToken = null, currentUser = null, categories = [], llocs = [], cicles = [], editingId = null, editingCicleId = null, editingCategoriaId = null, fotoFile = null, fotoGaleriaUrl = null;
 
-var gxCategories = {};   // slug -> {nom, color_gradient, icona}
-var gxEvents = [];       // events del filtre actiu (avui/demà/cap/mes)
-var gxEventsTots = [];   // tots els esdeveniments futurs (per a la secció "Tots els esdeveniments")
-var gxRangeActiu = null;  // rang {from,to} del filtre actiu
-var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
-var GX_GANXOT_PATH = 'icons/';
-var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'icon-512.png';
-var GX_GANXOT_MAP = {
-  esports: 'buho_esports.png',
-  cultura: 'buho_teatro.png',
-  musica: 'buho_musica.png',
-  fira: 'buho_mercat.png',
-  gastro: 'buho_gastro.png',
-  festa: 'buho_nit.png'
-};
+const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
-var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
-var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
-function gxCap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-var gxFiltreActiu = 'avui';
-var gxMesOffset = 0;
-var gxNomesNens = false;
-var gxPagina = 0;
-var gxPaginaTots = 0;
-var gxFichaStack = [];
-var gxFichaCurrentId = null;
-
-function gxToISO(d){
-  var mm = String(d.getMonth()+1).padStart(2,'0');
-  var dd = String(d.getDate()).padStart(2,'0');
-  return d.getFullYear()+'-'+mm+'-'+dd;
-}
-function gxTodayISO(){
-  return gxToISO(new Date());
-}
-function gxFormatDataCurta(dataISO){
-  if(!dataISO) return '';
-  var d = new Date(dataISO+'T00:00:00');
-  return GX_DIES[d.getDay()] + ' ' + d.getDate();
-}
-function gxFormatHora(hora){
-  if(!hora) return '';
-  return hora.slice(0,5);
-}
-
-function gxRangeFor(filtre){
-  var today = new Date();
-  today.setHours(0,0,0,0);
-  if(filtre==='dema'){
-    var d = new Date(today); d.setDate(d.getDate()+1);
-    return {from:gxToISO(d), to:gxToISO(d), titol:'Demà a Sant Feliu'};
+async function sbFetch(path, opts = {}) {
+  let res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  if (res.status === 401 && accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
   }
-  if(filtre==='cap'){
-    var dow = today.getDay(); // 0=diumenge..6=dissabte
-    var diesFinsDissabte = (6-dow+7)%7;
-    var sab = new Date(today); sab.setDate(sab.getDate()+diesFinsDissabte);
-    var diu = new Date(sab); diu.setDate(diu.getDate()+1);
-    // si avui ja és dissabte o diumenge, comença avui
-    if(dow===6){ sab = new Date(today); diu = new Date(today); diu.setDate(diu.getDate()+1); }
-    if(dow===0){ sab = new Date(today); diu = new Date(today); }
-    return {from:gxToISO(sab), to:gxToISO(diu), titol:'Cap de setmana'};
-  }
-  if(filtre==='mes'){
-    var base = new Date(today.getFullYear(), today.getMonth()+gxMesOffset, 1);
-    var last = new Date(base.getFullYear(), base.getMonth()+1, 0);
-    var from = (gxMesOffset===0) ? today : base;
-    return {from:gxToISO(from), to:gxToISO(last), titol:'Al '+GX_MESOS[base.getMonth()], mes:gxCap(GX_MESOS[base.getMonth()])};
-  }
-  // avui (default)
-  return {from:gxToISO(today), to:gxToISO(today), titol:'Avui a Sant Feliu'};
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || res.statusText); }
+  const text = await res.text(); return text ? JSON.parse(text) : null;
 }
 
-function gxSetFiltreActiu(filtre){
-  gxFiltreActiu = filtre;
-  ['avui','dema','cap','mes'].forEach(function(f){
-    var el = document.getElementById('gx-filtre-'+f);
-    if(f===filtre){ el.style.background='#103b52'; el.style.color='#fff'; el.style.fontWeight='600'; }
-    else{ el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500'; }
-  });
+async function refreshAccessToken() {
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const data = await res.json();
+    if (!res.ok) return false;
+    accessToken = data.access_token; refreshToken = data.refresh_token;
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_refresh', refreshToken);
+    return true;
+  } catch (e) { return false; }
 }
 
-async function gxCarregarRang(range){
-  document.getElementById('gx-agenda-loading').style.display='block';
-  document.getElementById('gx-agenda-loading').textContent='Carregant...';
-  document.getElementById('gx-agenda-buit').style.display='none';
-  document.getElementById('gx-agenda-destacat').innerHTML='';
-  document.getElementById('gx-agenda-grid').innerHTML='';
-  document.getElementById('gx-tots-wrap').style.display='none';
-  document.getElementById('gx-tots-llista').innerHTML='';
-  try{
-    var query = gxSupabase.from('esdeveniments')
-      .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url), cicles(id,nom)')
-      .gte('data', range.from)
-      .eq('estat','publicat')
-      .order('data', {ascending:true})
-      .order('destacat', {ascending:false})
-      .order('ordre', {ascending:true})
-      .order('hora_inici', {ascending:true});
-    // per a "avui", "dema" i "cap" carreguem també tots els esdeveniments futurs
-    // (sense límit superior) per a la secció "Tots els esdeveniments"
-    var totsFiltres = (gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap');
-    var to = totsFiltres ? null : range.to;
-    if(to) query = query.lte('data', to);
-    var evRes = await query;
-    if(evRes.error){ console.error(evRes.error); }
-    gxEventsTots = evRes.data || [];
-    if(totsFiltres){
-      gxEvents = gxEventsTots.filter(function(e){ return e.data>=range.from && e.data<=range.to; });
+// Igual que sbFetch però per a l'API de Storage (llistar/pujar fotos), amb el mateix
+// refresc automàtic de token quan caduca (401).
+async function sbStorageFetch(path, opts = {}) {
+  const buildHeaders = () => ({ 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY), 'apikey': SUPABASE_ANON_KEY, ...(opts.headers || {}) });
+  let res = await fetch(SUPABASE_URL + path, { ...opts, headers: buildHeaders() });
+  if (res.status === 401 && accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) res = await fetch(SUPABASE_URL + path, { ...opts, headers: buildHeaders() });
+  }
+  return res;
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method:'POST', headers:{ 'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY }, body:JSON.stringify({ email, password:pass }) });
+    const data = await res.json(); if(!res.ok) throw new Error(data.error_description || 'Error');
+    accessToken = data.access_token; refreshToken = data.refresh_token; currentUser = data.user;
+    localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_refresh', refreshToken); localStorage.setItem('gx_user', JSON.stringify(currentUser));
+    showApp();
+  } catch (e) { document.getElementById('login-error').textContent = e.message; document.getElementById('login-error').style.display='block'; }
+}
+
+function doLogout() { localStorage.clear(); location.reload(); }
+
+async function tryAutoLogin() {
+  const token = localStorage.getItem('gx_token'), user = localStorage.getItem('gx_user'), refresh = localStorage.getItem('gx_refresh');
+  if (token && user) { accessToken = token; refreshToken = refresh; currentUser = JSON.parse(user); showApp(); }
+}
+
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('user-email').textContent = currentUser.email;
+  await carregarCategories();
+  await carregarLlocs();
+  await carregarCicles();
+  renderFiltres(); renderCatPills(); await carregarEsdeveniments();
+}
+
+async function carregarCategories() {
+  categories = await sbFetch('/rest/v1/categories?select=*&order=ordre');
+}
+
+async function carregarLlocs() {
+  llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
+  const sel = document.getElementById('f-lloc');
+  sel.innerHTML = '<option value="">— Tria un lloc —</option>';
+  llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.nom}</option>`);
+}
+
+async function carregarCicles() {
+  cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
+  const sel = document.getElementById('f-cicle');
+  sel.innerHTML = '<option value="">— Cap cicle —</option>';
+  cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
+}
+
+// ---- CONTROLADOR DE LUGARES (NUEVA VENTANA) ----
+function obrirGestorLlocs() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-llocs').style.display = 'block';
+  renderListaLugaresGestion();
+}
+function tancarGestorLlocs() {
+  document.getElementById('vista-llocs').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaLugaresGestion() {
+  const container = document.getElementById('lista-llocs-gestion');
+  container.innerHTML = llocs.map(l => `
+    <div class="lloc-item">
+      <span>📍 ${l.nom}</span>
+      <button onclick="eliminarLloc('${l.id}')">Eliminar</button>
+    </div>
+  `).join('');
+}
+async function crearLlocNou() {
+  const nom = document.getElementById('nou-lloc-nom').value.trim();
+  if(!nom) return toast('Escriu el nom del lloc', true);
+  try {
+    await sbFetch('/rest/v1/llocs', { method: 'POST', body: JSON.stringify({ nom }) });
+    document.getElementById('nou-lloc-nom').value = '';
+    toast('Lloc guardat a Supabase!');
+    await carregarLlocs(); renderListaLugaresGestion();
+  } catch(e) { toast('Error o lloc ja existent', true); }
+}
+async function eliminarLloc(id) {
+  if(!confirm('Segur que vols eliminar aquest lloc?')) return;
+  try {
+    await sbFetch(`/rest/v1/llocs?id=eq.${id}`, { method: 'DELETE' });
+    toast('Lloc eliminat');
+    await carregarLlocs(); renderListaLugaresGestion();
+  } catch(e) { toast('No es pot eliminar si està en ús', true); }
+}
+
+// ---- CONTROLADOR DE CICLES / PROGRAMES (NUEVA VENTANA) ----
+function obrirGestorCicles() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-cicles').style.display = 'block';
+  renderListaCiclesGestion();
+}
+function tancarGestorCicles() {
+  cancelarEdicioCicle();
+  document.getElementById('vista-cicles').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaCiclesGestion() {
+  const container = document.getElementById('lista-cicles-gestion');
+  if(!cicles.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap cicle creat.</div>'; return; }
+  const fmtData = (d) => d ? d.split('-').reverse().join('/') : '';
+  container.innerHTML = cicles.map(c => {
+    let rang = '';
+    if(c.data_inici || c.data_fi) rang = `<span style="color:var(--text-sec); font-size:12px;"> · ${fmtData(c.data_inici)}${c.data_fi ? ' – ' + fmtData(c.data_fi) : ''}</span>`;
+    return `
+    <div class="lloc-item">
+      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}</span>
+      <span style="display:flex; gap:14px;">
+        <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="duplicarCicle('${c.id}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
+        <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
+      </span>
+    </div>
+  `}).join('');
+}
+async function guardarCicle() {
+  const nom = document.getElementById('nou-cicle-nom').value.trim();
+  const descripcio = document.getElementById('nou-cicle-descripcio').value.trim();
+  const color = document.getElementById('nou-cicle-color').value.trim();
+  const dataInici = document.getElementById('nou-cicle-data-inici').value;
+  const dataFi = document.getElementById('nou-cicle-data-fi').value;
+  if(!nom) return toast('Escriu el nom del cicle', true);
+  const body = { nom, descripcio: descripcio || null, color: color || null, data_inici: dataInici || null, data_fi: dataFi || null };
+  try {
+    if(editingCicleId) {
+      await sbFetch(`/rest/v1/cicles?id=eq.${editingCicleId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Cicle actualitzat!');
     } else {
-      gxEvents = gxEventsTots;
+      await sbFetch('/rest/v1/cicles', { method: 'POST', body: JSON.stringify(body) });
+      toast('Cicle guardat a Supabase!');
     }
-  }catch(e){ console.error('Error esdeveniments', e); }
-  gxRenderAgenda();
+    cancelarEdicioCicle();
+    await carregarCicles(); renderListaCiclesGestion();
+  } catch(e) { toast(e.message || 'Error o cicle ja existent', true); }
 }
 
-function gxCanviaMes(delta){
-  gxMesOffset += delta;
-  if(gxMesOffset<0) gxMesOffset=0;
-  if(gxFiltreActiu!=='mes') gxFiltrar('mes');
-  else gxFiltrar('mes');
-}
-function gxToggleNens(){
-  gxNomesNens = !gxNomesNens;
-  gxPagina=0;
-  gxPaginaTots=0;
-  var el = document.getElementById('gx-filtre-nens');
-  if(gxNomesNens){ el.style.background='#103b52'; el.style.color='#fff'; el.style.fontWeight='600'; }
-  else{ el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500'; }
-  gxRenderAgenda();
-}
-async function gxFiltrar(filtre){
-  if(filtre!=='mes') gxMesOffset=0;
-  gxPagina=0;
-  gxPaginaTots=0;
-  gxSetFiltreActiu(filtre);
-  var range = gxRangeFor(filtre);
-  gxRangeActiu = range;
-  document.getElementById('gx-agenda-titol').textContent = range.titol;
-  document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
-  if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.mes; }
-  await gxCarregarRang(range);
+function editarCicle(id) {
+  const c = cicles.find(x => x.id === id);
+  if(!c) return;
+  editingCicleId = id;
+  document.getElementById('nou-cicle-nom').value = c.nom || '';
+  document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
+  document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
+  document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
+  document.getElementById('cicle-form-titol').textContent = 'EDITAR CICLE / PROGRAMA:';
+  document.getElementById('btn-guardar-cicle').textContent = 'Actualitzar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
+  document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
-var GX_VENTS = ['Tramuntana','Gregal','Llevant','Xaloc','Migjorn','Garbí','Ponent','Mestral'];
-function gxNomVent(graus){
-  var idx = Math.round(graus/45) % 8;
-  return GX_VENTS[idx];
-}
-function gxForcaVent(kmh){
-  if(kmh < 15) return {nom:'fluix', color:'#7fd69a', etiqueta:'verda'};
-  if(kmh < 30) return {nom:'moderat', color:'#ffd36a', etiqueta:'groga'};
-  return {nom:'fort', color:'#ff9a6a', etiqueta:'taronja'};
-}
-function gxCeleIcona(codi){
-  if(codi===0) return {icon:'ti-sun', desc:'Assolellat'};
-  if(codi<=3) return {icon:'ti-cloud', desc:'Núvols'};
-  if(codi===45||codi===48) return {icon:'ti-cloud-fog', desc:'Boira'};
-  if((codi>=51&&codi<=67)||(codi>=80&&codi<=82)) return {icon:'ti-cloud-rain', desc:'Pluja'};
-  if((codi>=71&&codi<=77)||codi===85||codi===86) return {icon:'ti-snowflake', desc:'Neu'};
-  if(codi>=95) return {icon:'ti-bolt', desc:'Tempesta'};
-  return {icon:'ti-cloud', desc:'Núvols'};
+function duplicarCicle(id) {
+  const c = cicles.find(x => x.id === id);
+  if(!c) return;
+  editingCicleId = null;
+  document.getElementById('nou-cicle-nom').value = (c.nom || '') + ' (còpia)';
+  document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
+  document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
+  document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
+  document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA (duplicat):';
+  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
+  document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+  toast('Cicle duplicat — revisa el nom i les dates abans de desar');
 }
 
-var GX_MUSSOL_SOL = 'assets/mussol-sol.png';
-var GX_MUSSOL_PLUJA = 'assets/mussol-pluja.png';
-var GX_MUSSOL_VENT = 'assets/mussol-vent.png';
-async function gxLoadMeteo(){
-  try{
-    var url = 'https://api.open-meteo.com/v1/forecast?latitude=41.7815&longitude=3.0295'
-      +'&current=temperature_2m,weather_code,wind_speed_10m'
-      +'&daily=weather_code,temperature_2m_max,wind_speed_10m_max,wind_direction_10m_dominant'
-      +'&timezone=Europe%2FMadrid&forecast_days=3';
-    var res = await fetch(url);
-    var d = await res.json();
+function cancelarEdicioCicle() {
+  editingCicleId = null;
+  document.getElementById('nou-cicle-nom').value = '';
+  document.getElementById('nou-cicle-descripcio').value = '';
+  document.getElementById('nou-cicle-color').value = '';
+  document.getElementById('nou-cicle-data-inici').value = '';
+  document.getElementById('nou-cicle-data-fi').value = '';
+  document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA:';
+  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-cancelar-cicle').style.display = 'none';
+}
+async function eliminarCicle(id) {
+  if(!confirm('Segur que vols eliminar aquest cicle? Els events que en formaven part quedaran sense cicle assignat.')) return;
+  if(editingCicleId === id) cancelarEdicioCicle();
+  try {
+    await sbFetch(`/rest/v1/cicles?id=eq.${id}`, { method: 'DELETE' });
+    toast('Cicle eliminat');
+    await carregarCicles(); renderListaCiclesGestion();
+  } catch(e) { toast('Error eliminant el cicle', true); }
+}
 
-    var curCel = gxCeleIcona(d.current.weather_code);
-    var mussolImg = GX_MUSSOL_SOL;
-    if((curCel.icon==='ti-cloud-rain'||curCel.icon==='ti-bolt'||curCel.icon==='ti-snowflake')) mussolImg = GX_MUSSOL_PLUJA;
-    else if(d.current.wind_speed_10m >= 30) mussolImg = GX_MUSSOL_VENT;
-    document.getElementById('gx-meteo-icon').src = mussolImg;
-    document.getElementById('gx-meteo-temp').textContent = Math.round(d.current.temperature_2m)+'°';
-    document.getElementById('gx-meteo-desc').textContent = curCel.desc;
-
-    var labels = ['Avui','Demà', null];
-    for(var i=0;i<3;i++){
-      var cel = gxCeleIcona(d.daily.weather_code[i]);
-      var temp = Math.round(d.daily.temperature_2m_max[i]);
-      var vent = gxNomVent(d.daily.wind_direction_10m_dominant[i]);
-      var forca = gxForcaVent(d.daily.wind_speed_10m_max[i]);
-      var row = document.getElementById('gx-meteo-dia-'+i);
-      var dataDia = new Date(d.daily.time[i]+'T00:00:00');
-      var label = labels[i] || (GX_DIES[dataDia.getDay()].slice(0,3).replace(/^./,function(c){return c.toUpperCase();})+' '+dataDia.getDate());
-      row.children[0].textContent = label;
-      row.children[1].className = 'ti '+cel.icon+' '+row.children[1].className.replace(/ti-[a-z-]+/,'').trim();
-      row.children[1].className = 'ti '+cel.icon;
-      row.children[1].style.fontSize='17px'; row.children[1].style.width='26px'; row.children[1].style.textAlign='center'; row.children[1].style.opacity='.9';
-      row.children[2].textContent = temp+'° '+cel.desc.toLowerCase();
-      row.children[3].innerHTML = '<i class="ti ti-wind" style="font-size:11px;"></i> '+vent+' '+forca.nom+' · <span style="color:'+forca.color+';">'+forca.etiqueta+'</span>';
+// ---- CONTROLADOR DE CATEGORIES (NUEVA VENTANA) ----
+function obrirGestorCategories() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-categories').style.display = 'block';
+  renderListaCategoriesGestion();
+}
+function tancarGestorCategories() {
+  cancelarEdicioCategoria();
+  document.getElementById('vista-categories').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+function renderListaCategoriesGestion() {
+  const container = document.getElementById('lista-categories-gestion');
+  if(!categories.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap categoria creada.</div>'; return; }
+  container.innerHTML = categories.map(c => `
+    <div class="lloc-item">
+      <span>🏷️ ${c.nom} <span style="color:var(--text-sec); font-size:12px;">· ordre ${c.ordre ?? '—'}</span></span>
+      <span style="display:flex; gap:14px;">
+        <button onclick="editarCategoria('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="eliminarCategoria('${c.id}')">Eliminar</button>
+      </span>
+    </div>
+  `).join('');
+}
+async function guardarCategoria() {
+  const nom = document.getElementById('nova-categoria-nom').value.trim();
+  const ordreVal = document.getElementById('nova-categoria-ordre').value;
+  if(!nom) return toast('Escriu el nom de la categoria', true);
+  const body = { nom };
+  if(ordreVal !== '') body.ordre = parseInt(ordreVal, 10);
+  try {
+    if(editingCategoriaId) {
+      await sbFetch(`/rest/v1/categories?id=eq.${editingCategoriaId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Categoria actualitzada!');
+    } else {
+      if(body.ordre === undefined) {
+        const maxOrdre = categories.reduce((m, c) => Math.max(m, c.ordre ?? 0), 0);
+        body.ordre = maxOrdre + 1;
+      }
+      body.slug = nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      await sbFetch('/rest/v1/categories', { method: 'POST', body: JSON.stringify(body) });
+      toast('Categoria creada!');
     }
-  }catch(e){ console.error('Error meteo', e); document.getElementById('gx-meteo-desc').textContent='Sense dades'; }
+    cancelarEdicioCategoria();
+    await carregarCategories(); renderFiltres(); renderCatPills(); renderListaCategoriesGestion();
+  } catch(e) { toast(e.message || 'Error o categoria ja existent', true); }
+}
+function editarCategoria(id) {
+  const c = categories.find(x => x.id === id);
+  if(!c) return;
+  editingCategoriaId = id;
+  document.getElementById('nova-categoria-nom').value = c.nom || '';
+  document.getElementById('nova-categoria-ordre').value = c.ordre ?? '';
+  document.getElementById('categoria-form-titol').textContent = 'EDITAR CATEGORIA:';
+  document.getElementById('btn-guardar-categoria').textContent = 'Actualitzar Categoria';
+  document.getElementById('btn-cancelar-categoria').style.display = 'inline-block';
+  document.getElementById('nova-categoria-nom').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+function cancelarEdicioCategoria() {
+  editingCategoriaId = null;
+  document.getElementById('nova-categoria-nom').value = '';
+  document.getElementById('nova-categoria-ordre').value = '';
+  document.getElementById('categoria-form-titol').textContent = 'NOVA CATEGORIA:';
+  document.getElementById('btn-guardar-categoria').textContent = 'Guardar Categoria';
+  document.getElementById('btn-cancelar-categoria').style.display = 'none';
+}
+async function eliminarCategoria(id) {
+  if(!confirm('Segur que vols eliminar aquesta categoria?')) return;
+  if(editingCategoriaId === id) cancelarEdicioCategoria();
+  try {
+    await sbFetch(`/rest/v1/categories?id=eq.${id}`, { method: 'DELETE' });
+    toast('Categoria eliminada');
+    await carregarCategories(); renderFiltres(); renderCatPills(); renderListaCategoriesGestion();
+  } catch(e) { toast('No es pot eliminar si està en ús', true); }
 }
 
-/* ===== RECORDATORIS ("Recorda-m'ho") =====
-   Notificació del navegador quan falti poc (1h) per l'esdeveniment.
-   Funciona mentre la pestanya/app estigui oberta (comprovació periòdica).
-   Es desa a localStorage perquè es mantingui entre sessions. */
-var GX_RECORDA_KEY = 'ganxoagenda_recordatoris';
-var GX_RECORDA_AVIS_MIN = 60; // minuts abans de l'esdeveniment
-
-function gxRecordatorisGet(){
-  try{ return JSON.parse(localStorage.getItem(GX_RECORDA_KEY)) || {}; }
-  catch(e){ return {}; }
+// ---- EVENTS LÓGICA Y RENDER ----
+function renderFiltres() {
+  const bar = document.getElementById('filtre-bar');
+  let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
+  categories.forEach(c => html += `<button class="filtre-btn" onclick="filtrar('${c.id}', this)">${c.nom}</button>`);
+  bar.innerHTML = html;
 }
-function gxRecordatorisSet(obj){
-  try{ localStorage.setItem(GX_RECORDA_KEY, JSON.stringify(obj)); }catch(e){}
+function filtrar(catId, btn) {
+  document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu')); btn.classList.add('actiu');
+  carregarEsdeveniments(catId);
 }
-function gxTeRecordatori(id){
-  return !!gxRecordatorisGet()[id];
+async function carregarEsdeveniments(catId = null) {
+  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color)&order=data.desc,hora_inici';
+  if(catId) q += `&categoria_id=eq.${catId}`;
+  const data = await sbFetch(q);
+  const container = document.getElementById('llista-events');
+  if(!data.length) { container.innerHTML = '<div class="llista-buida">🦉 Cap event creat.</div>'; return; }
+  container.innerHTML = data.map(e => `
+    <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
+      <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
+      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
+      <span class="estat-badge estat-${e.estat}">${e.estat}</span>
+    </div>
+  `).join('');
 }
 
-async function gxToggleRecorda(id, btnEl){
-  var ev = gxEvents.find(function(e){ return e.id===id; });
-  if(!ev) return;
-  var recordatoris = gxRecordatorisGet();
+function renderCatPills() {
+  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" onclick="selCat(this)">${c.nom}</div>`).join('');
+}
+function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); }
+function toggleSwitch(el) { el.classList.toggle('on'); if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none'; }
 
-  if(recordatoris[id]){
-    delete recordatoris[id];
-    gxRecordatorisSet(recordatoris);
-    gxActualitzaBotoRecorda(id, false);
-    return;
+function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('btn-duplicar-event').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
+function tornarLlista() { iaIdxActual = null; document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
+
+function netejarFormulari() {
+  document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
+  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
+  document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; fotoFile = null; fotoGaleriaUrl = null;
+}
+
+async function editarEsdeveniment(id) {
+  editingId = id; netejarFormulari(); document.getElementById('btn-eliminar').style.display='block'; document.getElementById('btn-duplicar-event').style.display='inline-block'; document.getElementById('form-titol').textContent = 'Editar esdeveniment';
+  const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
+  document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data; document.getElementById('f-data-fi').value = e.data_fi || '';
+  document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
+  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
+  if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
+  if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
+  if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
+  if(e.foto_url) { document.getElementById('foto-preview').src = e.foto_url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; fotoGaleriaUrl = e.foto_url; }
+  document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block';
+}
+
+// Converteix el formulari (amb les dades de l'event actual ja carregades) en un esdeveniment
+// nou independent: en desar-lo es fa un POST en lloc d'un PATCH sobre l'original.
+function duplicarEsdeveniment() {
+  editingId = null; iaIdxActual = null;
+  document.getElementById('btn-eliminar').style.display = 'none';
+  document.getElementById('btn-duplicar-event').style.display = 'none';
+  document.getElementById('form-titol').textContent = 'Duplicar esdeveniment';
+  toast('Esdeveniment duplicat — canvia la data i desa');
+}
+
+async function desarEsdeveniment(estatDesti) {
+  const titol = document.getElementById('f-titol').value.trim(), data = document.getElementById('f-data').value, dataFi = document.getElementById('f-data-fi').value;
+  if(!titol || !data) return toast('Títol i data obligatoris', true);
+  if(dataFi && dataFi < data) return toast('La data de fi no pot ser anterior a la data d\'inici', true);
+
+  // Mode repàs IA: ja té el seu propi avís de duplicats (mostrat a la llista d'events trobats),
+  // així que aquí només comprovem quan es desa manualment.
+  const enRevisioIA = iaIdxActual !== null && document.getElementById('ia-resultados-lista').style.display !== 'none';
+  if(!enRevisioIA) {
+    const dup = await comprovarDuplicatManual(titol, data);
+    if(dup && !confirm(`Ja existeix un esdeveniment "${dup.titol}" amb aquesta data (${data}). Vols desar-lo igualment?`)) return;
   }
 
-  if(!('Notification' in window)){
-    alert("Aquest dispositiu no admet notificacions.");
-    return;
-  }
-  var permis = Notification.permission;
-  if(permis==='default'){ permis = await Notification.requestPermission(); }
-  if(permis!=='granted'){
-    alert("Activa les notificacions per rebre l'avís quan quedi poc per l'esdeveniment.");
-    return;
+  // Si s'ha triat una foto nova des de l'ordinador, la pujem ara a Storage
+  let fotoUrlFinal = fotoGaleriaUrl;
+  if(fotoFile) {
+    try {
+      toast('Pujant la foto...');
+      fotoUrlFinal = await pujarFotoStorage(fotoFile);
+      fotoFile = null;
+      fotoGaleriaUrl = fotoUrlFinal;
+    } catch(e) { return toast('Error pujant la foto: ' + e.message, true); }
   }
 
-  recordatoris[id] = {
-    titol: ev.titol,
-    data: ev.data,
-    hora: ev.hora_inici || null,
-    lloc: gxLlocNom(ev),
-    avisat: false
+  const pill = document.querySelector('.cat-pill.selected');
+  const body = {
+    titol, data, data_fi: dataFi || null, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
+    hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
+    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
+    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoUrlFinal
   };
-  gxRecordatorisSet(recordatoris);
-  gxActualitzaBotoRecorda(id, true);
+  if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
+  else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
 
-  // notificació immediata de confirmació
-  try{
-    new Notification('Recordatori activat', {
-      body: ev.titol + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : ''),
-      icon: 'icons/icon-192.png'
-    });
-  }catch(e){}
-}
-
-function gxActualitzaBotoRecorda(id, actiu){
-  // botó destacat (gx-bell-ID) i botó de la fitxa (gx-f-recorda)
-  var bell = document.getElementById('gx-bell-'+id);
-  if(bell){
-    bell.style.background = actiu ? '#103b52' : 'transparent';
-    bell.style.color = actiu ? '#fff' : '#103b52';
-  }
-  var fBtn = document.getElementById('gx-f-recorda');
-  if(fBtn && gxFichaCurrentId===id){
-    if(actiu){
-      fBtn.style.background='#1d8a4e';
-      fBtn.innerHTML = '<i class="ti ti-bell-check" style="font-size:17px;"></i>Recordatori activat';
-    } else {
-      fBtn.style.background='#103b52';
-      fBtn.innerHTML = '<i class="ti ti-bell" style="font-size:17px;"></i>Recorda-m\'ho';
-    }
-  }
-}
-
-function gxComprovarRecordatoris(){
-  if(!('Notification' in window) || Notification.permission!=='granted') return;
-  var recordatoris = gxRecordatorisGet();
-  var ara = new Date();
-  var canviat = false;
-  Object.keys(recordatoris).forEach(function(id){
-    var r = recordatoris[id];
-    if(r.avisat) return;
-    var horaEv = r.hora || '00:00:00';
-    var dataEv = new Date(r.data+'T'+horaEv);
-    var diffMin = (dataEv - ara) / 60000;
-    if(diffMin <= GX_RECORDA_AVIS_MIN && diffMin > -5){
-      try{
-        new Notification('Comença d\'aquí poc', {
-          body: r.titol + (r.hora ? (' · '+gxFormatHora(r.hora)) : '') + (r.lloc ? (' · '+r.lloc) : ''),
-          icon: 'icons/icon-192.png'
-        });
-      }catch(e){}
-      r.avisat = true;
-      canviat = true;
-    }
-    // neteja recordatoris d'esdeveniments ja passats fa més d'un dia
-    if(diffMin < -1440){ delete recordatoris[id]; canviat=true; }
-  });
-  if(canviat) gxRecordatorisSet(recordatoris);
-}
-
-async function gxInit(){
-  gxLoadMeteo();
-  // text del botó "Al <mes actual>"
-  document.getElementById('gx-filtre-mes-text').textContent = gxCap(GX_MESOS[new Date().getMonth()]);
-  await gxFiltrar('avui');
-
-  // recordatoris: comprovació periòdica (cada minut) mentre l'app estigui oberta
-  gxComprovarRecordatoris();
-  setInterval(gxComprovarRecordatoris, 60000);
-
-  // obrir fitxa directe si l'enllaç porta ?ev=ID
-  var params = new URLSearchParams(window.location.search);
-  var evId = params.get('ev');
-  if(evId){ gxObrirFichaPerId(evId); }
-}
-
-async function gxObrirFichaPerId(id){
-  var ev = gxEvents.find(function(e){ return e.id===id; });
-  if(ev){ gxOpenFicha(id); return; }
-  try{
-    var res = await gxSupabase.from('esdeveniments')
-      .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url), cicles(id,nom)')
-      .eq('id', id).eq('estat','publicat').single();
-    if(res.data){
-      gxEvents.push(res.data);
-      gxOpenFicha(id);
-    }
-  }catch(e){ console.error('Error obrint esdeveniment per id', e); }
-}
-
-function gxCatInfo(ev){
-  return (ev && ev.categories) || {nom:'', color_gradient: GX_DEFAULT_GRADIENT, icona:''};
-}
-function gxLlocNom(ev){
-  return (ev && ev.llocs && ev.llocs.nom) || '';
-}
-
-function gxRenderAgenda(){
-  document.getElementById('gx-agenda-loading').style.display='none';
-  var destacat = document.getElementById('gx-agenda-destacat');
-  var grid = document.getElementById('gx-agenda-grid');
-  destacat.innerHTML=''; grid.innerHTML='';
-  grid.style.display='grid';
-  grid.style.gridTemplateColumns='1fr 1fr';
-  grid.style.flexDirection='';
-
-  var existingBtn = document.getElementById('gx-veure-mes');
-  if(existingBtn) existingBtn.remove();
-  document.getElementById('gx-tots-wrap').style.display='none';
-  document.getElementById('gx-tots-llista').innerHTML='';
-
-  var llista = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
-
-  if(!llista.length){
-    var msgs = {avui:'Avui no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', dema:'Demà no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', cap:'Aquest cap de setmana no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
-    if(gxNomesNens && (gxFiltreActiu==='avui'||gxFiltreActiu==='dema'||gxFiltreActiu==='cap')){
-      msgs.avui = 'Avui no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
-      msgs.dema = 'Demà no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
-      msgs.cap = 'Aquest cap de setmana no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
-    }
-    document.getElementById('gx-agenda-buit-text').textContent = msgs[gxFiltreActiu] || msgs.avui;
-    document.getElementById('gx-agenda-buit').style.display='block';
-  } else {
-  document.getElementById('gx-agenda-buit').style.display='none';
-
-  if(gxFiltreActiu==='cicle'){
-    gxRenderAgendaLlista(llista, grid);
+  // Mode repàs: si l'event venia de la llista de la IA i encara queden events per revisar,
+  // no tornem al gestor; marquem aquest com a fet i deixem el formulari net per al següent.
+  if(enRevisioIA) {
+    marcarIaItemFet(iaIdxActual, estatDesti);
+    iaIdxActual = null;
+    editingId = null;
+    netejarFormulari();
+    document.getElementById('btn-eliminar').style.display = 'none';
+    document.getElementById('btn-duplicar-event').style.display = 'none';
+    carregarEsdeveniments(); // refresca la llista del gestor en segon pla
+    const queden = quedenIaItemsPerRevisar();
+    toast(queden ? 'Publicat! Continua amb el següent ↓' : 'Publicat! Has revisat tots els events.');
+    document.getElementById('ia-resultados-lista').scrollIntoView({ behavior:'smooth', block:'center' });
     return;
   }
 
-  var ambData = (gxFiltreActiu==='cap' || gxFiltreActiu==='mes');
+  toast('Guardat!'); tornarLlista(); carregarEsdeveniments();
+}
 
-  var first = llista[0];
-  var cat = gxCatInfo(first);
-  destacat.innerHTML =
-    '<div onclick="gxOpenFicha(\''+first.id+'\')" style="border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 4px 18px rgba(16,59,82,.16); cursor:pointer;">'+
-    '<div style="height:166px; position:relative; background-image:'+(first.foto_url? 'url(\''+first.foto_url+'\')' : cat.color_gradient)+'; background-size:cover; background-position:center; display:flex; align-items:flex-end;">'+
-    '<div style="position:absolute; inset:0; background:linear-gradient(transparent 38%, rgba(0,0,0,.6));"></div>'+
-    '<div style="position:absolute; top:13px; left:13px; font-size:10px; font-weight:700; color:#103b52; background:#fff; padding:4px 11px; border-radius:6px; letter-spacing:.5px;">'+cat.nom.toUpperCase()+'</div>'+
-    '<div style="position:relative; padding:15px 16px; color:#fff;">'+
-    '<div style="font-size:11.5px; font-weight:600; opacity:.95; margin-bottom:3px;">'+(ambData?(gxFormatDataCurta(first.data)+(first.hora_inici?(' · '+gxFormatHora(first.hora_inici)):'')):(gxFormatHora(first.hora_inici)||'Tot el dia'))+'</div>'+
-    '<div style="font-size:21px; font-weight:900; letter-spacing:-.5px; line-height:1.1; font-family:var(--font-serif);">'+first.titol+'</div>'+
-    '</div></div>'+
-    '<div style="background:#fff; padding:11px 14px 12px; display:flex; align-items:center; justify-content:space-between;">'+
-    '<div style="font-size:12.5px; color:#6b7780; display:flex; align-items:center; gap:5px;"><i class="ti ti-map-pin" style="font-size:14px;"></i>'+gxLlocNom(first)+'</div>'+
-    '<div onclick="event.stopPropagation()" style="display:flex; gap:7px;">'+
-    '<div onclick="event.stopPropagation(); gxToggleRecorda(\''+first.id+'\', this)" id="gx-bell-'+first.id+'" style="width:33px; height:33px; border-radius:9px; border:1px solid #e4e0d7; display:flex; align-items:center; justify-content:center; color:'+(gxTeRecordatori(first.id)?'#fff':'#103b52')+'; background:'+(gxTeRecordatori(first.id)?'#103b52':'transparent')+';"><i class="ti ti-bell" style="font-size:15px;"></i></div>'+
-    '<div style="height:33px; border-radius:9px; background:#1d8a4e; display:flex; align-items:center; gap:5px; padding:0 11px; color:#fff;"><i class="ti ti-brand-whatsapp" style="font-size:15px;"></i></div>'+
-    '</div></div></div>';
-
-  var GX_PAGE = 6;
-  var totalGrid = llista.length - 1;
-  var visible = Math.min(totalGrid, GX_PAGE*(gxPagina+1));
-  for(var i=1;i<=visible;i++){
-    var ev = llista[i];
-    var c = gxCatInfo(ev);
-    var card = document.createElement('div');
-    card.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
-    card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
-    card.innerHTML =
-      '<div style="height:90px; position:relative; background-image:'+(ev.foto_url? 'url(\''+ev.foto_url+'\')' : c.color_gradient)+'; background-size:cover; background-position:center;"><div style="position:absolute; bottom:7px; left:8px; font-size:8.5px; font-weight:700; color:#fff; background:rgba(0,0,0,.32); padding:2px 7px; border-radius:5px;">'+c.nom.toUpperCase()+'</div></div>'+
-      '<div style="padding:9px 11px 12px;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(ambData?(gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):'')):(gxFormatHora(ev.hora_inici)||'Tot el dia'))+'</div><div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.15; letter-spacing:-.4px; font-family:var(--font-serif); margin-top:3px;">'+ev.titol+'</div><div style="font-size:10.5px; color:#8a8478; margin-top:5px;">'+gxLlocNom(ev)+'</div></div>';
-    grid.appendChild(card);
+// Marca un item de la llista IA com a desat (botó verd -> check, fons atenuat)
+function marcarIaItemFet(idx, estatDesti) {
+  const item = document.getElementById('ia-item-' + idx);
+  const btn = document.getElementById('ia-btn-' + idx);
+  if(btn) {
+    btn.textContent = estatDesti === 'publicat' ? '✓ Publicat' : '✓ Esborrany';
+    btn.style.background = '#9aa3a8';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.onclick = null;
+    const descartarBtn = btn.parentElement?.querySelector('button[onclick^="descartarEventIA"]');
+    if (descartarBtn) descartarBtn.style.display = 'none';
   }
+  if(item) { item.style.opacity = '0.55'; item.style.outline = 'none'; }
+}
 
-  if(totalGrid > visible){
-    var btn = document.createElement('div');
-    btn.id = 'gx-veure-mes';
-    btn.style.cssText = 'grid-column:1 / -1; text-align:center; padding:12px; margin-top:4px; border:1px dashed #c9c2b4; border-radius:11px; color:#103b52; font-size:13px; font-weight:700; cursor:pointer;';
-    btn.textContent = 'Veure més ('+(totalGrid-visible)+')';
-    btn.onclick = function(){ gxPagina += 1; gxRenderAgenda(); };
-    grid.parentElement.appendChild(btn);
-  }
-  } // fi else (llista no buida)
+function quedenIaItemsPerRevisar() {
+  if(!window.eventosDetectadosIA) return false;
+  return window.eventosDetectadosIA.some((_, i) => {
+    const b = document.getElementById('ia-btn-' + i);
+    return b && !b.disabled;
+  });
+}
 
-  // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
-  // exclou els dies ja mostrats al destacat/grid del filtre actiu
-  var totsWrap = document.getElementById('gx-tots-wrap');
-  var totsLlista = document.getElementById('gx-tots-llista');
-  if((gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap') && gxEventsTots.length){
-    var r = gxRangeActiu;
-    var restants = gxEventsTots.filter(function(e){
-      return !(r && e.data>=r.from && e.data<=r.to);
+async function eliminarEsdeveniment() { if(confirm('Segur?')) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'DELETE' }); tornarLlista(); carregarEsdeveniments(); } }
+
+// ---- AUXILIARS FOTOS ----
+function obrirGaleria() { document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-galeria').style.display='block'; actualitzarGaleriaVista(); }
+function tancarGaleria() { document.getElementById('vista-galeria').style.display='none'; document.getElementById('vista-llista').style.display='block'; }
+async function llistarFotos(){
+  try {
+    const res = await sbStorageFetch('/storage/v1/object/list/fotos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: '', limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
     });
-    var llistaTots = gxNomesNens ? restants.filter(function(e){ return e.familiar; }) : restants;
-    if(llistaTots.length){
-      totsWrap.style.display='block';
-      gxRenderAgendaLlista(llistaTots, totsLlista, 10);
-    }
-  }
+    if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.message || res.statusText); }
+    const data = await res.json();
+    return (data || []).filter(x => x.name && !x.name.startsWith('.'));
+  } catch (e) { toast('Error carregant la galeria: ' + e.message, true); return []; }
 }
+function urlPublica(n){ return `${SUPABASE_URL}/storage/v1/object/public/fotos/${n}`; }
+async function actualitzarGaleriaVista() { const f = await llistarFotos(); document.getElementById('galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px;">`).join(''); }
 
-/* Llista cronològica agrupada per dia amb capçalera de data ("Tots els esdeveniments").
-   maxItems: si s'indica, limita el total d'elements mostrats i amaga el botó "veure més". */
-function gxRenderAgendaLlista(llista, grid, maxItems){
-  grid.style.display='flex';
-  grid.style.flexDirection='column';
-  grid.style.gap='0';
-  grid.style.gridTemplateColumns='';
-
-  var GX_PAGE = 20;
-  var grups = []; // [{data, items:[...]}]
-  llista.forEach(function(ev){
-    var last = grups[grups.length-1];
-    if(!last || last.data!==ev.data){ grups.push({data:ev.data, items:[]}); last = grups[grups.length-1]; }
-    last.items.push(ev);
+// Puja un fitxer al bucket 'fotos' i retorna la seva URL pública
+async function pujarFotoStorage(file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const base = file.name.replace(/\.[^.]+$/, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // treu accents
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'foto';
+  const filename = `${Date.now()}-${base}.${ext}`;
+  const res = await sbStorageFetch(`/storage/v1/object/fotos/${filename}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
   });
+  if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.message || 'Error pujant la foto'); }
+  return urlPublica(filename);
+}
 
-  // aplanar amb límit de paginació per nombre d'esdeveniments totals
-  var count = 0, totalCount = llista.length;
-  var visible = maxItems ? Math.min(totalCount, maxItems) : Math.min(totalCount, GX_PAGE*(gxPaginaTots+1));
-  var today = gxTodayISO();
+// Pujada múltiple des de la Galeria
+async function pujarBatch(input) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  toast(`Pujant ${files.length} foto${files.length>1?'s':''}...`);
+  let ok = 0, errors = 0;
+  for (const file of files) {
+    try { await pujarFotoStorage(file); ok++; }
+    catch (e) { errors++; }
+  }
+  input.value = '';
+  await actualitzarGaleriaVista();
+  toast(errors ? `${ok} pujades, ${errors} amb error` : `${ok} foto${ok>1?'s':''} pujada${ok>1?'es':''}!`, errors > 0 && ok === 0);
+}
 
-  for(var g=0; g<grups.length; g++){
-    var grup = grups[g];
-    if(count >= visible) break;
+function previewFoto(i) { if(i.files&&i.files[0]) { fotoFile=i.files[0]; fotoGaleriaUrl=null; document.getElementById('foto-preview').src=URL.createObjectURL(fotoFile); document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; } }
+function obrirSelectorGaleria() { document.getElementById('modal-galeria').style.display='block'; actualitzarSelectorGaleria(); }
+function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display='none'; }
+async function actualitzarSelectorGaleria() { const f = await llistarFotos(); document.getElementById('selector-galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" onclick="triarFoto('${urlPublica(x.name)}')" style="width:100%; aspect-ratio:1; object-fit:cover; cursor:pointer;">`).join(''); }
+function triarFoto(url) { fotoGaleriaUrl=url; fotoFile=null; document.getElementById('foto-preview').src=url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; tancarSelectorGaleria(); }
+function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m; t.className='toast show'+(e?' error':''); setTimeout(()=>t.className='toast',2500); }
 
-    var header = document.createElement('div');
-    var d = new Date(grup.data+'T00:00:00');
-    var diaLabel = (grup.data===today) ? 'Avui · ' : '';
-    diaLabel += gxCap(GX_DIES[d.getDay()]) + ' ' + d.getDate() + ' ' + GX_MESOS[d.getMonth()];
-    header.style.cssText = 'font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:'+(g===0?'0':'18px')+' 2px 9px;';
-    header.textContent = diaLabel;
-    grid.appendChild(header);
+// ============================================================
+// ASSISTENT GEMINI (via Edge Function - clau API al servidor)
+// ============================================================
+let iaImatgeBase64 = null;
+let iaImatgeMime = null;
+let iaIdxActual = null;
 
-    for(var i=0;i<grup.items.length && count<visible; i++, count++){
-      var ev = grup.items[i];
-      var c = gxCatInfo(ev);
-      var row = document.createElement('div');
-      row.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
-      row.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer; margin-bottom:9px;';
-      row.innerHTML =
-        '<div style="width:50px; height:50px; border-radius:10px; flex-shrink:0; background-image:'+(ev.foto_url? "url('"+ev.foto_url+"')" : c.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
-        '<div style="flex:1; min-width:0;">'+
-          '<div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):''))+'</div>'+
-          '<div style="font-size:14px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+ev.titol+'</div>'+
-          '<div style="font-size:10.5px; color:#8a8478; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+gxLlocNom(ev)+'</div>'+
-        '</div>'+
-        '<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px; flex-shrink:0;"></i>';
-      grid.appendChild(row);
+function ia_onFileSelected(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  ia_carregarImatge(file);
+}
+
+function ia_carregarImatge(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result; // data:image/...;base64,XXXX
+    const base64 = dataUrl.split(',')[1];
+    iaImatgeBase64 = base64;
+    iaImatgeMime = file.type || 'image/jpeg';
+    document.getElementById('ia-imatge-img').src = dataUrl;
+    document.getElementById('ia-imatge-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function ia_eliminarImatge() {
+  iaImatgeBase64 = null; iaImatgeMime = null;
+  document.getElementById('ia-imatge-preview').style.display = 'none';
+  document.getElementById('ia-imatge-img').src = '';
+  document.getElementById('ia-imatge-input').value = '';
+}
+
+// Permet enganxar una imatge del cartell amb Ctrl+V dins del textarea
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('ia-contenido');
+  if (!ta) return;
+  ta.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) { ia_carregarImatge(file); e.preventDefault(); }
+        break;
+      }
     }
-  }
-
-  if(!maxItems && totalCount > visible){
-    var btn = document.createElement('div');
-    btn.id = 'gx-veure-mes-tots';
-    btn.style.cssText = 'text-align:center; padding:12px; margin-top:4px; border:1px dashed #c9c2b4; border-radius:11px; color:#103b52; font-size:13px; font-weight:700; cursor:pointer;';
-    btn.textContent = 'Veure més ('+(totalCount-visible)+')';
-    btn.onclick = function(){ gxPaginaTots += 1; gxRenderAgenda(); };
-    grid.appendChild(btn);
-  }
-}
-
-function gxAnarInici(){
-  document.getElementById('gx-ficha').style.display='none';
-  gxFichaStack = [];
-  gxFichaCurrentId = null;
-  gxPage('agenda');
-  gxFiltrar('avui');
-  window.scrollTo(0, 0);
-}
-
-function gxVeureCapSetmana(){
-  document.getElementById('gx-ficha').style.display='none';
-  gxFichaStack = [];
-  gxFichaCurrentId = null;
-  gxPage('agenda');
-  gxFiltrar('cap');
-  window.scrollTo(0, 0);
-}
-
-async function gxVeureCicle(){
-  var cicleEl = document.getElementById('gx-f-cicle');
-  var cicleId = cicleEl.dataset.cicleId;
-  if(!cicleId) return;
-  document.getElementById('gx-agenda-loading').style.display='block';
-  document.getElementById('gx-agenda-loading').textContent='Carregant...';
-  try{
-    var res = await gxSupabase.from('esdeveniments')
-      .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url), cicles(id,nom)')
-      .eq('cicle_id', cicleId)
-      .eq('estat','publicat')
-      .order('data', {ascending:true})
-      .order('hora_inici', {ascending:true});
-    if(res.error){ console.error(res.error); }
-    gxEvents = res.data || [];
-  }catch(e){ console.error('Error carregant cicle', e); }
-
-  document.getElementById('gx-ficha').style.display='none';
-  gxFichaStack = [];
-  gxFichaCurrentId = null;
-  gxPage('agenda');
-  gxFiltreActiu = 'cicle';
-  gxPagina = 0;
-  gxPaginaTots = 0;
-  document.getElementById('gx-agenda-titol').textContent = (gxEvents[0] && gxEvents[0].cicles && gxEvents[0].cicles.nom) || 'Cicle';
-  document.getElementById('gx-avui-data').textContent = '';
-  ['avui','dema','cap','mes'].forEach(function(f){
-    var el = document.getElementById('gx-filtre-'+f);
-    el.style.background='#f3f0e9'; el.style.color='#5f6b73'; el.style.fontWeight='500';
   });
-  document.getElementById('gx-filtres-wrap').style.display='none';
-  gxRenderAgenda();
-  window.scrollTo(0, 0);
+});
+
+// Carrega esdeveniments propers (per a deduplicació) - propers 60 dies enrere/endavant
+async function carregarExistentsPerDedup() {
+  try {
+    const avui = new Date();
+    const desde = new Date(avui); desde.setDate(desde.getDate() - 14);
+    const fins = new Date(avui); fins.setDate(fins.getDate() + 90);
+    const fmt = (d) => d.toISOString().slice(0,10);
+    const q = `/rest/v1/esdeveniments?select=titol,data&data=gte.${fmt(desde)}&data=lte.${fmt(fins)}`;
+    const data = await sbFetch(q);
+    return data || [];
+  } catch (e) { return []; }
 }
 
-function gxOpenFicha(id, fromFicha){
-  var ev = gxEvents.find(function(e){ return e.id===id; });
-  if(!ev) return;
-  var fichaEl = document.getElementById('gx-ficha');
-  if(fromFicha && fichaEl.style.display==='block' && gxFichaCurrentId && gxFichaCurrentId!==id){
-    gxFichaStack.push(gxFichaCurrentId);
-  } else if(!fromFicha){
-    gxFichaStack = [];
-  }
-  gxFichaCurrentId = id;
-  var cat = gxCatInfo(ev);
+// Comprova si ja existeix un esdeveniment amb el mateix títol (sense distingir majúscules) i la mateixa data,
+// excloent el que s'estigui editant. S'usa abans de desar manualment per evitar duplicats accidentals.
+async function comprovarDuplicatManual(titol, data) {
+  try {
+    const q = `/rest/v1/esdeveniments?select=id,titol&data=eq.${data}&titol=ilike.${encodeURIComponent(titol)}`;
+    const existents = await sbFetch(q);
+    return (existents || []).find(e => e.id !== editingId);
+  } catch (e) { return null; }
+}
 
-  document.getElementById('gx-f-header').style.backgroundImage = ev.foto_url ? "url('"+ev.foto_url+"')" : cat.color_gradient;
-  document.getElementById('gx-f-header').style.backgroundSize = 'cover';
-  document.getElementById('gx-f-header').style.backgroundPosition = 'center';
-  document.getElementById('gx-f-cat').textContent = cat.nom.toUpperCase();
+// Detecta si el text introduït és una sola URL, sense regex perilloses (evita el bloqueig del navegador).
+// Clau: una URL no conté espais; si n'hi ha, és text per analitzar, no una adreça.
+function semblaUrl(s) {
+  if (!s) return false;
+  const t = s.trim();
+  if (/\s/.test(t)) return false;            // té espais o salts de línia -> és text
+  if (/^https?:\/\//i.test(t)) return true;  // comença per http(s)://
+  if (/^www\./i.test(t)) return true;        // comença per www.
+  // domini simple tipus exemple.cat o exemple.cat/ruta (sense quantificadors imbricats)
+  return /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/[^\s]*)?$/i.test(t);
+}
 
-  // ganxot segons categoria
-  var ganxotWrap = document.getElementById('gx-f-ganxot-wrap');
-  var ganxotImg = document.getElementById('gx-f-ganxot');
-  ganxotWrap.style.background = cat.color_gradient;
-  ganxotImg.onerror = function(){ this.onerror=null; this.src = GX_GANXOT_DEFAULT; };
-  ganxotImg.src = GX_GANXOT_PATH + (ev.familiar ? 'buho_familia.png' : (GX_GANXOT_MAP[(ev.categories && ev.categories.slug) || ''] || 'icon-512.png'));
+// ---- AUXILIARS: progrés i cost de l'IA ----
+// Preus aproximats de gemini-2.5-flash (USD per milió de tokens). Si Google els canvia,
+// això només afecta l'estimació de cost mostrada, no el funcionament.
+const PREU_INPUT_PER_M = 0.30;
+const PREU_OUTPUT_PER_M = 2.50;
 
-  document.getElementById('gx-f-title').textContent = ev.titol;
-  document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : '');
-  document.getElementById('gx-f-on').textContent = gxLlocNom(ev) || '—';
-  document.getElementById('gx-f-lloc-map').textContent = gxLlocNom(ev) || '—';
-  document.getElementById('gx-f-preu').textContent = ev.preu_text || 'Entrada lliure';
-  document.getElementById('gx-f-organitza').textContent = ev.organitza || '—';
-  document.getElementById('gx-f-desc').textContent = ev.descripcio || '';
+function costEstimatIA(promptTokens, candidatesTokens) {
+  return (promptTokens || 0) / 1e6 * PREU_INPUT_PER_M + (candidatesTokens || 0) / 1e6 * PREU_OUTPUT_PER_M;
+}
 
-  // recorda-m'ho: estat del botó
-  gxActualitzaBotoRecorda(id, gxTeRecordatori(id));
+// Acumula l'ús d'avui a localStorage i retorna el total acumulat
+function registrarUsIA(usage) {
+  const avui = new Date().toISOString().slice(0, 10);
+  const key = 'gx_ia_usage_' + avui;
+  let acumulat = {};
+  try { acumulat = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { acumulat = {}; }
+  acumulat.promptTokens = (acumulat.promptTokens || 0) + (usage.promptTokens || 0);
+  acumulat.candidatesTokens = (acumulat.candidatesTokens || 0) + (usage.candidatesTokens || 0);
+  acumulat.totalTokens = (acumulat.totalTokens || 0) + (usage.totalTokens || 0);
+  acumulat.calls = (acumulat.calls || 0) + (usage.calls || 0);
+  localStorage.setItem(key, JSON.stringify(acumulat));
+  return acumulat;
+}
 
-  // mapa: enllaç a Google Maps i imatge estàtica
-  var lloc = ev.llocs;
-  var mapaLink = document.getElementById('gx-f-mapa-link');
-  var mapaImg = document.getElementById('gx-f-mapa-img');
-  if(lloc && lloc.google_maps_url){
-    mapaLink.href = lloc.google_maps_url;
-  } else if(lloc && lloc.latitud && lloc.longitud){
-    mapaLink.href = 'https://www.google.com/maps/search/?api=1&query='+lloc.latitud+','+lloc.longitud;
-  } else if(gxLlocNom(ev)){
-    mapaLink.href = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(gxLlocNom(ev)+' Sant Feliu de Guíxols');
-  } else {
-    mapaLink.href = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('Sant Feliu de Guíxols');
-  }
-  if(lloc && lloc.latitud && lloc.longitud){
-    var lat=lloc.latitud, lon=lloc.longitud, d=0.006;
-    mapaImg.style.backgroundImage = 'url(https://staticmap.openstreetmap.de/staticmap.php?center='+lat+','+lon+'&zoom=15&size=320x120&markers='+lat+','+lon+',red-pushpin)';
-    mapaImg.querySelector('i').style.display='none';
-  } else {
-    mapaImg.style.backgroundImage = '';
-    if(mapaImg.querySelector('i')) mapaImg.querySelector('i').style.display='block';
-  }
+// Mostra el consum d'aquesta consulta i l'acumulat d'avui
+function mostrarUsIA(usage) {
+  const el = document.getElementById('ia-usage-info');
+  if (!el || !usage) return;
+  const acumulat = registrarUsIA(usage);
+  const costAra = costEstimatIA(usage.promptTokens, usage.candidatesTokens);
+  const costAvui = costEstimatIA(acumulat.promptTokens, acumulat.candidatesTokens);
+  el.textContent = `Aquesta consulta: ${usage.totalTokens || 0} tokens · ${usage.calls || 0} crida${(usage.calls||0)===1?'':'es'} a Gemini (~$${costAra.toFixed(4)}) — Avui en total: ${acumulat.totalTokens || 0} tokens · ${acumulat.calls || 0} crides (~$${costAvui.toFixed(4)})`;
+}
 
-  // cicle
-  var cicleEl = document.getElementById('gx-f-cicle');
-  if(ev.cicle_id && ev.cicles){
-    document.getElementById('gx-f-cicle-nom').textContent = ev.cicles.nom || '';
-    cicleEl.dataset.cicleId = ev.cicle_id;
-    cicleEl.style.display='flex';
-  } else {
-    cicleEl.style.display='none';
-    cicleEl.dataset.cicleId = '';
-  }
+// Mostra un text de progrés amb un comptador de segons mentre l'IA treballa.
+// getTextBase() permet canviar el text base (p.ex. en reintents) sense perdre el comptador.
+function iniciarTemporitzadorIA(el, getTextBase) {
+  let segons = 0;
+  const update = () => { el.textContent = `${getTextBase()} (${segons}s)`; };
+  update();
+  const interval = setInterval(() => { segons++; update(); }, 1000);
+  return () => clearInterval(interval);
+}
 
-  // avís meteo: només per a categories a l'aire lliure
-  var outdoor = ['rem','vela','platja','senderisme','festa_major','fira','futbol','padel','basquet'];
-  document.getElementById('gx-f-alert').style.display = (outdoor.indexOf((ev.categories&&ev.categories.slug)||'')>-1) ? 'flex' : 'none';
-
-  // whatsapp
-  var GX_EMOJI = {esports:'\u26bd', cultura:'\ud83c\udfad', musica:'\ud83c\udfb6', fira:'\ud83c\udfaa', gastro:'\ud83c\udf7d', festa:'\ud83c\udf89'};
-  var emoji = (ev.categories && GX_EMOJI[ev.categories.slug]) || '\ud83d\udccc';
-  var msg = emoji+' *'+ev.titol+'*\n'+gxFormatDataCurta(ev.data)+(ev.hora_inici?(' · '+gxFormatHora(ev.hora_inici)):'')+'\n\ud83d\udccd '+gxLlocNom(ev);
-  if(ev.preu_text){ msg += '\n\ud83c\udfab '+ev.preu_text; }
-  msg += '\n\nVia Ganxoagenda \nhttps://ganxoagenda.cat/?ev='+ev.id;
-  document.getElementById('gx-f-whatsapp').href = 'https://wa.me/?text='+encodeURIComponent(msg);
-
-  // altres plans aquest dia
-  var altres = document.getElementById('gx-f-altres');
-  altres.innerHTML='';
-  var others = gxEvents.filter(function(e){ return e.id!==ev.id && e.data===ev.data; }).slice(0,4);
-  if(others.length===0){
-    document.getElementById('gx-f-altres-wrap').style.display='none';
-  } else {
-    document.getElementById('gx-f-altres-wrap').style.display='block';
-    others.forEach(function(o){
-      var oc = gxCatInfo(o);
-      var row = document.createElement('div');
-      row.onclick = function(){ gxOpenFicha(o.id, true); };
-      row.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:12px; padding:11px 13px; display:flex; align-items:center; gap:12px; cursor:pointer;';
-      row.innerHTML =
-        '<div style="width:44px; height:44px; border-radius:9px; flex-shrink:0; background-image:'+(o.foto_url? "url('"+o.foto_url+"')" : oc.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
-        '<div style="flex:1;"><div style="font-size:10px; font-weight:600; color:#d85a30;">'+(gxFormatHora(o.hora_inici)||'Tot el dia')+'</div><div style="font-size:13.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-top:2px;">'+o.titol+'</div></div>'+
-        '<i class="ti ti-chevron-right" style="color:#c3bcae; font-size:16px;"></i>';
-      altres.appendChild(row);
+// Crida la funció ganxo-ia amb reintents automàtics si Gemini està saturat
+// (errors típics: "model is overloaded", HTTP 429/503, "try again later"...).
+// Amb diversos events sol·licitats de cop és quan més apareixen aquests errors transitoris.
+async function fetchGanxoIA(body, onRetry) {
+  const MAX_INTENTS = 3;
+  const ESPERES_MS = [5000, 20000]; // esperes entre intents: prou per deixar passar una finestra de límit per minut
+  for (let intent = 1; intent <= MAX_INTENTS; intent++) {
+    const res = await fetch(GANXO_IA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify(body),
     });
-  }
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error('Resposta no vàlida del servidor (HTTP ' + res.status + '): ' + raw.slice(0, 200)); }
 
-  document.getElementById('gx-ficha').style.display='block';
-  document.getElementById('gx-ficha').scrollTop=0;
-  requestAnimationFrame(function(){
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    var ficha = document.getElementById('gx-ficha');
-    var rect = document.getElementById('gx-app').getBoundingClientRect();
-    var top = rect.top + window.scrollY - 18;
-    window.scrollTo(0, Math.max(0, top));
-  });
-}
-function gxCloseFicha(){
-  if(gxFichaStack.length){
-    var prevId = gxFichaStack.pop();
-    gxOpenFicha(prevId, true);
-    gxFichaStack.pop(); // remove the entry gxOpenFicha just re-pushed
-  } else {
-    document.getElementById('gx-ficha').style.display='none';
-    gxFichaCurrentId = null;
-    window.scrollTo(0, 0);
+    if (res.ok) return data;
+
+    const missatge = data.error || ('Error del servidor (HTTP ' + res.status + ')');
+
+    // Saturació o límit de Gemini (per minut o diari): val la pena esperar i reintentar,
+    // ja que un límit per minut es desbloqueja en qüestió de segons.
+    const esLimitOSaturacio = /overload|busy|occupat|ocupat|saturat|unavailable|503|429|resource_exhausted|quota|rate.?limit|try again/i.test(missatge);
+    if (esLimitOSaturacio && intent < MAX_INTENTS) {
+      if (onRetry) onRetry(intent, missatge);
+      await new Promise(r => setTimeout(r, ESPERES_MS[intent - 1]));
+      continue;
+    }
+    if (esLimitOSaturacio) {
+      throw new Error('El motor d\'IA continua saturat després de diversos intents. Pot ser un límit per minut (espera ~1 minut i torna-ho a provar) o la quota diària de Gemini (revisa aistudio.google.com). Detall: ' + missatge);
+    }
+    throw new Error(missatge);
   }
 }
 
-gxInit();
+async function procesarConGeminiUnPaso() {
+  let inputSource = document.getElementById('ia-contenido').value.trim();
+  if (!inputSource && !iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('./sw.js');
-  });
+  const loadingEl = document.getElementById('ia-loading');
+  const listaContenedor = document.getElementById('ia-resultados-lista');
+  const listaItems = document.getElementById('ia-lista-items');
+
+  const aprofundirActiu = document.getElementById('ia-aprofundir').checked;
+  let textBaseIA = aprofundirActiu ? '🤖 Llegint la font i entrant a les fitxes' : '🤖 Analitzant amb Gemini';
+  loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
+  const aturarTemporitzador = iniciarTemporitzadorIA(loadingEl, () => textBaseIA);
+
+  const esUrl = semblaUrl(inputSource);
+
+  try {
+    const existents = await carregarExistentsPerDedup();
+
+    const body = {
+      llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
+      categories: categories.map(c => ({ id: c.id, nom: c.nom })),
+      existents,
+      aprofundir: aprofundirActiu,
+    };
+    if (esUrl) body.url = inputSource;
+    else if (inputSource) body.texto = inputSource;
+    if (iaImatgeBase64) { body.imagenBase64 = iaImatgeBase64; body.imagenMime = iaImatgeMime; }
+
+    const data = await fetchGanxoIA(body, (intent, msg) => {
+      textBaseIA = `🤖 Motor d'IA ocupat, reintentant (${intent}/2)`;
+    });
+
+    mostrarUsIA(data.usage);
+
+    window.eventosDetectadosIA = data.events || [];
+    window.iaUrlBase = data.urlBase || '';
+    window.iaAvisos = data.avisos || [];
+
+    // Cap event trobat: avisem amb pistes en lloc de quedar-nos en blanc
+    if (window.eventosDetectadosIA.length === 0) {
+      const pista = esUrl
+        ? 'No s\'ha trobat cap event a la pàgina. Si la web carrega els events amb JavaScript (com un calendari interactiu), el lector no els pot veure: prova amb la pàgina de llistat, una fitxa concreta, o enganxa el text/cartell.'
+        : 'No s\'ha trobat cap event al text. Revisa que hi hagi títol i data.';
+      listaItems.innerHTML = `<div style="font-size:12px; color:var(--accent);">${pista}</div>`;
+      listaContenedor.style.display = 'block';
+      toast('Cap event trobat', true);
+      return;
+    }
+
+    renderLlistaIA();
+    listaContenedor.style.display = 'block';
+    document.getElementById('ia-contenido').value = '';
+    ia_eliminarImatge();
+    toast('Fetes!');
+  } catch(e) { toast(e.message, true); } finally { aturarTemporitzador(); loadingEl.style.display = 'none'; }
 }
+
+// Nombre de fitxes que l'Edge Function processa per lot (ha de coincidir amb MAX_FITXES a index.ts)
+const IA_MAX_FITXES_PER_LOT = 5;
+
+// Redibuixa la llista d'events trobats per la IA (avisos + items), preservant
+// l'estat "fet" (publicat/esborrany) dels que ja s'han desat.
+function renderLlistaIA() {
+  const listaItems = document.getElementById('ia-lista-items');
+
+  const fets = {};
+  (window.eventosDetectadosIA || []).forEach((_, i) => {
+    const b = document.getElementById('ia-btn-' + i);
+    if (b && b.disabled) fets[i] = b.textContent;
+  });
+
+  let html = '';
+  if (window.iaAvisos && window.iaAvisos.length) {
+    html += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${window.iaAvisos.join(' ')}</div>`;
+  }
+
+  const visibles = (window.eventosDetectadosIA || []).filter(e => !e.descartat);
+  if (visibles.length === 0) {
+    html += `<div style="font-size:12px; color:var(--text-sec);">S'han descartat tots els events trobats.</div>`;
+  }
+
+  (window.eventosDetectadosIA || []).forEach((ev, idx) => {
+    if (ev.descartat) return;
+    const avisDuplicat = ev.duplicat
+      ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
+      : '';
+    const avisPendent = ev.fitxa_pendent
+      ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>`
+      : '';
+    html += `
+      <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
+        <div>
+          <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
+          ${avisDuplicat}${avisPendent}
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0; margin-left:10px;">
+          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Carregar</button>
+          <button type="button" onclick="descartarEventIA(${idx})" title="Descartar aquest event" style="background:none; border:1px solid var(--border); color:var(--text-sec); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">✕</button>
+        </div>
+      </div>`;
+  });
+
+  listaItems.innerHTML = html;
+  Object.keys(fets).forEach(i => marcarIaItemFet(parseInt(i), fets[i].includes('Publicat') ? 'publicat' : 'esborrany'));
+  renderBotoContinuar();
+}
+
+// Treu un event de la llista de resultats de la IA sense desar-lo
+function descartarEventIA(idx) {
+  if (!window.eventosDetectadosIA || !window.eventosDetectadosIA[idx]) return;
+  window.eventosDetectadosIA[idx].descartat = true;
+  renderLlistaIA();
+}
+
+// Mostra (o amaga) el botó per completar les fitxes que han quedat pendents pel límit
+function renderBotoContinuar() {
+  const cont = document.getElementById('ia-lista-items');
+  const previ = document.getElementById('ia-btn-continuar-wrap');
+  if (previ) previ.remove();
+  const pendents = (window.eventosDetectadosIA || []).filter(e => e.fitxa_pendent && !e.descartat).length;
+  if (pendents === 0) return;
+  const enAquestLot = Math.min(pendents, IA_MAX_FITXES_PER_LOT);
+  const div = document.createElement('div');
+  div.id = 'ia-btn-continuar-wrap';
+  div.style.cssText = 'margin-top:6px;';
+  div.innerHTML = `<button type="button" id="ia-btn-continuar" onclick="continuarFitxes()" style="width:100%; background:var(--blau-clar); color:#fff; border:none; padding:9px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">⏬ Completar ${enAquestLot} de ${pendents} descripcions restants</button>`;
+  cont.appendChild(div);
+}
+
+// Crida la funció en mode "fitxes" per completar les descripcions pendents
+async function continuarFitxes() {
+  const btn = document.getElementById('ia-btn-continuar');
+  let textBaseBtn = '🤖 Llegint fitxes restants';
+  let aturarTemporitzador = null;
+  if (btn) { btn.disabled = true; aturarTemporitzador = iniciarTemporitzadorIA(btn, () => textBaseBtn); }
+  try {
+    const existents = await carregarExistentsPerDedup();
+    const data = await fetchGanxoIA({
+      mode: 'fitxes',
+      events: window.eventosDetectadosIA,
+      urlBaseInput: window.iaUrlBase || '',
+      existents,
+    }, (intent, msg) => {
+      textBaseBtn = `🤖 Ocupat, reintentant (${intent}/2)`;
+    });
+
+    mostrarUsIA(data.usage);
+
+    window.eventosDetectadosIA = data.events || window.eventosDetectadosIA;
+    window.iaAvisos = data.avisos || [];
+    renderLlistaIA();
+    toast('Descripcions completades!');
+  } catch (e) {
+    toast(e.message, true);
+    const b = document.getElementById('ia-btn-continuar');
+    if (b) { b.disabled = false; renderBotoContinuar(); }
+  } finally {
+    if (aturarTemporitzador) aturarTemporitzador();
+  }
+}
+
+// Heurística per detectar si un esdeveniment pertany a un cicle/programa ja existent
+// (Festa Major, Porta Ferrada...) comparant el seu títol i descripció amb el nom dels cicles,
+// per si la IA encara no ho detecta directament.
+const CICLE_STOPWORDS = ['cicle','festival','internacional','de','del','dels','la','el','les','els','i','d'];
+function netejaTextCicle(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’`]/g, ' ');
+}
+function detectarCicle(ev) {
+  if(ev.cicle_id) return ev.cicle_id;
+  const text = netejaTextCicle(`${ev.titol || ''} ${ev.descripcio || ''}`);
+  for(const c of cicles) {
+    const paraules = netejaTextCicle(c.nom).replace(/\b\d{4}\b/g, '').split(/\s+/)
+      .filter(p => p.length >= 5 && !CICLE_STOPWORDS.includes(p));
+    if(paraules.length && paraules.every(p => text.includes(p))) return c.id;
+  }
+  return null;
+}
+
+function cargarEventoIA(idx) {
+  const ev = window.eventosDetectadosIA[idx];
+  iaIdxActual = idx;
+  editingId = null; // un event carregat des de la IA sempre és nou (POST), mai una edició
+  document.getElementById('btn-eliminar').style.display = 'none';
+  document.getElementById('btn-duplicar-event').style.display = 'none';
+  // ressaltar quin item s'està editant ara
+  document.querySelectorAll('[id^="ia-item-"]').forEach(el => { el.style.outline = 'none'; });
+  const itemActiu = document.getElementById('ia-item-' + idx);
+  if(itemActiu) itemActiu.style.outline = '2px solid var(--blau-clar)';
+  document.getElementById('f-titol').value = ev.titol || '';
+  document.getElementById('f-data').value = ev.data || '';
+  document.getElementById('f-data-fi').value = ev.data_fi || '';
+  document.getElementById('f-hora-inici').value = ev.hora_inici || '';
+  document.getElementById('f-descripcio').value = ev.descripcio || '';
+  document.getElementById('f-preu-text').value = ev.preu_text || '';
+  document.getElementById('f-edat').value = ev.edat_minima || '';
+  document.getElementById('f-lloc').value = ev.lloc_id || '';
+  document.getElementById('f-cicle').value = detectarCicle(ev) || '';
+  if(ev.categoria_id) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected')); const p=document.querySelector(`.cat-pill[data-id="${ev.categoria_id}"]`); if(p) p.classList.add('selected'); }
+  const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
+  if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
+  else toast('Dades bolcades al formulari!');
+}
+
+document.addEventListener('DOMContentLoaded', tryAutoLogin);
 </script>
 </body>
 </html>
