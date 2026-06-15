@@ -285,6 +285,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <input type="checkbox" id="ia-aprofundir" style="width:auto; cursor:pointer;">
           Entrar a les fitxes per completar la descripció <span style="color:var(--accent);">(més lent)</span>
         </label>
+        <div id="ia-usage-info" style="font-size:11px; color:var(--text-sec); margin-top:6px;"></div>
         <div id="ia-resultados-lista" style="display:none; margin-top:16px; background:#fff; border:1px dashed var(--blau-clar); border-radius:8px; padding:14px;">
           <p style="font-size:12px; font-weight:600; color:var(--blau); margin-bottom:8px;">📅 EVENTS TROBATS:</p>
           <div id="ia-lista-items" style="display:flex; flex-direction:column; gap:8px;"></div>
@@ -784,6 +785,8 @@ function marcarIaItemFet(idx, estatDesti) {
     btn.style.cursor = 'default';
     btn.disabled = true;
     btn.onclick = null;
+    const descartarBtn = btn.parentElement?.querySelector('button[onclick^="descartarEventIA"]');
+    if (descartarBtn) descartarBtn.style.display = 'none';
   }
   if(item) { item.style.opacity = '0.55'; item.style.outline = 'none'; }
 }
@@ -939,6 +942,86 @@ function semblaUrl(s) {
   return /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/[^\s]*)?$/i.test(t);
 }
 
+// ---- AUXILIARS: progrés i cost de l'IA ----
+// Preus aproximats de gemini-2.5-flash (USD per milió de tokens). Si Google els canvia,
+// això només afecta l'estimació de cost mostrada, no el funcionament.
+const PREU_INPUT_PER_M = 0.30;
+const PREU_OUTPUT_PER_M = 2.50;
+
+function costEstimatIA(promptTokens, candidatesTokens) {
+  return (promptTokens || 0) / 1e6 * PREU_INPUT_PER_M + (candidatesTokens || 0) / 1e6 * PREU_OUTPUT_PER_M;
+}
+
+// Acumula l'ús d'avui a localStorage i retorna el total acumulat
+function registrarUsIA(usage) {
+  const avui = new Date().toISOString().slice(0, 10);
+  const key = 'gx_ia_usage_' + avui;
+  let acumulat = {};
+  try { acumulat = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { acumulat = {}; }
+  acumulat.promptTokens = (acumulat.promptTokens || 0) + (usage.promptTokens || 0);
+  acumulat.candidatesTokens = (acumulat.candidatesTokens || 0) + (usage.candidatesTokens || 0);
+  acumulat.totalTokens = (acumulat.totalTokens || 0) + (usage.totalTokens || 0);
+  acumulat.calls = (acumulat.calls || 0) + (usage.calls || 0);
+  localStorage.setItem(key, JSON.stringify(acumulat));
+  return acumulat;
+}
+
+// Mostra el consum d'aquesta consulta i l'acumulat d'avui
+function mostrarUsIA(usage) {
+  const el = document.getElementById('ia-usage-info');
+  if (!el || !usage) return;
+  const acumulat = registrarUsIA(usage);
+  const costAra = costEstimatIA(usage.promptTokens, usage.candidatesTokens);
+  const costAvui = costEstimatIA(acumulat.promptTokens, acumulat.candidatesTokens);
+  el.textContent = `Aquesta consulta: ${usage.totalTokens || 0} tokens · ${usage.calls || 0} crida${(usage.calls||0)===1?'':'es'} a Gemini (~$${costAra.toFixed(4)}) — Avui en total: ${acumulat.totalTokens || 0} tokens · ${acumulat.calls || 0} crides (~$${costAvui.toFixed(4)})`;
+}
+
+// Mostra un text de progrés amb un comptador de segons mentre l'IA treballa.
+// getTextBase() permet canviar el text base (p.ex. en reintents) sense perdre el comptador.
+function iniciarTemporitzadorIA(el, getTextBase) {
+  let segons = 0;
+  const update = () => { el.textContent = `${getTextBase()} (${segons}s)`; };
+  update();
+  const interval = setInterval(() => { segons++; update(); }, 1000);
+  return () => clearInterval(interval);
+}
+
+// Crida la funció ganxo-ia amb reintents automàtics si Gemini està saturat
+// (errors típics: "model is overloaded", HTTP 429/503, "try again later"...).
+// Amb diversos events sol·licitats de cop és quan més apareixen aquests errors transitoris.
+async function fetchGanxoIA(body, onRetry) {
+  const MAX_INTENTS = 3;
+  const ESPERES_MS = [5000, 20000]; // esperes entre intents: prou per deixar passar una finestra de límit per minut
+  for (let intent = 1; intent <= MAX_INTENTS; intent++) {
+    const res = await fetch(GANXO_IA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify(body),
+    });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error('Resposta no vàlida del servidor (HTTP ' + res.status + '): ' + raw.slice(0, 200)); }
+
+    if (res.ok) return data;
+
+    const missatge = data.error || ('Error del servidor (HTTP ' + res.status + ')');
+
+    // Saturació o límit de Gemini (per minut o diari): val la pena esperar i reintentar,
+    // ja que un límit per minut es desbloqueja en qüestió de segons.
+    const esLimitOSaturacio = /overload|busy|occupat|ocupat|saturat|unavailable|503|429|resource_exhausted|quota|rate.?limit|try again/i.test(missatge);
+    if (esLimitOSaturacio && intent < MAX_INTENTS) {
+      if (onRetry) onRetry(intent, missatge);
+      await new Promise(r => setTimeout(r, ESPERES_MS[intent - 1]));
+      continue;
+    }
+    if (esLimitOSaturacio) {
+      throw new Error('El motor d\'IA continua saturat després de diversos intents. Pot ser un límit per minut (espera ~1 minut i torna-ho a provar) o la quota diària de Gemini (revisa aistudio.google.com). Detall: ' + missatge);
+    }
+    throw new Error(missatge);
+  }
+}
+
 async function procesarConGeminiUnPaso() {
   let inputSource = document.getElementById('ia-contenido').value.trim();
   if (!inputSource && !iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
@@ -947,8 +1030,10 @@ async function procesarConGeminiUnPaso() {
   const listaContenedor = document.getElementById('ia-resultados-lista');
   const listaItems = document.getElementById('ia-lista-items');
 
-  loadingEl.textContent = document.getElementById('ia-aprofundir').checked ? '🤖 Llegint fitxes...' : '🤖 Analitzant...';
+  const aprofundirActiu = document.getElementById('ia-aprofundir').checked;
+  let textBaseIA = aprofundirActiu ? '🤖 Llegint la font i entrant a les fitxes' : '🤖 Analitzant amb Gemini';
   loadingEl.style.display = 'block'; listaContenedor.style.display = 'none'; listaItems.innerHTML = '';
+  const aturarTemporitzador = iniciarTemporitzadorIA(loadingEl, () => textBaseIA);
 
   const esUrl = semblaUrl(inputSource);
 
@@ -959,25 +1044,21 @@ async function procesarConGeminiUnPaso() {
       llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
       categories: categories.map(c => ({ id: c.id, nom: c.nom })),
       existents,
-      aprofundir: document.getElementById('ia-aprofundir').checked,
+      aprofundir: aprofundirActiu,
     };
     if (esUrl) body.url = inputSource;
     else if (inputSource) body.texto = inputSource;
     if (iaImatgeBase64) { body.imagenBase64 = iaImatgeBase64; body.imagenMime = iaImatgeMime; }
 
-    const res = await fetch(GANXO_IA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify(body),
+    const data = await fetchGanxoIA(body, (intent, msg) => {
+      textBaseIA = `🤖 Motor d'IA ocupat, reintentant (${intent}/2)`;
     });
-    let data;
-    const rawResp = await res.text();
-    try { data = JSON.parse(rawResp); }
-    catch { throw new Error('Resposta no vàlida del servidor (HTTP ' + res.status + '): ' + rawResp.slice(0, 200)); }
-    if (!res.ok) throw new Error(data.error || ('Error del servidor (HTTP ' + res.status + ')'));
+
+    mostrarUsIA(data.usage);
 
     window.eventosDetectadosIA = data.events || [];
     window.iaUrlBase = data.urlBase || '';
+    window.iaAvisos = data.avisos || [];
 
     // Cap event trobat: avisem amb pistes en lloc de quedar-nos en blanc
     if (window.eventosDetectadosIA.length === 0) {
@@ -990,32 +1071,69 @@ async function procesarConGeminiUnPaso() {
       return;
     }
 
-    if (data.avisos && data.avisos.length) {
-      listaItems.innerHTML += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${data.avisos.join(' ')}</div>`;
-    }
-
-    window.eventosDetectadosIA.forEach((ev, idx) => {
-      const avisDuplicat = ev.duplicat
-        ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
-        : '';
-      const avisPendent = ev.fitxa_pendent
-        ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>`
-        : '';
-      listaItems.innerHTML += `
-        <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
-          <div>
-            <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
-            ${avisDuplicat}${avisPendent}
-          </div>
-          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
-        </div>`;
-    });
-    renderBotoContinuar();
+    renderLlistaIA();
     listaContenedor.style.display = 'block';
     document.getElementById('ia-contenido').value = '';
     ia_eliminarImatge();
     toast('Fetes!');
-  } catch(e) { toast(e.message, true); } finally { loadingEl.style.display = 'none'; }
+  } catch(e) { toast(e.message, true); } finally { aturarTemporitzador(); loadingEl.style.display = 'none'; }
+}
+
+// Nombre de fitxes que l'Edge Function processa per lot (ha de coincidir amb MAX_FITXES a index.ts)
+const IA_MAX_FITXES_PER_LOT = 5;
+
+// Redibuixa la llista d'events trobats per la IA (avisos + items), preservant
+// l'estat "fet" (publicat/esborrany) dels que ja s'han desat.
+function renderLlistaIA() {
+  const listaItems = document.getElementById('ia-lista-items');
+
+  const fets = {};
+  (window.eventosDetectadosIA || []).forEach((_, i) => {
+    const b = document.getElementById('ia-btn-' + i);
+    if (b && b.disabled) fets[i] = b.textContent;
+  });
+
+  let html = '';
+  if (window.iaAvisos && window.iaAvisos.length) {
+    html += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${window.iaAvisos.join(' ')}</div>`;
+  }
+
+  const visibles = (window.eventosDetectadosIA || []).filter(e => !e.descartat);
+  if (visibles.length === 0) {
+    html += `<div style="font-size:12px; color:var(--text-sec);">S'han descartat tots els events trobats.</div>`;
+  }
+
+  (window.eventosDetectadosIA || []).forEach((ev, idx) => {
+    if (ev.descartat) return;
+    const avisDuplicat = ev.duplicat
+      ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>`
+      : '';
+    const avisPendent = ev.fitxa_pendent
+      ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>`
+      : '';
+    html += `
+      <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
+        <div>
+          <span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>
+          ${avisDuplicat}${avisPendent}
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0; margin-left:10px;">
+          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Carregar</button>
+          <button type="button" onclick="descartarEventIA(${idx})" title="Descartar aquest event" style="background:none; border:1px solid var(--border); color:var(--text-sec); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">✕</button>
+        </div>
+      </div>`;
+  });
+
+  listaItems.innerHTML = html;
+  Object.keys(fets).forEach(i => marcarIaItemFet(parseInt(i), fets[i].includes('Publicat') ? 'publicat' : 'esborrany'));
+  renderBotoContinuar();
+}
+
+// Treu un event de la llista de resultats de la IA sense desar-lo
+function descartarEventIA(idx) {
+  if (!window.eventosDetectadosIA || !window.eventosDetectadosIA[idx]) return;
+  window.eventosDetectadosIA[idx].descartat = true;
+  renderLlistaIA();
 }
 
 // Mostra (o amaga) el botó per completar les fitxes que han quedat pendents pel límit
@@ -1023,63 +1141,45 @@ function renderBotoContinuar() {
   const cont = document.getElementById('ia-lista-items');
   const previ = document.getElementById('ia-btn-continuar-wrap');
   if (previ) previ.remove();
-  const pendents = (window.eventosDetectadosIA || []).filter(e => e.fitxa_pendent).length;
+  const pendents = (window.eventosDetectadosIA || []).filter(e => e.fitxa_pendent && !e.descartat).length;
   if (pendents === 0) return;
+  const enAquestLot = Math.min(pendents, IA_MAX_FITXES_PER_LOT);
   const div = document.createElement('div');
   div.id = 'ia-btn-continuar-wrap';
   div.style.cssText = 'margin-top:6px;';
-  div.innerHTML = `<button type="button" id="ia-btn-continuar" onclick="continuarFitxes()" style="width:100%; background:var(--blau-clar); color:#fff; border:none; padding:9px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">⏬ Completar les ${pendents} descripcions restants</button>`;
+  div.innerHTML = `<button type="button" id="ia-btn-continuar" onclick="continuarFitxes()" style="width:100%; background:var(--blau-clar); color:#fff; border:none; padding:9px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">⏬ Completar ${enAquestLot} de ${pendents} descripcions restants</button>`;
   cont.appendChild(div);
 }
 
 // Crida la funció en mode "fitxes" per completar les descripcions pendents
 async function continuarFitxes() {
   const btn = document.getElementById('ia-btn-continuar');
-  if (btn) { btn.disabled = true; btn.textContent = '🤖 Llegint fitxes restants...'; }
+  let textBaseBtn = '🤖 Llegint fitxes restants';
+  let aturarTemporitzador = null;
+  if (btn) { btn.disabled = true; aturarTemporitzador = iniciarTemporitzadorIA(btn, () => textBaseBtn); }
   try {
     const existents = await carregarExistentsPerDedup();
-    const res = await fetch(GANXO_IA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({
-        mode: 'fitxes',
-        events: window.eventosDetectadosIA,
-        urlBaseInput: window.iaUrlBase || '',
-        existents,
-      }),
+    const data = await fetchGanxoIA({
+      mode: 'fitxes',
+      events: window.eventosDetectadosIA,
+      urlBaseInput: window.iaUrlBase || '',
+      existents,
+    }, (intent, msg) => {
+      textBaseBtn = `🤖 Ocupat, reintentant (${intent}/2)`;
     });
-    const raw = await res.text();
-    let data; try { data = JSON.parse(raw); } catch { throw new Error('Resposta no vàlida (HTTP ' + res.status + ')'); }
-    if (!res.ok) throw new Error(data.error || ('Error del servidor (HTTP ' + res.status + ')'));
 
-    // Conservem l'estat "fet" dels items ja publicats abans de redibuixar
-    const fets = {};
-    (window.eventosDetectadosIA || []).forEach((_, i) => {
-      const b = document.getElementById('ia-btn-' + i);
-      if (b && b.disabled) fets[i] = b.textContent;
-    });
+    mostrarUsIA(data.usage);
 
     window.eventosDetectadosIA = data.events || window.eventosDetectadosIA;
-    // redibuixar la llista
-    const listaItems = document.getElementById('ia-lista-items');
-    listaItems.innerHTML = '';
-    window.eventosDetectadosIA.forEach((ev, idx) => {
-      const avisDuplicat = ev.duplicat ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">⚠️ Possible duplicat de: "${ev.duplicat_de}"</div>` : '';
-      const avisPendent = ev.fitxa_pendent ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>` : '';
-      listaItems.innerHTML += `
-        <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
-          <div><span style="font-size:13px;"><strong>${ev.data||'S/D'}</strong> — ${ev.titol}</span>${avisDuplicat}${avisPendent}</div>
-          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; flex-shrink:0; margin-left:10px;">Carregar</button>
-        </div>`;
-    });
-    // restaurar l'estat "fet"
-    Object.keys(fets).forEach(i => marcarIaItemFet(parseInt(i), fets[i].includes('Publicat') ? 'publicat' : 'esborrany'));
-    renderBotoContinuar();
+    window.iaAvisos = data.avisos || [];
+    renderLlistaIA();
     toast('Descripcions completades!');
   } catch (e) {
     toast(e.message, true);
     const b = document.getElementById('ia-btn-continuar');
     if (b) { b.disabled = false; renderBotoContinuar(); }
+  } finally {
+    if (aturarTemporitzador) aturarTemporitzador();
   }
 }
 
