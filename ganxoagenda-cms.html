@@ -297,6 +297,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div class="camp full"><label>Cicle / Programa</label><select id="f-cicle"><option value="">— Cap cicle —</option></select></div>
         <div class="camp"><label>Data</label><input type="date" id="f-data"></div>
         <div class="camp"><label>Hora d'inici</label><input type="time" id="f-hora-inici"></div>
+        <div class="camp full"><label>Data de fi <span style="text-transform:none; font-weight:400;">(opcional — per a esdeveniments de diversos dies, com exposicions)</span></label><input type="date" id="f-data-fi"></div>
         <div class="camp"><label>Lloc</label><select id="f-lloc"></select></div>
         <div class="camp"><label>Hora de fi</label><input type="time" id="f-hora-fi"></div>
         <div class="camp"><label>Preu</label><input type="text" id="f-preu-text" placeholder="Ex: Gratuït / 15 €"></div>
@@ -379,6 +380,18 @@ async function refreshAccessToken() {
     localStorage.setItem('gx_token', accessToken); localStorage.setItem('gx_refresh', refreshToken);
     return true;
   } catch (e) { return false; }
+}
+
+// Igual que sbFetch però per a l'API de Storage (llistar/pujar fotos), amb el mateix
+// refresc automàtic de token quan caduca (401).
+async function sbStorageFetch(path, opts = {}) {
+  const buildHeaders = () => ({ 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY), 'apikey': SUPABASE_ANON_KEY, ...(opts.headers || {}) });
+  let res = await fetch(SUPABASE_URL + path, { ...opts, headers: buildHeaders() });
+  if (res.status === 401 && accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) res = await fetch(SUPABASE_URL + path, { ...opts, headers: buildHeaders() });
+  }
+  return res;
 }
 
 async function doLogin() {
@@ -606,6 +619,7 @@ async function guardarCategoria() {
         const maxOrdre = categories.reduce((m, c) => Math.max(m, c.ordre ?? 0), 0);
         body.ordre = maxOrdre + 1;
       }
+      body.slug = nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       await sbFetch('/rest/v1/categories', { method: 'POST', body: JSON.stringify(body) });
       toast('Categoria creada!');
     }
@@ -661,8 +675,8 @@ async function carregarEsdeveniments(catId = null) {
   if(!data.length) { container.innerHTML = '<div class="llista-buida">🦉 Cap event creat.</div>'; return; }
   container.innerHTML = data.map(e => `
     <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
-      <div class="data-col"><div class="dia">${e.data.split('-')[2]}</div><div class="mes">${e.data.split('-')[1]}</div></div>
-      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}</div></div>
+      <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
+      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
       <span class="estat-badge estat-${e.estat}">${e.estat}</span>
     </div>
   `).join('');
@@ -678,7 +692,7 @@ function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormul
 function tornarLlista() { iaIdxActual = null; document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
 
 function netejarFormulari() {
-  document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
+  document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
   document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; fotoFile = null; fotoGaleriaUrl = null;
@@ -687,7 +701,7 @@ function netejarFormulari() {
 async function editarEsdeveniment(id) {
   editingId = id; netejarFormulari(); document.getElementById('btn-eliminar').style.display='block'; document.getElementById('btn-duplicar-event').style.display='inline-block'; document.getElementById('form-titol').textContent = 'Editar esdeveniment';
   const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
-  document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data;
+  document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data; document.getElementById('f-data-fi').value = e.data_fi || '';
   document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
   document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
@@ -708,8 +722,9 @@ function duplicarEsdeveniment() {
 }
 
 async function desarEsdeveniment(estatDesti) {
-  const titol = document.getElementById('f-titol').value.trim(), data = document.getElementById('f-data').value;
+  const titol = document.getElementById('f-titol').value.trim(), data = document.getElementById('f-data').value, dataFi = document.getElementById('f-data-fi').value;
   if(!titol || !data) return toast('Títol i data obligatoris', true);
+  if(dataFi && dataFi < data) return toast('La data de fi no pot ser anterior a la data d\'inici', true);
 
   // Mode repàs IA: ja té el seu propi avís de duplicats (mostrat a la llista d'events trobats),
   // així que aquí només comprovem quan es desa manualment.
@@ -719,12 +734,23 @@ async function desarEsdeveniment(estatDesti) {
     if(dup && !confirm(`Ja existeix un esdeveniment "${dup.titol}" amb aquesta data (${data}). Vols desar-lo igualment?`)) return;
   }
 
+  // Si s'ha triat una foto nova des de l'ordinador, la pujem ara a Storage
+  let fotoUrlFinal = fotoGaleriaUrl;
+  if(fotoFile) {
+    try {
+      toast('Pujant la foto...');
+      fotoUrlFinal = await pujarFotoStorage(fotoFile);
+      fotoFile = null;
+      fotoGaleriaUrl = fotoUrlFinal;
+    } catch(e) { return toast('Error pujant la foto: ' + e.message, true); }
+  }
+
   const pill = document.querySelector('.cat-pill.selected');
   const body = {
-    titol, data, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
+    titol, data, data_fi: dataFi || null, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
     hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
     preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
-    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoGaleriaUrl
+    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoUrlFinal
   };
   if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
   else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
@@ -775,14 +801,57 @@ async function eliminarEsdeveniment() { if(confirm('Segur?')) { await sbFetch(`/
 // ---- AUXILIARS FOTOS ----
 function obrirGaleria() { document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-galeria').style.display='block'; actualitzarGaleriaVista(); }
 function tancarGaleria() { document.getElementById('vista-galeria').style.display='none'; document.getElementById('vista-llista').style.display='block'; }
-async function llistarFotos(){ const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/fotos`, { method: 'POST', headers: { 'Authorization': 'Bearer '+accessToken, 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ prefix: '', limit: 100 }) }); return res.ok ? res.json() : []; }
+async function llistarFotos(){
+  try {
+    const res = await sbStorageFetch('/storage/v1/object/list/fotos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: '', limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+    });
+    if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.message || res.statusText); }
+    const data = await res.json();
+    return (data || []).filter(x => x.name && !x.name.startsWith('.'));
+  } catch (e) { toast('Error carregant la galeria: ' + e.message, true); return []; }
+}
 function urlPublica(n){ return `${SUPABASE_URL}/storage/v1/object/public/fotos/${n}`; }
 async function actualitzarGaleriaVista() { const f = await llistarFotos(); document.getElementById('galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px;">`).join(''); }
-function previewFoto(i) { if(i.files&&i.files[0]) { fotoFile=i.files[0]; document.getElementById('foto-preview').src=URL.createObjectURL(fotoFile); document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; } }
+
+// Puja un fitxer al bucket 'fotos' i retorna la seva URL pública
+async function pujarFotoStorage(file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const base = file.name.replace(/\.[^.]+$/, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // treu accents
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'foto';
+  const filename = `${Date.now()}-${base}.${ext}`;
+  const res = await sbStorageFetch(`/storage/v1/object/fotos/${filename}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
+  });
+  if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.message || 'Error pujant la foto'); }
+  return urlPublica(filename);
+}
+
+// Pujada múltiple des de la Galeria
+async function pujarBatch(input) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  toast(`Pujant ${files.length} foto${files.length>1?'s':''}...`);
+  let ok = 0, errors = 0;
+  for (const file of files) {
+    try { await pujarFotoStorage(file); ok++; }
+    catch (e) { errors++; }
+  }
+  input.value = '';
+  await actualitzarGaleriaVista();
+  toast(errors ? `${ok} pujades, ${errors} amb error` : `${ok} foto${ok>1?'s':''} pujada${ok>1?'es':''}!`, errors > 0 && ok === 0);
+}
+
+function previewFoto(i) { if(i.files&&i.files[0]) { fotoFile=i.files[0]; fotoGaleriaUrl=null; document.getElementById('foto-preview').src=URL.createObjectURL(fotoFile); document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; } }
 function obrirSelectorGaleria() { document.getElementById('modal-galeria').style.display='block'; actualitzarSelectorGaleria(); }
 function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display='none'; }
 async function actualitzarSelectorGaleria() { const f = await llistarFotos(); document.getElementById('selector-galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" onclick="triarFoto('${urlPublica(x.name)}')" style="width:100%; aspect-ratio:1; object-fit:cover; cursor:pointer;">`).join(''); }
-function triarFoto(url) { fotoGaleriaUrl=url; document.getElementById('foto-preview').src=url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; tancarSelectorGaleria(); }
+function triarFoto(url) { fotoGaleriaUrl=url; fotoFile=null; document.getElementById('foto-preview').src=url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; tancarSelectorGaleria(); }
 function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m; t.className='toast show'+(e?' error':''); setTimeout(()=>t.className='toast',2500); }
 
 // ============================================================
@@ -1014,6 +1083,24 @@ async function continuarFitxes() {
   }
 }
 
+// Heurística per detectar si un esdeveniment pertany a un cicle/programa ja existent
+// (Festa Major, Porta Ferrada...) comparant el seu títol i descripció amb el nom dels cicles,
+// per si la IA encara no ho detecta directament.
+const CICLE_STOPWORDS = ['cicle','festival','internacional','de','del','dels','la','el','les','els','i','d'];
+function netejaTextCicle(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’`]/g, ' ');
+}
+function detectarCicle(ev) {
+  if(ev.cicle_id) return ev.cicle_id;
+  const text = netejaTextCicle(`${ev.titol || ''} ${ev.descripcio || ''}`);
+  for(const c of cicles) {
+    const paraules = netejaTextCicle(c.nom).replace(/\b\d{4}\b/g, '').split(/\s+/)
+      .filter(p => p.length >= 5 && !CICLE_STOPWORDS.includes(p));
+    if(paraules.length && paraules.every(p => text.includes(p))) return c.id;
+  }
+  return null;
+}
+
 function cargarEventoIA(idx) {
   const ev = window.eventosDetectadosIA[idx];
   iaIdxActual = idx;
@@ -1026,12 +1113,13 @@ function cargarEventoIA(idx) {
   if(itemActiu) itemActiu.style.outline = '2px solid var(--blau-clar)';
   document.getElementById('f-titol').value = ev.titol || '';
   document.getElementById('f-data').value = ev.data || '';
+  document.getElementById('f-data-fi').value = ev.data_fi || '';
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
   document.getElementById('f-descripcio').value = ev.descripcio || '';
   document.getElementById('f-preu-text').value = ev.preu_text || '';
   document.getElementById('f-edat').value = ev.edat_minima || '';
   document.getElementById('f-lloc').value = ev.lloc_id || '';
-  document.getElementById('f-cicle').value = ev.cicle_id || '';
+  document.getElementById('f-cicle').value = detectarCicle(ev) || '';
   if(ev.categoria_id) { document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected')); const p=document.querySelector(`.cat-pill[data-id="${ev.categoria_id}"]`); if(p) p.classList.add('selected'); }
   const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
   if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
