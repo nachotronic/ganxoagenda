@@ -131,7 +131,7 @@
 </div>
 
 <!-- ===== FITXA D'ESDEVENIMENT ===== -->
-<div id="gx-ficha" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
+<div id="gx-ficha" style="display:none; background:#faf8f3;">
 
 <!-- foto capçalera -->
 <div id="gx-f-header" style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d7494,#0d3346); display:flex; flex-direction:column; justify-content:space-between;">
@@ -196,14 +196,12 @@
 <!-- mapa -->
 <div style="padding:0 16px 18px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin-bottom:9px;">On és</div>
-<a id="gx-f-mapa-link" href="#" target="_blank" style="display:block; border-radius:13px; overflow:hidden; border:1px solid #e4e0d7; text-decoration:none;">
-<div id="gx-f-mapa-img" style="height:120px; background:#e8e4d9; position:relative; background-image:linear-gradient(0deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, #d8d2c2 25%, #d8d2c2 26%, transparent 27%, transparent 74%, #d8d2c2 75%, #d8d2c2 76%, transparent 77%, transparent); background-size:cover; background-position:center;">
-<i class="ti ti-map-pin" style="font-size:30px; color:#d85a30; position:absolute; top:50%; left:50%; transform:translate(-50%,-100%);"></i>
+<a id="gx-f-mapa-link" href="#" target="_blank" style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff; border:1px solid #e4e0d7; border-radius:13px; padding:13px 14px; text-decoration:none;">
+<div style="display:flex; align-items:center; gap:9px; min-width:0;">
+<i class="ti ti-map-pin" style="font-size:18px; color:#d85a30; flex-shrink:0;"></i>
+<div id="gx-f-lloc-map" style="font-size:12.5px; color:#1d2b27; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Port de Sant Feliu de Guíxols</div>
 </div>
-<div style="background:#fff; padding:11px 14px; display:flex; align-items:center; justify-content:space-between;">
-<div id="gx-f-lloc-map" style="font-size:12.5px; color:#6b7780;">Port de Sant Feliu de Guíxols</div>
-<div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
-</div>
+<div style="font-size:12px; font-weight:700; color:#103b52; display:flex; align-items:center; gap:5px; flex-shrink:0;">Com arribar<i class="ti ti-chevron-right" style="font-size:14px;"></i></div>
 </a>
 </div>
 
@@ -222,7 +220,7 @@
 <!-- fi fitxa -->
 
 <!-- ===== FITXA DE GUIA (EVERGREEN) ===== -->
-<div id="gx-guia" style="display:none; position:absolute; top:0; left:0; right:0; min-height:100%; background:#faf8f3; z-index:50; overflow-y:auto;">
+<div id="gx-guia" style="display:none; background:#faf8f3;">
 
 <!-- foto capçalera -->
 <div style="height:220px; position:relative; background-image:linear-gradient(125deg,#2d8aa0,#0d3a52); display:flex; flex-direction:column; justify-content:space-between;">
@@ -321,6 +319,10 @@
 
 <script>
 function gxPage(p){
+  document.getElementById('gx-ficha').style.display='none';
+  document.getElementById('gx-guia').style.display='none';
+  gxFichaStack = [];
+  gxFichaCurrentId = null;
   ['agenda','visita','practic'].forEach(function(x){
     document.getElementById('gx-page-'+x).style.display = (x===p)?'block':'none';
     document.getElementById('gx-nav-'+x).style.color = (x===p)?'#103b52':'#b3a89a';
@@ -333,11 +335,13 @@ function gxToggleMeteo(){
   else{d.style.display='none';c.className='ti ti-chevron-down';}
 }
 function gxOpenGuia(){
+  document.getElementById('gx-page-agenda').style.display='none';
   document.getElementById('gx-guia').style.display='block';
-  document.getElementById('gx-guia').scrollTop=0;
+  window.scrollTo(0, 0);
 }
 function gxCloseGuia(){
   document.getElementById('gx-guia').style.display='none';
+  document.getElementById('gx-page-agenda').style.display='block';
 }
 
 /* ===== SUPABASE ===== */
@@ -900,7 +904,8 @@ async function gxVeureCicle(){
 }
 
 function gxOpenFicha(id, fromFicha){
-  var ev = gxEvents.find(function(e){ return e.id===id; });
+  var ev = gxEvents.find(function(e){ return e.id===id; })
+        || gxEventsTots.find(function(e){ return e.id===id; });
   if(!ev) return;
   var fichaEl = document.getElementById('gx-ficha');
   if(fromFicha && fichaEl.style.display==='block' && gxFichaCurrentId && gxFichaCurrentId!==id){
@@ -934,10 +939,9 @@ function gxOpenFicha(id, fromFicha){
   // recorda-m'ho: estat del botó
   gxActualitzaBotoRecorda(id, gxTeRecordatori(id));
 
-  // mapa: enllaç a Google Maps i imatge estàtica
+  // mapa: enllaç "Com arribar" a Google Maps
   var lloc = ev.llocs;
   var mapaLink = document.getElementById('gx-f-mapa-link');
-  var mapaImg = document.getElementById('gx-f-mapa-img');
   if(lloc && lloc.google_maps_url){
     mapaLink.href = lloc.google_maps_url;
   } else if(lloc && lloc.latitud && lloc.longitud){
@@ -946,14 +950,6 @@ function gxOpenFicha(id, fromFicha){
     mapaLink.href = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(gxLlocNom(ev)+' Sant Feliu de Guíxols');
   } else {
     mapaLink.href = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent('Sant Feliu de Guíxols');
-  }
-  if(lloc && lloc.latitud && lloc.longitud){
-    var lat=lloc.latitud, lon=lloc.longitud, d=0.006;
-    mapaImg.style.backgroundImage = 'url(https://staticmap.openstreetmap.de/staticmap.php?center='+lat+','+lon+'&zoom=15&size=320x120&markers='+lat+','+lon+',red-pushpin)';
-    mapaImg.querySelector('i').style.display='none';
-  } else {
-    mapaImg.style.backgroundImage = '';
-    if(mapaImg.querySelector('i')) mapaImg.querySelector('i').style.display='block';
   }
 
   // cicle
@@ -1000,8 +996,8 @@ function gxOpenFicha(id, fromFicha){
     });
   }
 
+  document.getElementById('gx-page-agenda').style.display='none';
   document.getElementById('gx-ficha').style.display='block';
-  document.getElementById('gx-ficha').scrollTop=0;
   requestAnimationFrame(function(){
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
@@ -1019,6 +1015,7 @@ function gxCloseFicha(){
     gxFichaStack.pop(); // remove the entry gxOpenFicha just re-pushed
   } else {
     document.getElementById('gx-ficha').style.display='none';
+    document.getElementById('gx-page-agenda').style.display='block';
     gxFichaCurrentId = null;
     window.scrollTo(0, 0);
   }
