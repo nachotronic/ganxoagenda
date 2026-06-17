@@ -160,11 +160,12 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
     <div id="vista-llista">
       <div class="llista-header">
         <h2>Esdeveniments</h2>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
           <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
           <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
           <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
+          <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -201,6 +202,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div style="display:flex; flex-direction:column; gap:10px;">
           <input type="text" id="nou-cicle-nom" placeholder="Nom del cicle (Ex: Porta Ferrada 2026)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
           <textarea id="nou-cicle-descripcio" placeholder="Descripció breu (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:60px; font-family:var(--font-sans); resize:vertical;"></textarea>
+          <input type="url" id="nou-cicle-url" placeholder="URL web oficial (opcional, ex: https://portaferrada.cat)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
           <div style="display:flex; gap:10px;">
             <div style="flex:1;">
               <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data d'inici</label>
@@ -240,6 +242,83 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
       <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Categories actuals:</h3>
       <div id="lista-categories-gestion"></div>
+    </div>
+
+    <!-- SECCIÓ GESTOR DE SÈRIES -->
+    <div id="vista-series" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarGestorSeries()">← Tornar</button>
+        <h2>🔄 Sèries d'esdeveniments periòdics</h2>
+      </div>
+
+      <!-- Formulari nova sèrie -->
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px;">
+        <label id="series-form-titol" style="display:block; font-size:12px; font-weight:600; margin-bottom:10px;">NOVA SÈRIE RECURRENT:</label>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="text" id="serie-titol" placeholder="Títol (Ex: Ball de Saló a Las Vegas)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <textarea id="serie-descripcio" placeholder="Descripció (opcional)" style="padding:10px; border:1px solid var(--border); border-radius:8px; min-height:50px; font-family:var(--font-sans); resize:vertical;"></textarea>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Dia de la setmana</label>
+              <select id="serie-dia" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+                <option value="1">Dilluns</option>
+                <option value="2">Dimarts</option>
+                <option value="3">Dimecres</option>
+                <option value="4">Dijous</option>
+                <option value="5">Divendres</option>
+                <option value="6" selected>Dissabte</option>
+                <option value="0">Diumenge</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:120px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Hora d'inici</label>
+              <input type="time" id="serie-hora-inici" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <div style="flex:1; min-width:120px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Hora de fi</label>
+              <input type="time" id="serie-hora-fi" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data d'inici</label>
+              <input type="date" id="serie-data-inici" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Data de fi</label>
+              <input type="date" id="serie-data-fi" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Lloc</label>
+              <select id="serie-lloc" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;"><option value="">— Sense lloc —</option></select>
+            </div>
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Categoria</label>
+              <select id="serie-categoria" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;"><option value="">— Sense categoria —</option></select>
+            </div>
+            <div style="flex:1; min-width:140px;">
+              <label style="display:block; font-size:11px; color:var(--text-sec); margin-bottom:4px;">Cicle</label>
+              <select id="serie-cicle" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;"><option value="">— Sense cicle —</option></select>
+            </div>
+          </div>
+          <input type="text" id="serie-preu" placeholder="Preu (opcional, ex: 5€ · entrada lliure)" style="padding:10px; border:1px solid var(--border); border-radius:8px;">
+          <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end;">
+            <button class="btn-esborrany" onclick="previsualitzarSerie()">👁️ Previsualitzar dates</button>
+            <button class="btn-nou" onclick="guardarSerie()">🔄 Generar sèrie</button>
+          </div>
+        </div>
+        <!-- Previsualització de dates generades -->
+        <div id="serie-preview" style="display:none; margin-top:14px; padding:12px; background:#f4f7f9; border-radius:8px;">
+          <div style="font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:8px;">Dates que es generaran:</div>
+          <div id="serie-preview-list" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Llistat de sèries existents -->
+      <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Sèries actuals:</h3>
+      <div id="lista-series-gestion"></div>
     </div>
 
     <!-- SECCIÓ GALERIA -->
@@ -430,6 +509,7 @@ async function showApp() {
   await carregarCategories();
   await carregarLlocs();
   await carregarCicles();
+  await carregarSeries();
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
 }
 
@@ -512,7 +592,7 @@ function renderListaCiclesGestion() {
     if(c.data_inici || c.data_fi) rang = `<span style="color:var(--text-sec); font-size:12px;"> · ${fmtData(c.data_inici)}${c.data_fi ? ' – ' + fmtData(c.data_fi) : ''}</span>`;
     return `
     <div class="lloc-item">
-      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}</span>
+      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}${c.url ? ` <a href="${c.url}" target="_blank" style="font-size:11px; color:var(--blau);">🔗</a>` : ''}</span>
       <span style="display:flex; gap:14px;">
         <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
         <button onclick="duplicarCicle('${c.id}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
@@ -525,10 +605,11 @@ async function guardarCicle() {
   const nom = document.getElementById('nou-cicle-nom').value.trim();
   const descripcio = document.getElementById('nou-cicle-descripcio').value.trim();
   const color = document.getElementById('nou-cicle-color').value.trim();
+  const url = document.getElementById('nou-cicle-url').value.trim();
   const dataInici = document.getElementById('nou-cicle-data-inici').value;
   const dataFi = document.getElementById('nou-cicle-data-fi').value;
   if(!nom) return toast('Escriu el nom del cicle', true);
-  const body = { nom, descripcio: descripcio || null, color: color || null, data_inici: dataInici || null, data_fi: dataFi || null };
+  const body = { nom, descripcio: descripcio || null, color: color || null, url: url || null, data_inici: dataInici || null, data_fi: dataFi || null };
   try {
     if(editingCicleId) {
       await sbFetch(`/rest/v1/cicles?id=eq.${editingCicleId}`, { method: 'PATCH', body: JSON.stringify(body) });
@@ -549,6 +630,7 @@ function editarCicle(id) {
   document.getElementById('nou-cicle-nom').value = c.nom || '';
   document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
   document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-url').value = c.url || '';
   document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
   document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
   document.getElementById('cicle-form-titol').textContent = 'EDITAR CICLE / PROGRAMA:';
@@ -564,6 +646,7 @@ function duplicarCicle(id) {
   document.getElementById('nou-cicle-nom').value = (c.nom || '') + ' (còpia)';
   document.getElementById('nou-cicle-descripcio').value = c.descripcio || '';
   document.getElementById('nou-cicle-color').value = c.color || '';
+  document.getElementById('nou-cicle-url').value = c.url || '';
   document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
   document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
   document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA (duplicat):';
@@ -578,6 +661,7 @@ function cancelarEdicioCicle() {
   document.getElementById('nou-cicle-nom').value = '';
   document.getElementById('nou-cicle-descripcio').value = '';
   document.getElementById('nou-cicle-color').value = '';
+  document.getElementById('nou-cicle-url').value = '';
   document.getElementById('nou-cicle-data-inici').value = '';
   document.getElementById('nou-cicle-data-fi').value = '';
   document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA:';
@@ -670,7 +754,169 @@ async function eliminarCategoria(id) {
   } catch(e) { toast('No es pot eliminar si està en ús', true); }
 }
 
-// ---- EVENTS LÓGICA Y RENDER ----
+// ---- CONTROLADOR DE SÈRIES ----
+let series = [];
+
+async function carregarSeries() {
+  series = await sbFetch('/rest/v1/series?select=*&order=created_at.desc');
+}
+
+function obrirGestorSeries() {
+  document.getElementById('vista-llista').style.display = 'none';
+  document.getElementById('vista-series').style.display = 'block';
+  // Omplir selects amb les dades ja carregades
+  const selLloc = document.getElementById('serie-lloc');
+  selLloc.innerHTML = '<option value="">— Sense lloc —</option>' + llocs.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+  const selCat = document.getElementById('serie-categoria');
+  selCat.innerHTML = '<option value="">— Sense categoria —</option>' + categories.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  const selCicle = document.getElementById('serie-cicle');
+  selCicle.innerHTML = '<option value="">— Sense cicle —</option>' + cicles.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  renderListaSeriesGestion();
+}
+
+function tancarGestorSeries() {
+  document.getElementById('vista-series').style.display = 'none';
+  document.getElementById('vista-llista').style.display = 'block';
+}
+
+// Genera la llista de dates per a una sèrie donada (dia de la setmana entre dues dates)
+function generarDatesSerie(diaSetmana, dataInici, dataFi) {
+  const dates = [];
+  const d = new Date(dataInici + 'T00:00:00');
+  const fi = new Date(dataFi + 'T00:00:00');
+  // Avança fins al primer dia de la setmana demanat
+  while (d.getDay() !== parseInt(diaSetmana, 10)) d.setDate(d.getDate() + 1);
+  while (d <= fi) {
+    dates.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 7);
+  }
+  return dates;
+}
+
+function previsualitzarSerie() {
+  const dia = document.getElementById('serie-dia').value;
+  const dataInici = document.getElementById('serie-data-inici').value;
+  const dataFi = document.getElementById('serie-data-fi').value;
+  if (!dataInici || !dataFi) return toast('Cal indicar data d\'inici i de fi', true);
+  if (dataFi < dataInici) return toast('La data de fi no pot ser anterior a la d\'inici', true);
+  const dates = generarDatesSerie(dia, dataInici, dataFi);
+  const preview = document.getElementById('serie-preview');
+  const list = document.getElementById('serie-preview-list');
+  list.innerHTML = dates.map(d => {
+    const [y,m,dd] = d.split('-');
+    return `<span style="background:var(--blau-clar); color:#fff; font-size:11px; padding:3px 8px; border-radius:12px;">${dd}/${m}/${y}</span>`;
+  }).join('');
+  if (dates.length === 0) list.innerHTML = '<span style="font-size:12px; color:var(--accent);">Cap data trobada en aquest rang.</span>';
+  preview.style.display = 'block';
+  toast(`${dates.length} data${dates.length !== 1 ? 's' : ''} generades`);
+}
+
+async function guardarSerie() {
+  const titol = document.getElementById('serie-titol').value.trim();
+  const dia = document.getElementById('serie-dia').value;
+  const dataInici = document.getElementById('serie-data-inici').value;
+  const dataFi = document.getElementById('serie-data-fi').value;
+  if (!titol) return toast('Cal indicar el títol de la sèrie', true);
+  if (!dataInici || !dataFi) return toast('Cal indicar data d\'inici i de fi', true);
+  if (dataFi < dataInici) return toast('La data de fi no pot ser anterior a la d\'inici', true);
+
+  const dates = generarDatesSerie(dia, dataInici, dataFi);
+  if (dates.length === 0) return toast('No hi ha dates en el rang indicat', true);
+  if (!confirm(`Es crearan ${dates.length} events. Vols continuar?`)) return;
+
+  const descripcio = document.getElementById('serie-descripcio').value.trim();
+  const horaInici = document.getElementById('serie-hora-inici').value;
+  const horaFi = document.getElementById('serie-hora-fi').value;
+  const llocId = document.getElementById('serie-lloc').value || null;
+  const catId = document.getElementById('serie-categoria').value || null;
+  const cicleId = document.getElementById('serie-cicle').value || null;
+  const preuText = document.getElementById('serie-preu').value.trim();
+
+  try {
+    // 1. Crear el registre de la sèrie
+    const serieRes = await sbFetch('/rest/v1/series?select=id', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({
+        titol, descripcio: descripcio || null,
+        dia_setmana: parseInt(dia, 10),
+        hora_inici: horaInici ? horaInici + ':00' : null,
+        hora_fi: horaFi ? horaFi + ':00' : null,
+        lloc_id: llocId, categoria_id: catId, cicle_id: cicleId,
+        preu_text: preuText || null,
+        data_inici: dataInici, data_fi: dataFi
+      })
+    });
+    const serieId = serieRes[0].id;
+
+    // 2. Crear tots els events de la sèrie en un sol INSERT
+    const events = dates.map(data => ({
+      titol, descripcio: descripcio || null, data,
+      hora_inici: horaInici ? horaInici + ':00' : null,
+      hora_fi: horaFi ? horaFi + ':00' : null,
+      lloc_id: llocId, categoria_id: catId, cicle_id: cicleId,
+      preu_text: preuText || null,
+      estat: 'publicat',
+      serie_id: serieId
+    }));
+    await sbFetch('/rest/v1/esdeveniments', {
+      method: 'POST',
+      body: JSON.stringify(events)
+    });
+
+    toast(`✅ ${dates.length} events creats!`);
+    netejarFormulariSerie();
+    await carregarSeries(); renderListaSeriesGestion();
+    await carregarEsdeveniments();
+  } catch(e) { toast('Error creant la sèrie: ' + e.message, true); }
+}
+
+function netejarFormulariSerie() {
+  ['serie-titol','serie-descripcio','serie-hora-inici','serie-hora-fi','serie-data-inici','serie-data-fi','serie-preu']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('serie-preview').style.display = 'none';
+}
+
+async function renderListaSeriesGestion() {
+  await carregarSeries();
+  const container = document.getElementById('lista-series-gestion');
+  if (!series.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap sèrie creada.</div>'; return; }
+  const DIES = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+  container.innerHTML = series.map(s => {
+    const lloc = llocs.find(l => l.id === s.lloc_id);
+    const cat = categories.find(c => c.id === s.categoria_id);
+    return `
+    <div class="lloc-item" style="flex-direction:column; align-items:flex-start; gap:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+        <strong style="font-size:13px;">🔄 ${s.titol}</strong>
+        <span style="display:flex; gap:14px;">
+          <button onclick="eliminarSerie('${s.id}', false)" style="background:none; border:none; color:var(--accent); font-weight:600; cursor:pointer; font-size:12px;">Eliminar futurs</button>
+          <button onclick="eliminarSerie('${s.id}', true)" style="background:none; border:none; color:var(--vermell); font-weight:600; cursor:pointer; font-size:12px;">Eliminar tots</button>
+        </span>
+      </div>
+      <div style="font-size:12px; color:var(--text-sec);">${DIES[s.dia_setmana]} · ${s.data_inici} → ${s.data_fi}${s.hora_inici ? ' · ' + s.hora_inici.slice(0,5) : ''}${lloc ? ' · ' + lloc.nom : ''}${cat ? ' · ' + cat.nom : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function eliminarSerie(serieId, tots) {
+  const msg = tots
+    ? 'Segur que vols eliminar TOTS els events d\'aquesta sèrie (passats i futurs)?'
+    : 'Segur que vols eliminar els events FUTURS d\'aquesta sèrie (a partir d\'avui)?';
+  if (!confirm(msg)) return;
+  try {
+    const avui = new Date().toISOString().slice(0, 10);
+    let q = `/rest/v1/esdeveniments?serie_id=eq.${serieId}`;
+    if (!tots) q += `&data=gte.${avui}`;
+    await sbFetch(q, { method: 'DELETE' });
+    if (tots) await sbFetch(`/rest/v1/series?id=eq.${serieId}`, { method: 'DELETE' });
+    toast(tots ? 'Sèrie eliminada' : 'Events futurs eliminats');
+    await renderListaSeriesGestion();
+    await carregarEsdeveniments();
+  } catch(e) { toast('Error eliminant: ' + e.message, true); }
+}
+
+
 function renderFiltres() {
   const bar = document.getElementById('filtre-bar');
   let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
@@ -682,7 +928,7 @@ function filtrar(catId, btn) {
   carregarEsdeveniments(catId);
 }
 async function carregarEsdeveniments(catId = null) {
-  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color)&order=data.desc,hora_inici';
+  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color),series(titol)&order=data.desc,hora_inici';
   if(catId) q += `&categoria_id=eq.${catId}`;
   const data = await sbFetch(q);
   const container = document.getElementById('llista-events');
@@ -690,7 +936,7 @@ async function carregarEsdeveniments(catId = null) {
   container.innerHTML = data.map(e => `
     <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
       <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
-      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
+      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
       <span class="estat-badge estat-${e.estat}">${e.estat}</span>
     </div>
   `).join('');
