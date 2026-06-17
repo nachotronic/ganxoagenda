@@ -1810,7 +1810,7 @@ async function esborrarAnalitica(){
 // SINCRONITZAR CARTELERA DE CINEMA (eCartelera → Supabase)
 // ============================================================
 const PUBLICINE_URL = 'https://www.publicine.net/cartellera-cinema/platja-daro/cinemes-ocine-platja-daro';
-
+const CINEMA_SYNC_URL = SUPABASE_URL + '/functions/v1/cinema-sync';
 function diesCapSetmana() {
   // Retorna els desplaçaments (0=avui) per arribar a divendres, dissabte i diumenge
   const avui = new Date().getDay(); // 0=dg,1=dl,2=dt,3=dc,4=dj,5=dv,6=ds
@@ -1855,92 +1855,44 @@ async function sincronitzarCartelera() {
 
   try {
     // 1. Carregar existents
-    setProgress(5, 'Carregant events existents...');
+    setProgress(10, 'Carregant events existents...');
     const avuiStr = new Date().toISOString().slice(0,10);
     const d60 = new Date(); d60.setDate(d60.getDate()+60);
     const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
     const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
     addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
 
-    // 2. Fer fetch de Publicine des del CMS (via Jina a través de Ganxo-IA però en mode text)
-    // Obtenim el text complet i el filtrem al client per quedar-nos només amb dv/ds/dg
-    setProgress(15, 'Llegint Publicine...');
+    // 2. Cridar cinema-sync (nova Edge Function dedicada)
+    setProgress(20, 'Llegint cartelera i processant amb IA...');
+    const res = await fetch(CINEMA_SYNC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ lloc_id: llocOcine.id, categoria_id: catCinema.id })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Error cinema-sync');
 
-    // Demanem el text via Ganxo-IA en mode "url" però amb max tokens reduïts
-    // Alternativa: fer fetch directe amb cors-anywhere si fos possible
-    // Opció robusta: enviar la URL i deixar que Jina retorni, però partir en 2 lots pel titol
-    // LOT 1: divendres
-    // LOT 2: dissabte + diumenge
+    const events = data.events || [];
+    addLog(`✓ ${events.length} pel·lícules trobades (${(data.dies_processats||[]).join(', ')})`);
+    setProgress(75, 'Preparant events nous...');
 
-    const basePeticio = {
-      llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
-      categories: [{id: catCinema.id, nom: catCinema.nom}],
-      existents: [],
-      aprofundir: false,
-    };
-
-    const todsPels = {};
-
-    const lots = [
-      { label: 'Divendres', prompt: 'Extreu NOMÉS les pel·lícules amb horaris de DIVENDRES. Un event per pel·lícula amb tots els pases del divendres a la descripció. Ignora completament dissabte, diumenge i altres dies.' },
-      { label: 'Dissabte i Diumenge', prompt: 'Extreu NOMÉS les pel·lícules amb horaris de DISSABTE i DIUMENGE. Un event per pel·lícula amb tots els pases de dissabte i diumenge a la descripció. Ignora completament divendres i dies laborables.' },
-    ];
-
-    for(let i = 0; i < lots.length; i++) {
-      const lot = lots[i];
-      setProgress(20 + i * 30, `Processant ${lot.label}... (${i+1}/2)`);
-      try {
-        const res = await fetchGanxoIA({
-          ...basePeticio,
-          url: PUBLICINE_URL,
-          prompt_extra: lot.prompt,
-        }, (intent) => setProgress(20 + i * 30, `${lot.label}: reintentant (${intent}/2)...`));
-
-        const evs = res.events || [];
-        addLog(`✓ ${lot.label}: ${evs.length} pel·lícules`);
-        evs.forEach(ev => {
-          if(!ev.titol) return;
-          const clau = ev.titol.toLowerCase().trim();
-          if(!todsPels[clau]) todsPels[clau] = ev;
-          else {
-            // Fusionar descripció
-            todsPels[clau].descripcio = [todsPels[clau].descripcio, ev.descripcio].filter(Boolean).join('\n');
-          }
-        });
-      } catch(e) {
-        addLog(`⚠️ ${lot.label}: ${e.message.slice(0,60)}`);
-      }
-    }
-
-    setProgress(80, 'Preparant events nous...');
-
-    const nous = [];
-    const saltats = [];
-
-    for(const [clau, ev] of Object.entries(todsPels)) {
-      if(existentsSet.has(clau)) { saltats.push(ev.titol); continue; }
-      nous.push({
-        titol: ev.titol,
-        data: ev.data || avuiStr,
-        hora_inici: ev.hora_inici || null,
-        descripcio: ev.descripcio || '',
-        categoria_id: catCinema.id,
-        lloc_id: llocOcine.id,
-        estat: 'esborrany',
-        familiar: false,
-        destacat: false,
-      });
-    }
+    // 3. Filtrar duplicats i inserir
+    const nous = events.filter(ev => ev.titol && !existentsSet.has(ev.titol.toLowerCase().trim()));
+    const saltats = events.length - nous.length;
 
     if(!nous.length) {
-      addLog(`ℹ️ ${saltats.length} pel·lícules ja existien`);
+      addLog(`ℹ️ ${saltats} pel·lícules ja existien`);
       setProgress(100, 'Ja estàvem al dia!');
     } else {
-      setProgress(90, `Creant ${nous.length} events...`);
+      setProgress(85, `Creant ${nous.length} events...`);
       await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
       await carregarEsdeveniments();
       addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
-      if(saltats.length) addLog(`↩️ ${saltats.length} ja existien (saltades)`);
+      if(saltats) addLog(`↩️ ${saltats} ja existien (saltades)`);
       setProgress(100, 'Fet!');
     }
 
