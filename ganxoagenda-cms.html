@@ -166,6 +166,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
           <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
           <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
+          <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -333,6 +334,78 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
       </div>
       <div id="galeria-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
     </div>
+
+<!-- SECCIÓ ANALÍTICA — afegir abans de la VISTA FORMULARI -->
+    <div id="vista-analitica" style="display:none;">
+      <div class="form-header">
+        <button class="btn-tornar" onclick="tancarAnalitica()">← Tornar</button>
+        <h2>📊 Analítica</h2>
+        <button onclick="carregarAnalitica()" style="margin-left:auto; padding:8px 16px; border:1px solid var(--border); border-radius:8px; background:#fff; cursor:pointer; font-size:13px;">🔄 Actualitzar</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:14px; margin-bottom:24px;">
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11px; color:var(--text-sec); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Obertures app</div>
+          <div id="kpi-app-open" style="font-size:32px; font-weight:700; color:var(--blau);">—</div>
+          <div id="kpi-app-open-7d" style="font-size:11px; color:var(--text-sec); margin-top:3px;">7 dies</div>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11px; color:var(--text-sec); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Fitxes vistes</div>
+          <div id="kpi-fitxa" style="font-size:32px; font-weight:700; color:var(--blau);">—</div>
+          <div id="kpi-fitxa-7d" style="font-size:11px; color:var(--text-sec); margin-top:3px;">7 dies</div>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11px; color:var(--text-sec); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Compartits WA</div>
+          <div id="kpi-wa" style="font-size:32px; font-weight:700; color:#1d8a4e;">—</div>
+          <div id="kpi-wa-7d" style="font-size:11px; color:var(--text-sec); margin-top:3px;">7 dies</div>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11px; color:var(--text-sec); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Recordatoris</div>
+          <div id="kpi-recorda" style="font-size:32px; font-weight:700; color:var(--accent);">—</div>
+          <div id="kpi-recorda-7d" style="font-size:11px; color:var(--text-sec); margin-top:3px;">7 dies</div>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11px; color:var(--text-sec); font-weight:600; text-transform:uppercase; margin-bottom:6px;">Sessions úniques</div>
+          <div id="kpi-sessions" style="font-size:32px; font-weight:700; color:var(--blau);">—</div>
+          <div id="kpi-sessions-7d" style="font-size:11px; color:var(--text-sec); margin-top:3px;">7 dies</div>
+        </div>
+      </div>
+
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px;">
+        <div style="font-size:14px; font-weight:600; margin-bottom:16px;">Obertures per dia (30 dies)</div>
+        <div id="analitica-chart" style="height:120px; display:flex; align-items:flex-end; gap:3px; padding:0 4px;"><div style="font-size:12px; color:var(--text-sec);">Carregant...</div></div>
+        <div id="analitica-chart-labels" style="display:flex; gap:3px; margin-top:6px; padding:0 4px;"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Filtres usats (30 dies)</div>
+          <div id="analitica-filtres"></div>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Top 10 fitxes vistes</div>
+          <div id="analitica-top-fitxes"></div>
+        </div>
+      </div>
+
+      <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div style="font-size:14px; font-weight:600;">Últims 50 events</div>
+          <button onclick="esborrarAnalitica()" style="font-size:12px; color:var(--vermell); background:none; border:1px solid var(--vermell); padding:5px 10px; border-radius:6px; cursor:pointer;">🗑️ Esborrar tot</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead><tr style="background:var(--fons-2);">
+              <th style="text-align:left; padding:6px 8px; font-size:11px;">Data/hora</th>
+              <th style="text-align:left; padding:6px 8px; font-size:11px;">Tipus</th>
+              <th style="text-align:left; padding:6px 8px; font-size:11px;">Detall</th>
+            </tr></thead>
+            <tbody id="analitica-raw-tbody"><tr><td colspan="3" style="padding:12px; text-align:center;">Carregant...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
 
     <!-- VISTA FORMULARI -->
     <div id="vista-form">
@@ -1519,6 +1592,123 @@ function usarFotoSuggerida() {
 
 function descartarFotoSuggerida() {
   document.getElementById('foto-suggerida').style.display = 'none';
+}
+
+
+// ============================================================
+// ANALÍTICA — afegir al final del <script> del CMS
+// ============================================================
+function obrirAnalitica(){
+  document.getElementById('vista-llista').style.display='none';
+  document.getElementById('vista-analitica').style.display='block';
+  carregarAnalitica();
+}
+function tancarAnalitica(){
+  document.getElementById('vista-analitica').style.display='none';
+  document.getElementById('vista-llista').style.display='block';
+}
+
+async function carregarAnalitica(){
+  try{
+    const ara = new Date();
+    const fa30 = new Date(ara); fa30.setDate(fa30.getDate()-30);
+    const data = await sbFetch(`/rest/v1/analytics_events?select=*&created_at=gte.${fa30.toISOString()}&order=created_at.desc&limit=2000`);
+    if(!Array.isArray(data)) return;
+
+    const tipos = (tipus, dies) => {
+      const des = new Date(); des.setDate(des.getDate()-dies);
+      return data.filter(e => e.tipus===tipus && new Date(e.created_at) >= des).length;
+    };
+    const sessions = (dies) => {
+      const des = new Date(); des.setDate(des.getDate()-dies);
+      return new Set(data.filter(e => new Date(e.created_at) >= des).map(e=>e.session_id)).size;
+    };
+
+    document.getElementById('kpi-app-open').textContent  = tipos('app_open',30);
+    document.getElementById('kpi-app-open-7d').textContent = tipos('app_open',7)+' últims 7 dies';
+    document.getElementById('kpi-fitxa').textContent  = tipos('fitxa_vista',30);
+    document.getElementById('kpi-fitxa-7d').textContent = tipos('fitxa_vista',7)+' últims 7 dies';
+    document.getElementById('kpi-wa').textContent  = tipos('compartir_whatsapp',30);
+    document.getElementById('kpi-wa-7d').textContent = tipos('compartir_whatsapp',7)+' últims 7 dies';
+    document.getElementById('kpi-recorda').textContent  = tipos('recordatori',30);
+    document.getElementById('kpi-recorda-7d').textContent = tipos('recordatori',7)+' últims 7 dies';
+    document.getElementById('kpi-sessions').textContent = sessions(30);
+    document.getElementById('kpi-sessions-7d').textContent = sessions(7)+' últims 7 dies';
+
+    // Gràfic per dia (app_open) — 30 dies
+    const fmt = d => d.toISOString().slice(0,10);
+    const obertures = {};
+    for(let i=29; i>=0; i--){
+      const d = new Date(); d.setDate(d.getDate()-i);
+      obertures[fmt(d)] = 0;
+    }
+    data.filter(e=>e.tipus==='app_open').forEach(e=>{ const k=e.created_at.slice(0,10); if(k in obertures) obertures[k]++; });
+    const vals = Object.values(obertures);
+    const maxVal = Math.max(...vals, 1);
+    document.getElementById('analitica-chart').innerHTML = vals.map((v,i) => {
+      const k = Object.keys(obertures)[i];
+      const pct = Math.round((v/maxVal)*100);
+      return `<div title="${k}: ${v} obertures" style="flex:1; background:${pct>0?'#103b52':'#e4e0d7'}; height:${Math.max(pct,2)}%; border-radius:3px 3px 0 0; min-height:${v>0?'4px':'2px'};"></div>`;
+    }).join('');
+    document.getElementById('analitica-chart-labels').innerHTML = vals.map((_,i) => {
+      const dia = parseInt(Object.keys(obertures)[i].slice(8));
+      return `<div style="flex:1; text-align:center; font-size:9px; color:var(--text-sec);">${dia%5===0?dia:''}</div>`;
+    }).join('');
+
+    // Filtres
+    const filtreCount = {};
+    data.filter(e=>e.tipus==='filtre').forEach(e=>{
+      const f = (e.payload && e.payload.filtre) || '?';
+      filtreCount[f] = (filtreCount[f]||0)+1;
+    });
+    const totalFiltres = Object.values(filtreCount).reduce((a,b)=>a+b,0)||1;
+    const filtreNoms = {avui:'Avui',dema:'Demà',cap:'Cap de setmana',mes:'Per mes',cicle:'Cicle'};
+    document.getElementById('analitica-filtres').innerHTML = Object.entries(filtreCount)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([f,n]) => `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="font-size:13px; min-width:110px;">${filtreNoms[f]||f}</div>
+        <div style="flex:1; height:8px; background:var(--fons-2); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; background:var(--blau); border-radius:4px; width:${Math.round(n/totalFiltres*100)}%;"></div>
+        </div>
+        <div style="font-size:12px; color:var(--text-sec); min-width:28px; text-align:right;">${n}</div>
+      </div>`).join('') || '<div style="font-size:12px; color:var(--text-sec);">Sense dades</div>';
+
+    // Top fitxes
+    const fitxaCount = {};
+    data.filter(e=>e.tipus==='fitxa_vista').forEach(e=>{
+      const t = (e.payload && e.payload.titol) || (e.payload && e.payload.event_id) || '?';
+      fitxaCount[t] = (fitxaCount[t]||0)+1;
+    });
+    const topFitxes = Object.entries(fitxaCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxFitxa = topFitxes[0]?.[1]||1;
+    document.getElementById('analitica-top-fitxes').innerHTML = topFitxes.map(([t,n]) => `
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
+        <div style="flex:1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t}">${t}</div>
+        <div style="font-size:12px; font-weight:600; color:var(--blau); min-width:22px; text-align:right;">${n}</div>
+      </div>`).join('') || '<div style="font-size:12px; color:var(--text-sec);">Sense dades</div>';
+
+    // Raw
+    const tipusLabels = {app_open:'🏠 App oberta',fitxa_vista:'👁️ Fitxa',filtre:'🔍 Filtre',compartir_whatsapp:'💬 WhatsApp',recordatori:'🔔 Recordatori'};
+    document.getElementById('analitica-raw-tbody').innerHTML = data.slice(0,50).map(e => {
+      const dt = new Date(e.created_at);
+      const hora = dt.toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
+      const detall = e.payload ? Object.entries(e.payload).filter(([k])=>k!=='ua').map(([k,v])=>`${k}: ${v}`).join(' · ') : '';
+      return `<tr style="border-top:1px solid var(--border);">
+        <td style="padding:5px 8px; white-space:nowrap; color:var(--text-sec);">${hora}</td>
+        <td style="padding:5px 8px; white-space:nowrap;">${tipusLabels[e.tipus]||e.tipus}</td>
+        <td style="padding:5px 8px; color:var(--text-sec); font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${detall}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="3" style="padding:12px; text-align:center; color:var(--text-sec);">Sense dades</td></tr>';
+
+  }catch(e){ toast('Error carregant analítica: '+e.message, true); }
+}
+
+async function esborrarAnalitica(){
+  if(!confirm("Segur que vols esborrar TOTS els events d'analítica?")) return;
+  try{
+    await sbFetch('/rest/v1/analytics_events?id=gt.00000000-0000-0000-0000-000000000000', { method:'DELETE' });
+    toast('Analítica esborrada'); carregarAnalitica();
+  }catch(e){ toast('Error: '+e.message, true); }
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
