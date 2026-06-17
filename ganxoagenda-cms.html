@@ -1415,12 +1415,84 @@ async function procesarConGeminiUnPaso() {
       return;
     }
 
+    // Detectar possibles grups (mateix títol, mateix dia) i preguntar si agrupar
+    await detectarIOferiAgrupar();
+
     renderLlistaIA();
     listaContenedor.style.display = 'block';
     document.getElementById('ia-contenido').value = '';
     ia_eliminarImatge();
     toast('Fetes!');
   } catch(e) { toast(e.message, true); } finally { aturarTemporitzador(); loadingEl.style.display = 'none'; }
+}
+
+// Detecta events amb el mateix títol (normalitzat) en el mateix dia.
+// Per a cada grup, mostra un modal preguntant si agrupar-los en un sol event
+// amb tots els horaris a la descripció.
+function normalitzarTitol(t) {
+  return (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+}
+
+async function detectarIOferiAgrupar() {
+  const events = window.eventosDetectadosIA || [];
+  // Agrupa per titol normalitzat + data
+  const grups = {};
+  events.forEach((ev, idx) => {
+    if(ev.descartat) return;
+    const clau = normalitzarTitol(ev.titol) + '|' + (ev.data || '');
+    if(!grups[clau]) grups[clau] = [];
+    grups[clau].push({ev, idx});
+  });
+
+  // Filtra grups amb més d'un event
+  const grupsMultiples = Object.values(grups).filter(g => g.length > 1);
+  if(!grupsMultiples.length) return;
+
+  // Per a cada grup, preguntar a l'usuari
+  for(const grup of grupsMultiples) {
+    const titol = grup[0].ev.titol;
+    const data = grup[0].ev.data;
+    const horaris = grup.map(g => g.ev.hora_inici || 'sense hora').join(', ');
+    const resposta = await mostrarModalAgrupacio(titol, data, horaris);
+    if(resposta === 'agrupar') {
+      // Construir un sol event amb tots els horaris a la descripció
+      const primer = grup[0].ev;
+      const horarisText = grup.map(g => g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) : null).filter(Boolean);
+      const descripcioHoraris = horarisText.length
+        ? 'Horaris: ' + horarisText.join(' · ')
+        : '';
+      const descripcioBase = primer.descripcio || '';
+      primer.descripcio = [descripcioBase, descripcioHoraris].filter(Boolean).join('\n');
+      primer.hora_inici = horarisText[0] ? horarisText[0] + ':00' : primer.hora_inici;
+      // Descartar la resta
+      grup.slice(1).forEach(g => { g.ev.descartat = true; });
+    }
+    // Si 'separats', no fa res — es mostren tots per separat
+  }
+}
+
+function mostrarModalAgrupacio(titol, data, horaris) {
+  return new Promise(resolve => {
+    // Reutilitzem el modal de galeria o creem un de nou
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#fff; border-radius:14px; max-width:440px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+        <div style="font-size:16px; font-weight:700; color:var(--blau); margin-bottom:8px;">🎬 Possibles pases del mateix event</div>
+        <p style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">He trobat <strong>${horaris.split(',').length} entrades amb el mateix títol</strong> el mateix dia. Potser és un sol event amb diversos pases.</p>
+        <div style="background:var(--fons-2); border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:13px;">
+          <div style="font-weight:600; margin-bottom:4px;">${titol}</div>
+          <div style="color:var(--text-sec);">📅 ${data} · 🕐 ${horaris}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button id="btn-agrupar" style="background:var(--blau); color:#fff; border:none; border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer;">Sí, és el mateix event — agrupar amb tots els horaris a la descripció</button>
+          <button id="btn-separats" style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:13px; cursor:pointer; color:var(--text-sec);">No, són events independents — mantenir separats</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#btn-agrupar').onclick = () => { document.body.removeChild(modal); resolve('agrupar'); };
+    modal.querySelector('#btn-separats').onclick = () => { document.body.removeChild(modal); resolve('separats'); };
+  });
 }
 
 // Nombre de fitxes que l'Edge Function processa per lot (ha de coincidir amb MAX_FITXES a index.ts)
@@ -1700,13 +1772,13 @@ async function carregarAnalitica(){
       </tr>`;
     }).join('') || '<tr><td colspan="3" style="padding:12px; text-align:center; color:var(--text-sec);">Sense dades</td></tr>';
 
-  }catch(e){ toast('Error carregant analítica: '+e.message, true); }
+  }catch(e){ console.error('Error analítica:', e); toast('Error carregant analítica: ' + e.message, true); }
 }
 
 async function esborrarAnalitica(){
   if(!confirm("Segur que vols esborrar TOTS els events d'analítica?")) return;
   try{
-    await sbFetch('/rest/v1/analytics_events?id=gt.00000000-0000-0000-0000-000000000000', { method:'DELETE' });
+    await sbFetch('/rest/v1/analytics_events?created_at=gte.2020-01-01', { method:'DELETE' });
     toast('Analítica esborrada'); carregarAnalitica();
   }catch(e){ toast('Error: '+e.message, true); }
 }
