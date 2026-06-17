@@ -1434,48 +1434,49 @@ function normalitzarTitol(t) {
 
 async function detectarIOferiAgrupar() {
   const events = window.eventosDetectadosIA || [];
-  const actius = events.filter(e => !e.descartat);
+  const actius = events.filter(function(e){ return !e.descartat; });
+  console.log('[Agrupació] Events actius:', actius.length, actius.map(function(e){ return e.data + ' ' + e.titol; }));
   if(actius.length < 2) return;
 
   // Agrupa per data
   const perData = {};
-  actius.forEach((ev, idx) => {
+  actius.forEach(function(ev){
     const data = ev.data || 'sense-data';
     if(!perData[data]) perData[data] = [];
-    perData[data].push({ev, idx: events.indexOf(ev)});
+    perData[data].push(ev);
   });
 
-  // Per cada dia amb més d'un event, preguntar
-  for(const [data, grup] of Object.entries(perData)){
+  console.log('[Agrupació] Grups per data:', Object.keys(perData).map(function(k){ return k + ': ' + perData[k].length; }));
+
+  const dates = Object.keys(perData);
+  for(var i = 0; i < dates.length; i++){
+    const data = dates[i];
+    const grup = perData[data];
     if(grup.length < 2) continue;
 
-    // Títols iguals (pases) o títols diferents (programa d'actes)?
-    const titolsUnics = new Set(grup.map(g => normalitzarTitol(g.ev.titol)));
+    console.log('[Agrupació] Mostrant modal per', data, grup.length, 'events');
+    const titolsUnics = new Set(grup.map(function(ev){ return normalitzarTitol(ev.titol); }));
     const sonPases = titolsUnics.size === 1;
 
-    const resposta = await mostrarModalAgrupacio(data, grup, sonPases);
+    const resposta = await mostrarModalAgrupacio(data, grup.map(function(ev){ return {ev: ev, idx: events.indexOf(ev)}; }), sonPases);
+    console.log('[Agrupació] Resposta:', resposta);
+
     if(resposta === 'agrupar'){
-      const primer = grup[0].ev;
+      const primer = grup[0];
       if(sonPases){
-        // Mateix títol: afegir horaris a la descripció
-        const horaris = grup.map(g => g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) : null).filter(Boolean);
-        const descripcioBase = primer.descripcio || '';
-        primer.descripcio = [descripcioBase, horaris.length ? 'Horaris: ' + horaris.join(' · ') : ''].filter(Boolean).join('\n');
+        const horaris = grup.map(function(ev){ return ev.hora_inici ? ev.hora_inici.slice(0,5) : null; }).filter(Boolean);
+        primer.descripcio = [primer.descripcio || '', horaris.length ? 'Horaris: ' + horaris.join(' · ') : ''].filter(Boolean).join('\n');
         primer.hora_inici = horaris[0] ? horaris[0] + ':00' : primer.hora_inici;
       } else {
-        // Títols diferents: construir descripció amb tots els actes
-        const actes = grup.map(g => {
-          const hora = g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) + 'h ' : '';
-          return hora + g.ev.titol;
+        const actes = grup.map(function(ev){
+          return (ev.hora_inici ? ev.hora_inici.slice(0,5) + 'h ' : '') + ev.titol;
         });
-        // Demanar títol per a l'event unificat
-        const titolUnificat = prompt(`Com es diu l'event? (es crearà un sol event amb tots els actes a la descripció)`, primer.titol) || primer.titol;
+        const titolUnificat = prompt('Com es diu l\'event? (es crearà un sol event amb tots els actes a la descripció)', primer.titol) || primer.titol;
         primer.titol = titolUnificat;
         primer.descripcio = actes.join('\n');
-        primer.hora_inici = grup[0].ev.hora_inici;
       }
-      // Descartar la resta del grup
-      grup.slice(1).forEach(g => { events[g.idx].descartat = true; });
+      // Descartar la resta
+      grup.slice(1).forEach(function(ev){ ev.descartat = true; });
     }
   }
 }
