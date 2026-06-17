@@ -508,6 +508,7 @@ async function gxFiltrar(filtre){
   document.getElementById('gx-avui-data').textContent = (filtre==='avui'||filtre==='dema') ? gxFormatDataCurta(range.from) : '';
   if(filtre==='mes'){ document.getElementById('gx-filtre-mes-text').textContent = range.mes; }
   await gxCarregarRang(range);
+  gxTrack('filtre', {filtre: filtre});
 }
 
 var GX_VENTS = ['Tramuntana','Gregal','Llevant','Xaloc','Migjorn','Garbí','Ponent','Mestral'];
@@ -619,6 +620,7 @@ async function gxToggleRecorda(id, btnEl){
   };
   gxRecordatorisSet(recordatoris);
   gxActualitzaBotoRecorda(id, true);
+  gxTrack('recordatori', {event_id: id, titol: (ev.titol||'').slice(0,80)});
 
   // notificació immediata de confirmació
   try{
@@ -689,6 +691,9 @@ async function gxInit(){
   var params = new URLSearchParams(window.location.search);
   var evId = params.get('ev');
   if(evId){ gxObrirFichaPerId(evId); }
+
+  // analítica: app oberta
+  gxTrack('app_open', {referrer: document.referrer.slice(0,100)});
 }
 
 async function gxObrirFichaPerId(id){
@@ -994,6 +999,7 @@ function gxOpenFicha(id, fromFicha){
     if(ev.preu_text){ msg += '\n\ud83c\udfab '+ev.preu_text; }
     msg += '\n\nVia Ganxoagenda \nhttps://ganxoagenda.cat/?ev='+ev.id;
     document.getElementById('gx-f-whatsapp').href = 'https://wa.me/?text='+encodeURIComponent(msg);
+    document.getElementById('gx-f-whatsapp').onclick = function(){ gxTrack('compartir_whatsapp', {event_id: id, titol: (ev.titol||'').slice(0,80)}); };
 
     // altres plans aquest dia
     var altres = document.getElementById('gx-f-altres');
@@ -1024,6 +1030,10 @@ function gxOpenFicha(id, fromFicha){
   document.getElementById('gx-ficha').style.display='block';
   gxCapNavUpdate();
   window.scrollTo(0, 0);
+  // analítica: fitxa vista
+  if(!fromFicha){
+    gxTrack('fitxa_vista', {event_id: id, titol: (ev.titol||'').slice(0,80), categoria: ev.categories&&ev.categories.slug||'', data: ev.data||''});
+  }
 }
 function gxCloseFicha(){
   if(gxFichaStack.length){
@@ -1041,6 +1051,43 @@ function gxCloseFicha(){
 }
 
 gxInit();
+
+/* ===== ANALÍTICA (anònima, sense cookies) =====
+   Envia un event a la taula analytics_events de Supabase.
+   Fire-and-forget: cap error bloqueja la UI. */
+var GX_SESSION_ID = (function(){
+  try{
+    var k = 'gx_sid';
+    var s = sessionStorage.getItem(k);
+    if(!s){ s = Math.random().toString(36).slice(2)+Date.now().toString(36); sessionStorage.setItem(k,s); }
+    return s;
+  }catch(e){ return 'anon'; }
+})();
+
+function gxTrack(tipus, payload){
+  try{
+    var body = JSON.stringify({
+      tipus: tipus,
+      payload: payload || {},
+      session_id: GX_SESSION_ID,
+      ua: navigator.userAgent.slice(0,120)
+    });
+    fetch(gxSupabaseUrl+'/rest/v1/analytics_events', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey': gxSupabaseKey,
+        'Authorization': 'Bearer '+gxSupabaseKey,
+        'Prefer': 'return=minimal'
+      },
+      body: body
+    }).catch(function(){});
+  }catch(e){}
+}
+
+// Exposem les constants de Supabase per a gxTrack
+var gxSupabaseUrl = 'https://bmlkyubpdrgadqhnebti.supabase.co';
+var gxSupabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 
 /* Fallback: si el font d'icones Tabler no carrega (CDN bloquejat/lent),
    mostrar les icones SVG inline de "enrere" i "inici" a la fitxa. */
