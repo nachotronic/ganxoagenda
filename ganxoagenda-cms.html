@@ -1830,7 +1830,6 @@ async function sincronitzarCartelera() {
   if(!catCinema) return toast('No s\'ha trobat la categoria "Cinema". Crea-la primer.', true);
   if(!llocOcine) return toast('No s\'ha trobat el lloc "Ocine". Crea\'l primer.', true);
 
-  // Modal de progrés
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
   modal.innerHTML = `
@@ -1855,38 +1854,70 @@ async function sincronitzarCartelera() {
   };
 
   try {
-    // 1. Carregar events existents
+    // 1. Carregar existents
     setProgress(5, 'Carregant events existents...');
     const avuiStr = new Date().toISOString().slice(0,10);
     const d60 = new Date(); d60.setDate(d60.getDate()+60);
-    const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol,data&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
+    const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
     const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
     addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
 
-    // 2. Fer fetch de publicine (una sola crida, tota la setmana)
-    setProgress(15, 'Llegint cartelera de Publicine...');
-    const res = await fetchGanxoIA({
-      url: PUBLICINE_URL,
+    // 2. Fer fetch de Publicine des del CMS (via Jina a través de Ganxo-IA però en mode text)
+    // Obtenim el text complet i el filtrem al client per quedar-nos només amb dv/ds/dg
+    setProgress(15, 'Llegint Publicine...');
+
+    // Demanem el text via Ganxo-IA en mode "url" però amb max tokens reduïts
+    // Alternativa: fer fetch directe amb cors-anywhere si fos possible
+    // Opció robusta: enviar la URL i deixar que Jina retorni, però partir en 2 lots pel titol
+    // LOT 1: divendres
+    // LOT 2: dissabte + diumenge
+
+    const basePeticio = {
       llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
       categories: [{id: catCinema.id, nom: catCinema.nom}],
       existents: [],
       aprofundir: false,
-      prompt_extra: 'Extreu totes les pel·lícules amb els seus horaris de divendres, dissabte i diumenge. Un event per pel·lícula. Inclou tots els pases de dv/ds/dg a la descripció. Ignora els dies laborables.'
-    }, (intent, msg) => {
-      setProgress(15, `Motor IA ocupat, reintentant (${intent}/2)...`);
-    });
+    };
 
-    const events = res.events || [];
-    addLog(`✓ ${events.length} pel·lícules trobades a Publicine`);
-    setProgress(70, 'Processant pel·lícules...');
+    const todsPels = {};
 
-    // 3. Construir events únics
+    const lots = [
+      { label: 'Divendres', prompt: 'Extreu NOMÉS les pel·lícules amb horaris de DIVENDRES. Un event per pel·lícula amb tots els pases del divendres a la descripció. Ignora completament dissabte, diumenge i altres dies.' },
+      { label: 'Dissabte i Diumenge', prompt: 'Extreu NOMÉS les pel·lícules amb horaris de DISSABTE i DIUMENGE. Un event per pel·lícula amb tots els pases de dissabte i diumenge a la descripció. Ignora completament divendres i dies laborables.' },
+    ];
+
+    for(let i = 0; i < lots.length; i++) {
+      const lot = lots[i];
+      setProgress(20 + i * 30, `Processant ${lot.label}... (${i+1}/2)`);
+      try {
+        const res = await fetchGanxoIA({
+          ...basePeticio,
+          url: PUBLICINE_URL,
+          prompt_extra: lot.prompt,
+        }, (intent) => setProgress(20 + i * 30, `${lot.label}: reintentant (${intent}/2)...`));
+
+        const evs = res.events || [];
+        addLog(`✓ ${lot.label}: ${evs.length} pel·lícules`);
+        evs.forEach(ev => {
+          if(!ev.titol) return;
+          const clau = ev.titol.toLowerCase().trim();
+          if(!todsPels[clau]) todsPels[clau] = ev;
+          else {
+            // Fusionar descripció
+            todsPels[clau].descripcio = [todsPels[clau].descripcio, ev.descripcio].filter(Boolean).join('\n');
+          }
+        });
+      } catch(e) {
+        addLog(`⚠️ ${lot.label}: ${e.message.slice(0,60)}`);
+      }
+    }
+
+    setProgress(80, 'Preparant events nous...');
+
     const nous = [];
     const saltats = [];
 
-    for(const ev of events) {
-      if(!ev.titol) continue;
-      const clau = ev.titol.toLowerCase().trim();
+    for(const [clau, ev] of Object.entries(todsPels)) {
       if(existentsSet.has(clau)) { saltats.push(ev.titol); continue; }
       nous.push({
         titol: ev.titol,
@@ -1897,27 +1928,26 @@ async function sincronitzarCartelera() {
         lloc_id: llocOcine.id,
         estat: 'esborrany',
         familiar: false,
-        destacat: false
+        destacat: false,
       });
     }
 
-    setProgress(85, `Creant ${nous.length} events nous...`);
-
     if(!nous.length) {
-      addLog(`ℹ️ ${saltats.length} pel·lícules ja existien, res nou a crear`);
+      addLog(`ℹ️ ${saltats.length} pel·lícules ja existien`);
       setProgress(100, 'Ja estàvem al dia!');
     } else {
+      setProgress(90, `Creant ${nous.length} events...`);
       await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
       await carregarEsdeveniments();
       addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
       if(saltats.length) addLog(`↩️ ${saltats.length} ja existien (saltades)`);
-      setProgress(100, '¡Fet!');
+      setProgress(100, 'Fet!');
     }
 
-    setTimeout(() => { document.body.removeChild(modal); }, 2500);
+    setTimeout(() => document.body.removeChild(modal), 2500);
 
   } catch(e) {
-    setProgress(100, 'Error: ' + e.message.slice(0,80));
+    setProgress(100, 'Error: ' + e.message.slice(0, 80));
     document.getElementById('cinema-progress-bar').style.background = 'var(--vermell)';
     addLog('Tanca aquesta finestra i torna a intentar-ho.');
     modal.addEventListener('click', () => document.body.removeChild(modal));
