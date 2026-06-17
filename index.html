@@ -601,13 +601,22 @@ async function gxToggleRecorda(id, btnEl){
   }
 
   if(!('Notification' in window)){
-    alert("Aquest dispositiu no admet notificacions.");
+    alert("Aquest dispositiu o navegador no admet notificacions push.\n\nProva d'instal·lar l'app (afegeix a la pantalla d'inici) i torna-ho a intentar.");
     return;
   }
   var permis = Notification.permission;
   if(permis==='default'){ permis = await Notification.requestPermission(); }
   if(permis!=='granted'){
-    alert("Activa les notificacions per rebre l'avís quan quedi poc per l'esdeveniment.");
+    var msg = "Les notificacions estan bloquejades. Per activar-les:\n\n";
+    var ua = navigator.userAgent;
+    if(/iPhone|iPad/.test(ua)){
+      msg += "📱 iPhone/iPad:\nConfiguracion → Safari → Notificaciones → Ganxoagenda → Permitir\n\nO si has instal·lat l'app: Ajustes → Ganxoagenda → Notificaciones → Permitir";
+    } else if(/Android/.test(ua)){
+      msg += "📱 Android:\nMenú del navegador (⋮) → Configuración del sitio → Notificaciones → Permitir\n\nO: Configuración del móvil → Apps → Chrome → Notificaciones → Activar";
+    } else {
+      msg += "💻 Ordinador:\nFes clic a l'icona 🔒 o ⓘ a l'esquerra de l'adreça web i activa les Notificaciones per a aquest lloc.";
+    }
+    alert(msg);
     return;
   }
 
