@@ -1834,89 +1834,123 @@ async function sincronitzarCartelera() {
   if(!catCinema) return toast('No s\'ha trobat la categoria "Cinema". Crea-la primer.', true);
   if(!llocOcine) return toast('No s\'ha trobat el lloc "Ocine". Crea\'l primer.', true);
 
-  const dies = diesCapSetmana();
-  toast('🎬 Sincronitzant cartelera...');
+  // Modal de progrés
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:16px; font-weight:700; color:var(--blau); margin-bottom:16px;">🎬 Sincronitzant cartelera...</div>
+      <div id="cinema-progress-bar-wrap" style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
+        <div id="cinema-progress-bar" style="height:100%; background:var(--blau); border-radius:8px; width:0%; transition:width .4s;"></div>
+      </div>
+      <div id="cinema-progress-text" style="font-size:13px; color:var(--text-sec);">Preparant...</div>
+      <div id="cinema-progress-log" style="margin-top:12px; font-size:12px; color:var(--text-sec); display:flex; flex-direction:column; gap:4px; min-height:60px;"></div>
+    </div>`;
+  document.body.appendChild(modal);
 
-  // Carregar events de cinema existents per evitar duplicats
-  const avui = new Date().toISOString().slice(0,10);
-  const d60 = new Date(); d60.setDate(d60.getDate()+60);
-  const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol,data&categoria_id=eq.${catCinema.id}&data=gte.${avui}&data=lte.${d60.toISOString().slice(0,10)}`);
-  const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
+  const setProgress = (pct, text) => {
+    document.getElementById('cinema-progress-bar').style.width = pct + '%';
+    document.getElementById('cinema-progress-text').textContent = text;
+  };
+  const addLog = (text) => {
+    const el = document.createElement('div');
+    el.textContent = text;
+    document.getElementById('cinema-progress-log').appendChild(el);
+  };
 
-  // Recollir totes les pel·lícules per dia via Ganxo-IA
-  const pelsPer = {}; // {titol_norm: {titol, horaris:[{data,hora}], poster}}
+  try {
+    const dies = diesCapSetmana();
+    const diesNoms = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+    const avui = new Date();
 
-  for(const desp of dies) {
-    const url = ECARTELERA_BASE + desp + ',1.html';
-    try {
-      const res = await fetchGanxoIA({
-        url,
-        llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
-        categories: [{id: catCinema.id, nom: catCinema.nom}],
-        existents: [],
-        aprofundir: false,
-        prompt_extra: 'Extreu totes les pel·lícules i els seus horaris. Cada pel·lícula és un event separat. Assigna categoria cinema i lloc Ocine.'
-      }, null);
+    // Carregar existents
+    setProgress(5, 'Carregant events existents...');
+    const avuiStr = avui.toISOString().slice(0,10);
+    const d60 = new Date(); d60.setDate(d60.getDate()+60);
+    const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol,data&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
+    const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
+    addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
 
-      (res.events || []).forEach(ev => {
-        if(!ev.titol) return;
-        const clau = ev.titol.toLowerCase().trim();
-        if(!pelsPer[clau]) pelsPer[clau] = {titol: ev.titol, horaris: [], poster: ev.foto_url_font || null, descripcio: ev.descripcio || ''};
-        if(ev.data && ev.hora_inici) {
-          pelsPer[clau].horaris.push({data: ev.data, hora: ev.hora_inici});
-        }
-      });
-    } catch(e) {
-      console.warn('Error dia', desp, e.message);
+    const pelsPer = {};
+
+    for(let i = 0; i < dies.length; i++) {
+      const desp = dies[i];
+      const dataDia = new Date(avui); dataDia.setDate(dataDia.getDate() + desp);
+      const nomDia = diesNoms[dataDia.getDay()];
+      const pct = 10 + (i / dies.length) * 70;
+      setProgress(pct, `Llegint cartelera del ${nomDia}... (${i+1}/3)`);
+
+      const url = ECARTELERA_BASE + desp + ',1.html';
+      try {
+        const res = await fetchGanxoIA({
+          url,
+          llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
+          categories: [{id: catCinema.id, nom: catCinema.nom}],
+          existents: [],
+          aprofundir: false,
+          prompt_extra: 'Extreu totes les pel·lícules i els seus horaris. Cada pel·lícula és un event separat. Assigna categoria cinema i lloc Ocine.'
+        }, null);
+
+        const nPels = (res.events || []).length;
+        addLog(`✓ ${nomDia}: ${nPels} pel·lícules trobades`);
+
+        (res.events || []).forEach(ev => {
+          if(!ev.titol) return;
+          const clau = ev.titol.toLowerCase().trim();
+          if(!pelsPer[clau]) pelsPer[clau] = {titol: ev.titol, horaris: [], poster: ev.foto_url_font || null, descripcio: ev.descripcio || ''};
+          if(ev.data && ev.hora_inici) {
+            pelsPer[clau].horaris.push({data: ev.data, hora: ev.hora_inici});
+          }
+        });
+      } catch(e) {
+        addLog(`⚠️ ${nomDia}: error — ${e.message.slice(0,60)}`);
+      }
     }
+
+    setProgress(85, 'Preparant events nous...');
+
+    const nous = [];
+    const saltats = [];
+
+    for(const [clau, peli] of Object.entries(pelsPer)) {
+      if(existentsSet.has(clau)) { saltats.push(peli.titol); continue; }
+      const horarisText = peli.horaris
+        .sort((a,b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora))
+        .map(h => {
+          const d = new Date(h.data + 'T00:00:00');
+          const dn = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
+          return dn[d.getDay()] + ' ' + d.getDate() + ': ' + h.hora.slice(0,5) + 'h';
+        }).join(' · ');
+      const dataMin = peli.horaris.reduce((m,h) => h.data < m ? h.data : m, peli.horaris[0]?.data || avuiStr);
+      const horaMin = peli.horaris.find(h => h.data === dataMin)?.hora || null;
+      nous.push({
+        titol: peli.titol, data: dataMin, hora_inici: horaMin,
+        descripcio: [peli.descripcio, horarisText ? 'Horaris: ' + horarisText : ''].filter(Boolean).join('\n'),
+        categoria_id: catCinema.id, lloc_id: llocOcine.id,
+        estat: 'esborrany', familiar: false, destacat: false
+      });
+    }
+
+    if(!nous.length) {
+      addLog(`ℹ️ ${saltats.length} pel·lícules ja existien, res nou a crear`);
+      setProgress(100, 'Ja estàvem al dia!');
+    } else {
+      setProgress(92, `Creant ${nous.length} events nous...`);
+      await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
+      await carregarEsdeveniments();
+      addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
+      if(saltats.length) addLog(`↩️ ${saltats.length} ja existien (saltades)`);
+      setProgress(100, '¡Fet!');
+    }
+
+    setTimeout(() => { document.body.removeChild(modal); }, 2000);
+
+  } catch(e) {
+    setProgress(100, 'Error: ' + e.message.slice(0,80));
+    document.getElementById('cinema-progress-bar').style.background = 'var(--vermell)';
+    addLog('Tanca aquesta finestra i torna a intentar-ho.');
+    modal.addEventListener('click', () => document.body.removeChild(modal));
   }
-
-  if(!Object.keys(pelsPer).length) return toast('No s\'han trobat pel·lícules', true);
-
-  // Construir events únics per pel·lícula (un event per tota la setmana)
-  const nous = [];
-  const saltats = [];
-
-  for(const [clau, peli] of Object.entries(pelsPer)) {
-    if(existentsSet.has(clau)) { saltats.push(peli.titol); continue; }
-
-    // Construir descripció amb tots els horaris
-    const horarisText = peli.horaris
-      .sort((a,b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora))
-      .map(h => {
-        const d = new Date(h.data + 'T00:00:00');
-        const dies = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
-        return dies[d.getDay()] + ' ' + d.getDate() + ': ' + h.hora.slice(0,5) + 'h';
-      }).join(' · ');
-
-    const dataMin = peli.horaris.reduce((m,h) => h.data < m ? h.data : m, peli.horaris[0]?.data || avui);
-    const horaMin = peli.horaris.find(h => h.data === dataMin)?.hora || null;
-
-    nous.push({
-      titol: peli.titol,
-      data: dataMin,
-      hora_inici: horaMin,
-      descripcio: [peli.descripcio, horarisText ? 'Horaris: ' + horarisText : ''].filter(Boolean).join('\n'),
-      categoria_id: catCinema.id,
-      lloc_id: llocOcine.id,
-      estat: 'esborrany',
-      familiar: false,
-      destacat: false
-    });
-  }
-
-  if(!nous.length) {
-    toast(`Tot ja existeix (${saltats.length} saltades)`, false);
-    return;
-  }
-
-  // Inserir a Supabase
-  await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
-  await carregarEsdeveniments();
-
-  // Resum
-  const msg = `✅ ${nous.length} pel·lícules creades com a esborrany${saltats.length ? ` · ${saltats.length} ja existien` : ''}`;
-  toast(msg);
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
