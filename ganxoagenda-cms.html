@@ -1809,10 +1809,7 @@ async function esborrarAnalitica(){
 // ============================================================
 // SINCRONITZAR CARTELERA DE CINEMA (eCartelera → Supabase)
 // ============================================================
-const ECARTELERA_BASE = 'https://www.ecartelera.com/cines/306,';
-// 2=divendres, 3=dissabte, 4=diumenge (relatius a avui dimecres o qualsevol dia)
-// En realitat el número és el desplaçament respecte avui (0=avui, 1=demà...)
-// Calculem dinàmicament quin desplaçament correspon a dv/ds/dg
+const PUBLICINE_URL = 'https://www.publicine.net/cartellera-cinema/platja-daro/cinemes-ocine-platja-daro';
 
 function diesCapSetmana() {
   // Retorna els desplaçaments (0=avui) per arribar a divendres, dissabte i diumenge
@@ -1827,7 +1824,6 @@ function diesCapSetmana() {
 }
 
 async function sincronitzarCartelera() {
-  // Detectar categoria Cinema i lloc Ocine
   const catCinema = categories.find(c => /cinema/i.test(c.nom) || /cinema/i.test(c.slug));
   const llocOcine = llocs.find(l => /ocine|platja.?d.?aro/i.test(l.nom));
 
@@ -1840,7 +1836,7 @@ async function sincronitzarCartelera() {
   modal.innerHTML = `
     <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
       <div style="font-size:16px; font-weight:700; color:var(--blau); margin-bottom:16px;">🎬 Sincronitzant cartelera...</div>
-      <div id="cinema-progress-bar-wrap" style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
+      <div style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
         <div id="cinema-progress-bar" style="height:100%; background:var(--blau); border-radius:8px; width:0%; transition:width .4s;"></div>
       </div>
       <div id="cinema-progress-text" style="font-size:13px; color:var(--text-sec);">Preparant...</div>
@@ -1859,83 +1855,58 @@ async function sincronitzarCartelera() {
   };
 
   try {
-    const dies = diesCapSetmana();
-    const diesNoms = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
-    const avui = new Date();
-
-    // Carregar existents
+    // 1. Carregar events existents
     setProgress(5, 'Carregant events existents...');
-    const avuiStr = avui.toISOString().slice(0,10);
+    const avuiStr = new Date().toISOString().slice(0,10);
     const d60 = new Date(); d60.setDate(d60.getDate()+60);
     const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol,data&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
     const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
     addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
 
-    const pelsPer = {};
+    // 2. Fer fetch de publicine (una sola crida, tota la setmana)
+    setProgress(15, 'Llegint cartelera de Publicine...');
+    const res = await fetchGanxoIA({
+      url: PUBLICINE_URL,
+      llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
+      categories: [{id: catCinema.id, nom: catCinema.nom}],
+      existents: [],
+      aprofundir: false,
+      prompt_extra: 'Extreu totes les pel·lícules amb els seus horaris de divendres, dissabte i diumenge. Un event per pel·lícula. Inclou tots els pases de dv/ds/dg a la descripció. Ignora els dies laborables.'
+    }, (intent, msg) => {
+      setProgress(15, `Motor IA ocupat, reintentant (${intent}/2)...`);
+    });
 
-    for(let i = 0; i < dies.length; i++) {
-      const desp = dies[i];
-      const dataDia = new Date(avui); dataDia.setDate(dataDia.getDate() + desp);
-      const nomDia = diesNoms[dataDia.getDay()];
-      const pct = 10 + (i / dies.length) * 70;
-      setProgress(pct, `Llegint cartelera del ${nomDia}... (${i+1}/3)`);
+    const events = res.events || [];
+    addLog(`✓ ${events.length} pel·lícules trobades a Publicine`);
+    setProgress(70, 'Processant pel·lícules...');
 
-      const url = ECARTELERA_BASE + desp + ',1.html';
-      try {
-        const res = await fetchGanxoIA({
-          url,
-          llocs: [{id: llocOcine.id, nom: llocOcine.nom}],
-          categories: [{id: catCinema.id, nom: catCinema.nom}],
-          existents: [],
-          aprofundir: false,
-          prompt_extra: 'Extreu totes les pel·lícules i els seus horaris. Cada pel·lícula és un event separat. Assigna categoria cinema i lloc Ocine.'
-        }, null);
-
-        const nPels = (res.events || []).length;
-        addLog(`✓ ${nomDia}: ${nPels} pel·lícules trobades`);
-
-        (res.events || []).forEach(ev => {
-          if(!ev.titol) return;
-          const clau = ev.titol.toLowerCase().trim();
-          if(!pelsPer[clau]) pelsPer[clau] = {titol: ev.titol, horaris: [], poster: ev.foto_url_font || null, descripcio: ev.descripcio || ''};
-          if(ev.data && ev.hora_inici) {
-            pelsPer[clau].horaris.push({data: ev.data, hora: ev.hora_inici});
-          }
-        });
-      } catch(e) {
-        addLog(`⚠️ ${nomDia}: error — ${e.message.slice(0,60)}`);
-      }
-    }
-
-    setProgress(85, 'Preparant events nous...');
-
+    // 3. Construir events únics
     const nous = [];
     const saltats = [];
 
-    for(const [clau, peli] of Object.entries(pelsPer)) {
-      if(existentsSet.has(clau)) { saltats.push(peli.titol); continue; }
-      const horarisText = peli.horaris
-        .sort((a,b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora))
-        .map(h => {
-          const d = new Date(h.data + 'T00:00:00');
-          const dn = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
-          return dn[d.getDay()] + ' ' + d.getDate() + ': ' + h.hora.slice(0,5) + 'h';
-        }).join(' · ');
-      const dataMin = peli.horaris.reduce((m,h) => h.data < m ? h.data : m, peli.horaris[0]?.data || avuiStr);
-      const horaMin = peli.horaris.find(h => h.data === dataMin)?.hora || null;
+    for(const ev of events) {
+      if(!ev.titol) continue;
+      const clau = ev.titol.toLowerCase().trim();
+      if(existentsSet.has(clau)) { saltats.push(ev.titol); continue; }
       nous.push({
-        titol: peli.titol, data: dataMin, hora_inici: horaMin,
-        descripcio: [peli.descripcio, horarisText ? 'Horaris: ' + horarisText : ''].filter(Boolean).join('\n'),
-        categoria_id: catCinema.id, lloc_id: llocOcine.id,
-        estat: 'esborrany', familiar: false, destacat: false
+        titol: ev.titol,
+        data: ev.data || avuiStr,
+        hora_inici: ev.hora_inici || null,
+        descripcio: ev.descripcio || '',
+        categoria_id: catCinema.id,
+        lloc_id: llocOcine.id,
+        estat: 'esborrany',
+        familiar: false,
+        destacat: false
       });
     }
+
+    setProgress(85, `Creant ${nous.length} events nous...`);
 
     if(!nous.length) {
       addLog(`ℹ️ ${saltats.length} pel·lícules ja existien, res nou a crear`);
       setProgress(100, 'Ja estàvem al dia!');
     } else {
-      setProgress(92, `Creant ${nous.length} events nous...`);
       await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
       await carregarEsdeveniments();
       addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
@@ -1943,7 +1914,7 @@ async function sincronitzarCartelera() {
       setProgress(100, '¡Fet!');
     }
 
-    setTimeout(() => { document.body.removeChild(modal); }, 2000);
+    setTimeout(() => { document.body.removeChild(modal); }, 2500);
 
   } catch(e) {
     setProgress(100, 'Error: ' + e.message.slice(0,80));
