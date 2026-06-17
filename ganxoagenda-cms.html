@@ -1426,67 +1426,88 @@ async function procesarConGeminiUnPaso() {
   } catch(e) { toast(e.message, true); } finally { aturarTemporitzador(); loadingEl.style.display = 'none'; }
 }
 
-// Detecta events amb el mateix títol (normalitzat) en el mateix dia.
-// Per a cada grup, mostra un modal preguntant si agrupar-los en un sol event
-// amb tots els horaris a la descripció.
+// Detecta events el mateix dia (tant si tenen el mateix títol com si no).
+// Agrupa per data i pregunta si son part del mateix event o independents.
 function normalitzarTitol(t) {
   return (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
 }
 
 async function detectarIOferiAgrupar() {
   const events = window.eventosDetectadosIA || [];
-  // Agrupa per titol normalitzat + data
-  const grups = {};
-  events.forEach((ev, idx) => {
-    if(ev.descartat) return;
-    const clau = normalitzarTitol(ev.titol) + '|' + (ev.data || '');
-    if(!grups[clau]) grups[clau] = [];
-    grups[clau].push({ev, idx});
+  const actius = events.filter(e => !e.descartat);
+  if(actius.length < 2) return;
+
+  // Agrupa per data
+  const perData = {};
+  actius.forEach((ev, idx) => {
+    const data = ev.data || 'sense-data';
+    if(!perData[data]) perData[data] = [];
+    perData[data].push({ev, idx: events.indexOf(ev)});
   });
 
-  // Filtra grups amb més d'un event
-  const grupsMultiples = Object.values(grups).filter(g => g.length > 1);
-  if(!grupsMultiples.length) return;
+  // Per cada dia amb més d'un event, preguntar
+  for(const [data, grup] of Object.entries(perData)){
+    if(grup.length < 2) continue;
 
-  // Per a cada grup, preguntar a l'usuari
-  for(const grup of grupsMultiples) {
-    const titol = grup[0].ev.titol;
-    const data = grup[0].ev.data;
-    const horaris = grup.map(g => g.ev.hora_inici || 'sense hora').join(', ');
-    const resposta = await mostrarModalAgrupacio(titol, data, horaris);
-    if(resposta === 'agrupar') {
-      // Construir un sol event amb tots els horaris a la descripció
+    // Títols iguals (pases) o títols diferents (programa d'actes)?
+    const titolsUnics = new Set(grup.map(g => normalitzarTitol(g.ev.titol)));
+    const sonPases = titolsUnics.size === 1;
+
+    const resposta = await mostrarModalAgrupacio(data, grup, sonPases);
+    if(resposta === 'agrupar'){
       const primer = grup[0].ev;
-      const horarisText = grup.map(g => g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) : null).filter(Boolean);
-      const descripcioHoraris = horarisText.length
-        ? 'Horaris: ' + horarisText.join(' · ')
-        : '';
-      const descripcioBase = primer.descripcio || '';
-      primer.descripcio = [descripcioBase, descripcioHoraris].filter(Boolean).join('\n');
-      primer.hora_inici = horarisText[0] ? horarisText[0] + ':00' : primer.hora_inici;
-      // Descartar la resta
-      grup.slice(1).forEach(g => { g.ev.descartat = true; });
+      if(sonPases){
+        // Mateix títol: afegir horaris a la descripció
+        const horaris = grup.map(g => g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) : null).filter(Boolean);
+        const descripcioBase = primer.descripcio || '';
+        primer.descripcio = [descripcioBase, horaris.length ? 'Horaris: ' + horaris.join(' · ') : ''].filter(Boolean).join('\n');
+        primer.hora_inici = horaris[0] ? horaris[0] + ':00' : primer.hora_inici;
+      } else {
+        // Títols diferents: construir descripció amb tots els actes
+        const actes = grup.map(g => {
+          const hora = g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) + 'h ' : '';
+          return hora + g.ev.titol;
+        });
+        // Demanar títol per a l'event unificat
+        const titolUnificat = prompt(`Com es diu l'event? (es crearà un sol event amb tots els actes a la descripció)`, primer.titol) || primer.titol;
+        primer.titol = titolUnificat;
+        primer.descripcio = actes.join('\n');
+        primer.hora_inici = grup[0].ev.hora_inici;
+      }
+      // Descartar la resta del grup
+      grup.slice(1).forEach(g => { events[g.idx].descartat = true; });
     }
-    // Si 'separats', no fa res — es mostren tots per separat
   }
 }
 
-function mostrarModalAgrupacio(titol, data, horaris) {
+function mostrarModalAgrupacio(data, grup, sonPases) {
   return new Promise(resolve => {
-    // Reutilitzem el modal de galeria o creem un de nou
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+
+    const resum = grup.map(g => {
+      const hora = g.ev.hora_inici ? g.ev.hora_inici.slice(0,5) + 'h' : '';
+      return `<div style="padding:4px 0; border-bottom:1px solid var(--border); font-size:12px;"><span style="color:var(--blau); font-weight:600; min-width:44px; display:inline-block;">${hora}</span> ${g.ev.titol}</div>`;
+    }).join('');
+
+    const titolModal = sonPases
+      ? '🎬 Pases del mateix event?'
+      : '📋 Actes del mateix event?';
+    const descripcioModal = sonPases
+      ? `He trobat <strong>${grup.length} pases</strong> amb el mateix títol el dia <strong>${data}</strong>. Vols agrupar-los en un sol event amb tots els horaris?`
+      : `He trobat <strong>${grup.length} actes</strong> el dia <strong>${data}</strong>. Potser formen part del mateix event (com un programa de festa). Vols crear un sol event?`;
+    const textBotoAgrupar = sonPases
+      ? 'Sí, agrupar — un sol event amb tots els horaris'
+      : 'Sí, crear un sol event amb tots els actes a la descripció';
+
     modal.innerHTML = `
-      <div style="background:#fff; border-radius:14px; max-width:440px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
-        <div style="font-size:16px; font-weight:700; color:var(--blau); margin-bottom:8px;">🎬 Possibles pases del mateix event</div>
-        <p style="font-size:13px; color:var(--text-sec); margin-bottom:16px;">He trobat <strong>${horaris.split(',').length} entrades amb el mateix títol</strong> el mateix dia. Potser és un sol event amb diversos pases.</p>
-        <div style="background:var(--fons-2); border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:13px;">
-          <div style="font-weight:600; margin-bottom:4px;">${titol}</div>
-          <div style="color:var(--text-sec);">📅 ${data} · 🕐 ${horaris}</div>
-        </div>
+      <div style="background:#fff; border-radius:14px; max-width:460px; width:100%; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.25); max-height:90vh; overflow-y:auto;">
+        <div style="font-size:16px; font-weight:700; color:var(--blau); margin-bottom:8px;">${titolModal}</div>
+        <p style="font-size:13px; color:var(--text-sec); margin-bottom:14px;">${descripcioModal}</p>
+        <div style="background:var(--fons-2); border-radius:8px; padding:10px 14px; margin-bottom:18px;">${resum}</div>
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <button id="btn-agrupar" style="background:var(--blau); color:#fff; border:none; border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer;">Sí, és el mateix event — agrupar amb tots els horaris a la descripció</button>
-          <button id="btn-separats" style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:13px; cursor:pointer; color:var(--text-sec);">No, són events independents — mantenir separats</button>
+          <button id="btn-agrupar" style="background:var(--blau); color:#fff; border:none; border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:13px; font-weight:600; cursor:pointer;">${textBotoAgrupar}</button>
+          <button id="btn-separats" style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:var(--font-sans); font-size:13px; cursor:pointer; color:var(--text-sec);">No, mantenir-los com a events separats</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
