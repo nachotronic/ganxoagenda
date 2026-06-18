@@ -1187,7 +1187,7 @@ async function renderPagina() {
       <div class="info"><div class="titol">${escapeHtml(e.titol)}</div><div class="meta"><span>${escapeHtml(e.categories?.nom || '')}</span><span>${escapeHtml(e.llocs?.nom || '')}</span>${e.cicles?.nom ? `<span style="color:${escapeHtml(e.cicles.color || 'var(--accent)')}; font-weight:600;">🎟️ ${escapeHtml(e.cicles.nom)}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${escapeHtml(e.data_fi.split('-').reverse().join('/'))}</span>` : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
         <span class="estat-badge estat-${escapeHtml(e.estat)}">${escapeHtml(e.estat)}</span>
-        <button onclick="event.stopPropagation(); confirmarEsborrarCard('${escapeHtml(e.id)}','${escapeHtml(e.titol).replace(/'/g,\"\\'\")}');" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
+        <button onclick="event.stopPropagation(); confirmarEsborrarCard(this.dataset.id, this.dataset.titol)" data-id="${escapeHtml(e.id)}" data-titol="${escapeHtml(e.titol)}" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
       </div>
     </div>
   `).join('');
