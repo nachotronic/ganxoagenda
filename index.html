@@ -97,9 +97,9 @@
 <div id="gx-cartelera-wrap" style="display:none; margin-top:20px;">
   <div onclick="gxToggleCartelera()" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:0; padding:0 2px;">
     <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px;">🎬 Cartellera</div>
-    <div id="gx-cartelera-arrow" style="font-size:13px; color:#8a8478; transition:transform .2s;">▼</div>
+    <div id="gx-cartelera-arrow" style="font-size:13px; color:#8a8478; transition:transform .2s; transform:rotate(-90deg);">▼</div>
   </div>
-  <div id="gx-cartelera-llista" style="margin-top:11px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
+  <div id="gx-cartelera-llista" style="margin-top:11px; display:none; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
 </div>
 <div id="gx-tots-wrap" style="display:none; margin-top:22px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 11px;">Tots els esdeveniments</div>
@@ -923,7 +923,7 @@ function gxRenderAgendaLlista(llista, grid, maxItems){
 function gxToggleCartelera(){
   var llista = document.getElementById('gx-cartelera-llista');
   var arrow = document.getElementById('gx-cartelera-arrow');
-  var obert = llista.style.display !== 'none';
+  var obert = llista.style.display === 'grid';
   llista.style.display = obert ? 'none' : 'grid';
   arrow.style.transform = obert ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
