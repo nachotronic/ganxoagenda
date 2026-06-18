@@ -753,7 +753,9 @@ function gxRenderAgenda(){
   document.getElementById('gx-cartelera-wrap').style.display='none';
   document.getElementById('gx-cartelera-llista').innerHTML='';
   var llistaBase = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
-  var llistaCinema = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema' && !e.a_agenda; });
+  // La cartelera agafa de gxEventsTots (tots els futurs) per mostrar sempre les pel·lícules pròximes
+  var llistaBaseTots = gxNomesNens ? gxEventsTots.filter(function(e){ return e.familiar; }) : gxEventsTots;
+  var llistaCinema = llistaBaseTots.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema' && !e.a_agenda; });
   var llista = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema' || e.a_agenda; });
 
   if(!llista.length && !llistaCinema.length){
