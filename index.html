@@ -382,14 +382,31 @@ var GX_DEFAULT_GRADIENT = 'linear-gradient(125deg,#6b7780,#3d4750)';
 var GX_GANXOT_PATH = 'icons/';
 var GX_GANXOT_DEFAULT = GX_GANXOT_PATH+'icon-512.png';
 var GX_GANXOT_MAP = {
-  esports: 'buho_esports.png',
-  cultura: 'buho_teatro.png',
-  musica: 'buho_musica.png',
-  fira: 'buho_mercat.png',
-  gastro: 'buho_gastro.png',
-  festa: 'buho_nit.png',
-  cinema: 'buho_cine.png'
+  esports:      'buho_esports.png',
+  cultura:      'buho_teatro.png',
+  musica:       'buho_musica.png',
+  fira:         'buho_mercat.png',
+  gastro:       'buho_gastro.png',
+  festa:        'buho_festa.png',
+  cinema:       'buho_cine.png',
+  llibres:      'buho_libros.png',
+  natacio:      'buho_natacion.png',
+  teatre:       'buho_teatro.png',
+  nit:          'buho_nit.png',
+  platja:       'buho_playa.png',
+  ball:         'buho_baile.png',
+  mercat:       'buho_mercat.png',
+  carnaval:     'buho_carnaval.png',
+  halloween:    'buho_halloween.png',
+  nadal:        'buho_nadal.png',
+  'festa-major':'buho_festa_major.png',
 };
+
+// Si la categoria té icona a Supabase, usar-la; si no, buscar al mapa
+function gxGanxotUrl(slug, iconaDb) {
+  if(iconaDb) return GX_GANXOT_PATH + iconaDb + (iconaDb.includes('.') ? '' : '.png');
+  return GX_GANXOT_PATH + (GX_GANXOT_MAP[slug] || 'icon-512.png');
+}
 
 var GX_DIES = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
 var GX_MESOS = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
@@ -1008,7 +1025,7 @@ function gxOpenFicha(id, fromFicha){
     var ganxotImg = document.getElementById('gx-f-ganxot');
     ganxotWrap.style.background = cat.color_gradient || GX_DEFAULT_GRADIENT;
     ganxotImg.onerror = function(){ this.onerror=null; this.src = GX_GANXOT_DEFAULT; };
-    ganxotImg.src = GX_GANXOT_PATH + (ev.familiar ? 'buho_familia.png' : (GX_GANXOT_MAP[(ev.categories && ev.categories.slug) || ''] || 'icon-512.png'));
+    ganxotImg.src = ev.familiar ? GX_GANXOT_PATH + 'buho_familia.png' : gxGanxotUrl((ev.categories && ev.categories.slug) || '', (ev.categories && ev.categories.icona) || '');
 
     document.getElementById('gx-f-title').textContent = ev.titol || '';
     document.getElementById('gx-f-quan').textContent = gxFormatDataCurta(ev.data) + (ev.hora_inici ? (' · '+gxFormatHora(ev.hora_inici)) : '');
