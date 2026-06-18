@@ -753,8 +753,8 @@ function gxRenderAgenda(){
   document.getElementById('gx-cartelera-wrap').style.display='none';
   document.getElementById('gx-cartelera-llista').innerHTML='';
   var llistaBase = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
-  var llistaCinema = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema'; });
-  var llista = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema'; });
+  var llistaCinema = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema' && !e.a_agenda; });
+  var llista = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema' || e.a_agenda; });
 
   if(!llista.length){
     var msgs = {avui:'Avui no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', dema:'Demà no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', cap:'Aquest cap de setmana no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
@@ -849,7 +849,7 @@ function gxRenderAgenda(){
   if((gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap') && gxEventsTots.length){
     var r = gxRangeActiu;
     var restants = gxEventsTots.filter(function(e){
-      return !(r && e.data>=r.from && e.data<=r.to) && (e.categories && e.categories.slug) !== 'cinema';
+      return !(r && e.data>=r.from && e.data<=r.to) && ((e.categories && e.categories.slug) !== 'cinema' || e.a_agenda);
     });
     var llistaTots = gxNomesNens ? restants.filter(function(e){ return e.familiar; }) : restants;
     if(llistaTots.length){
