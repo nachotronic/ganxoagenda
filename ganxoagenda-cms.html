@@ -547,7 +547,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 <div class="toast" id="toast"></div>
 
 <script>
-const escapeHtml = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const escapeHtml = s => { if(s == null) return ''; const m = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}; return String(s).replace(/[&<>"']/g, c => m[c]); };
 
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
@@ -1187,7 +1187,7 @@ async function renderPagina() {
       <div class="info"><div class="titol">${escapeHtml(e.titol)}</div><div class="meta"><span>${escapeHtml(e.categories?.nom || '')}</span><span>${escapeHtml(e.llocs?.nom || '')}</span>${e.cicles?.nom ? `<span style="color:${escapeHtml(e.cicles.color || 'var(--accent)')}; font-weight:600;">🎟️ ${escapeHtml(e.cicles.nom)}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${escapeHtml(e.data_fi.split('-').reverse().join('/'))}</span>` : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
         <span class="estat-badge estat-${escapeHtml(e.estat)}">${escapeHtml(e.estat)}</span>
-        <button onclick="event.stopPropagation(); confirmarEsborrarCard('${escapeHtml(e.id)}','${escapeHtml(e.titol).replace(/'/g,\"\\'\")}');" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
+        <button onclick='event.stopPropagation(); confirmarEsborrarCard(this.dataset.id, this.dataset.titol)' data-id='${escapeHtml(e.id)}' data-titol='${escapeHtml(e.titol)}' style='font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;'>🗑️</button>
       </div>
     </div>
   `).join('');
