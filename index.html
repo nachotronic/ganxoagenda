@@ -429,13 +429,16 @@ function gxRangeFor(filtre){
   }
   if(filtre==='cap'){
     var dow = today.getDay(); // 0=diumenge..6=dissabte
-    var diesFinsDissabte = (6-dow+7)%7;
-    var sab = new Date(today); sab.setDate(sab.getDate()+diesFinsDissabte);
-    var diu = new Date(sab); diu.setDate(diu.getDate()+1);
-    // si avui ja és dissabte o diumenge, comença avui
-    if(dow===6){ sab = new Date(today); diu = new Date(today); diu.setDate(diu.getDate()+1); }
-    if(dow===0){ sab = new Date(today); diu = new Date(today); }
-    return {from:gxToISO(sab), to:gxToISO(diu), titol:'Cap de setmana'};
+    // Cap de setmana = divendres + dissabte + diumenge
+    var diesFinsDiv = (5-dow+7)%7;
+    var div = new Date(today); div.setDate(div.getDate()+diesFinsDiv);
+    var sab = new Date(div); sab.setDate(div.getDate()+1);
+    var diu = new Date(div); diu.setDate(div.getDate()+2);
+    // si avui ja és dissabte, comença avui
+    if(dow===6){ div = new Date(today); diu = new Date(today); diu.setDate(diu.getDate()+1); }
+    // si avui ja és diumenge, comença avui
+    if(dow===0){ div = new Date(today); diu = new Date(today); }
+    return {from:gxToISO(div), to:gxToISO(diu), titol:'Cap de setmana'};
   }
   if(filtre==='mes'){
     var base = new Date(today.getFullYear(), today.getMonth()+gxMesOffset, 1);
