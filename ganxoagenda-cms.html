@@ -1499,6 +1499,35 @@ async function procesarConGeminiUnPaso() {
 
 // Detecta events el mateix dia (tant si tenen el mateix títol com si no).
 // Agrupa per data i pregunta si son part del mateix event o independents.
+// Converteix un títol en MAJÚSCULES a Title Case respectant preposicions/articles catalans/castellans
+const MINUSCULES_CAT = new Set(['a','al','als','amb','cap','com','d','de','del','dels','des','el','els','em','en','ens','entre','es','et','i','l','la','les','lo','los','més','ni','o','on','os','per','però','que','sense','ser','si','sobre','sota','un','una','unes','uns','y','a','ante','bajo','con','contra','de','del','desde','durante','en','entre','hacia','hasta','la','las','lo','los','ni','o','para','pero','por','que','se','sin','sobre','sus','tras','un','una','unas','unos','y']);
+function titleCaseCa(str) {
+  if(!str) return str;
+  // Si ja no és tot majúscules, no tocar
+  const neta = str.replace(/[^a-zA-ZÀ-ú]/g, '');
+  if(neta.length > 0 && neta !== neta.toUpperCase()) return str;
+  return str.toLowerCase().replace(/(?:^|[\s\-–:·"«(])(\S)/g, (match, lletra, offset) => {
+    const paraula = str.slice(offset).toLowerCase().split(/[\s\-–:·"«()]/)[0];
+    // Sempre majúscula al principi absolut
+    if(offset === 0) return match.slice(0,-1) + lletra.toUpperCase();
+    // Majúscula si no és preposició/article
+    if(!MINUSCULES_CAT.has(paraula)) return match.slice(0,-1) + lletra.toUpperCase();
+    return match;
+  }).replace(/^(.)/, c => c.toUpperCase()); // Garantir primera lletra majúscula
+}
+
+// Formata la descripció d'horaris "Dv: 16:00, 18:30 · Ds: 16:00 · Dg: 18:30"
+// en un format multilínia llegible per al textarea
+function formatHoraris(desc) {
+  if(!desc) return desc;
+  // Si ja té salts de línia, respectar-los però netejar espais sobrants
+  if(desc.includes('\n')) return desc.trim();
+  // Separar per · i posar cada dia en una línia
+  const parts = desc.split(/\s*[·•]\s*/);
+  if(parts.length <= 1) return desc.trim();
+  return parts.map(p => p.trim()).filter(Boolean).join('\n');
+}
+
 function normalitzarTitol(t) {
   return (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
 }
@@ -1720,11 +1749,11 @@ function cargarEventoIA(idx) {
   document.querySelectorAll('[id^="ia-item-"]').forEach(el => { el.style.outline = 'none'; });
   const itemActiu = document.getElementById('ia-item-' + idx);
   if(itemActiu) itemActiu.style.outline = '2px solid var(--blau-clar)';
-  document.getElementById('f-titol').value = ev.titol || '';
+  document.getElementById('f-titol').value = titleCaseCa(ev.titol || '');
   document.getElementById('f-data').value = ev.data || '';
   document.getElementById('f-data-fi').value = ev.data_fi || '';
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
-  document.getElementById('f-descripcio').value = ev.descripcio || '';
+  document.getElementById('f-descripcio').value = formatHoraris(ev.descripcio || '');
   document.getElementById('f-preu-text').value = ev.preu_text || '';
   document.getElementById('f-edat').value = ev.edat_minima || '';
   document.getElementById('f-lloc').value = ev.lloc_id || '';
@@ -1983,7 +2012,12 @@ async function sincronitzarCartelera() {
       setProgress(100, 'Ja estàvem al dia!');
     } else {
       setProgress(85, `Creant ${nous.length} events...`);
-      await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nous) });
+      const nousFmts = nous.map(ev => ({
+        ...ev,
+        titol: titleCaseCa(ev.titol || ''),
+        descripcio: formatHoraris(ev.descripcio || '') || ev.descripcio
+      }));
+      await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nousFmts) });
       await carregarEsdeveniments();
       addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
       if(saltats) addLog(`↩️ ${saltats} ja existien (saltades)`);
