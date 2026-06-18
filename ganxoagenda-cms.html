@@ -167,7 +167,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
           <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
           <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
-          <button class="btn-nou" style="background:#c0392b;" onclick="sincronitzarCartelera()">🎬 Cartelera</button>
+          <button class="btn-nou" style="background:#c0392b;" onclick="confirmarCartelera()">🎬 Cartelera</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -618,11 +618,34 @@ function tancarGestorLlocs() {
 function renderListaLugaresGestion() {
   const container = document.getElementById('lista-llocs-gestion');
   container.innerHTML = llocs.map(l => `
-    <div class="lloc-item">
+    <div class="lloc-item" id="lloc-row-${l.id}">
       <span>📍 ${l.nom}</span>
-      <button onclick="eliminarLloc('${l.id}')">Eliminar</button>
+      <div style="display:flex;gap:6px;">
+        <button onclick="editarLloc('${l.id}','${l.nom.replace(/'/g,"\\'")}')">Editar</button>
+        <button onclick="eliminarLloc('${l.id}')">Eliminar</button>
+      </div>
     </div>
   `).join('');
+}
+function editarLloc(id, nomActual) {
+  const row = document.getElementById('lloc-row-' + id);
+  row.innerHTML = `
+    <input id="edit-lloc-input-${id}" value="${nomActual}" style="flex:1; padding:8px; border:1px solid var(--border); border-radius:8px; font-size:14px;">
+    <div style="display:flex;gap:6px;">
+      <button onclick="desarLlocEditat('${id}')" style="background:var(--accent);">Desar</button>
+      <button onclick="renderListaLugaresGestion()" style="background:var(--text-sec);">Cancel·lar</button>
+    </div>`;
+  row.style.display = 'flex'; row.style.gap = '10px'; row.style.alignItems = 'center';
+  document.getElementById('edit-lloc-input-' + id).focus();
+}
+async function desarLlocEditat(id) {
+  const nomNou = document.getElementById('edit-lloc-input-' + id)?.value.trim();
+  if(!nomNou) return toast('El nom no pot estar buit', true);
+  try {
+    await sbFetch(`/rest/v1/llocs?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ nom: nomNou }) });
+    toast('Lloc actualitzat!');
+    await carregarLlocs(); renderListaLugaresGestion();
+  } catch(e) { toast('Error actualitzant: ' + e.message, true); }
 }
 async function crearLlocNou() {
   const nom = document.getElementById('nou-lloc-nom').value.trim();
@@ -1821,6 +1844,30 @@ function diesCapSetmana() {
     result.push(diff);
   }
   return result;
+}
+
+function confirmarCartelera() {
+  const llocOcine = llocs.find(l => /ocine|platja.?d.?aro/i.test(l.nom));
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:380px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:18px; font-weight:700; color:var(--blau); margin-bottom:8px;">🎬 Sincronitzar cartelera</div>
+      <p style="font-size:14px; color:var(--text-sec); margin:0 0 16px;">S'importaran les pel·lícules del cap de setmana des de Publicine i es crearan com a esborranys.</p>
+      <div style="background:var(--fons-2); border-radius:10px; padding:12px 14px; margin-bottom:20px; font-size:13px;">
+        <div style="font-weight:600; margin-bottom:6px;">Lloc assignat:</div>
+        <div style="color:${llocOcine ? 'var(--accent)' : 'var(--vermell)'}; font-weight:500;">
+          ${llocOcine ? '📍 ' + llocOcine.nom : '⚠️ No s\'ha trobat "Ocine". Crea\'l primer a Lugares.'}
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="btn-cancel-cartelera" style="padding:10px 18px; border:1px solid var(--border); border-radius:8px; background:#fff; font-size:14px; cursor:pointer;">Cancel·lar</button>
+        <button id="btn-ok-cartelera" style="padding:10px 18px; border:none; border-radius:8px; background:#c0392b; color:#fff; font-size:14px; font-weight:600; cursor:pointer;" ${!llocOcine ? 'disabled style="opacity:.5;cursor:not-allowed;"' : ''}>Sincronitzar ara</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btn-cancel-cartelera').onclick = () => document.body.removeChild(modal);
+  modal.querySelector('#btn-ok-cartelera').onclick = () => { document.body.removeChild(modal); sincronitzarCartelera(); };
 }
 
 async function sincronitzarCartelera() {
