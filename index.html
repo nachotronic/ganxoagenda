@@ -477,17 +477,12 @@ async function gxCarregarRang(range){
       .order('hora_inici', {ascending:true});
     // per a "avui", "dema" i "cap" carreguem també tots els esdeveniments futurs
     // (sense límit superior) per a la secció "Tots els esdeveniments"
-    var totsFiltres = (gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap');
-    var to = totsFiltres ? null : range.to;
-    if(to) query = query.lte('data', to);
+    // Sempre carreguem tots els futurs (sense límit superior) per tenir la cartellera
     var evRes = await query;
     if(evRes.error){ console.error(evRes.error); }
     gxEventsTots = evRes.data || [];
-    if(totsFiltres){
-      gxEvents = gxEventsTots.filter(function(e){ return e.data>=range.from && e.data<=range.to; });
-    } else {
-      gxEvents = gxEventsTots;
-    }
+    // gxEvents = els que cauen dins el rang del filtre actiu
+    gxEvents = gxEventsTots.filter(function(e){ return e.data>=range.from && (!range.to || e.data<=range.to); });
   }catch(e){ console.error('Error esdeveniments', e); }
   gxRenderAgenda();
 }
