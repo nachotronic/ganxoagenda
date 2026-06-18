@@ -825,6 +825,8 @@ function gxRenderAgenda(){
   carteleraLlista.innerHTML = '';
   if(llistaCinema.length){
     carteleraWrap.style.display = 'block';
+    carteleraLlista.style.display = 'none';
+    document.getElementById('gx-cartelera-arrow').style.transform = 'rotate(-90deg)';
     llistaCinema.forEach(function(ev){
       var c = gxCatInfo(ev);
       var card = document.createElement('div');
