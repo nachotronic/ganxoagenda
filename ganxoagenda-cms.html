@@ -1024,19 +1024,66 @@ function filtrar(catId, btn) {
   document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu')); btn.classList.add('actiu');
   carregarEsdeveniments(catId);
 }
+const PAGINA_MIDA = 20;
+let paginaActual = 0;
+let paginaCatId = null;
+
 async function carregarEsdeveniments(catId = null) {
-  let q = '/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color),series(titol)&order=data.desc,hora_inici';
-  if(catId) q += `&categoria_id=eq.${catId}`;
-  const data = await sbFetch(q);
+  paginaActual = 0;
+  paginaCatId = catId;
+  await renderPagina();
+}
+
+async function renderPagina() {
   const container = document.getElementById('llista-events');
-  if(!data.length) { container.innerHTML = '<div class="llista-buida">🦉 Cap event creat.</div>'; return; }
-  container.innerHTML = data.map(e => `
+  container.innerHTML = '<div class="llista-buida" style="opacity:.5;">Carregant...</div>';
+
+  const offset = paginaActual * PAGINA_MIDA;
+  // Demanem PAGINA_MIDA+1 per saber si hi ha pàgina següent
+  let q = `/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color),series(titol)&order=data.desc,hora_inici&limit=${PAGINA_MIDA + 1}&offset=${offset}`;
+  if(paginaCatId) q += `&categoria_id=eq.${paginaCatId}`;
+
+  const data = await sbFetch(q);
+  const hiHaSeguent = data.length > PAGINA_MIDA;
+  const pagina = hiHaSeguent ? data.slice(0, PAGINA_MIDA) : data;
+
+  if(!pagina.length && paginaActual === 0) {
+    container.innerHTML = '<div class="llista-buida">🦉 Cap event creat.</div>';
+    renderPaginacio(false, false);
+    return;
+  }
+
+  container.innerHTML = pagina.map(e => `
     <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
       <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
       <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
       <span class="estat-badge estat-${e.estat}">${e.estat}</span>
     </div>
   `).join('');
+
+  renderPaginacio(paginaActual > 0, hiHaSeguent);
+}
+
+function renderPaginacio(hiHaAnterior, hiHaSeguent) {
+  let el = document.getElementById('paginacio-events');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'paginacio-events';
+    el.style.cssText = 'display:flex; align-items:center; justify-content:center; gap:10px; padding:16px 0 4px; font-size:13px;';
+    document.getElementById('llista-events').insertAdjacentElement('afterend', el);
+  }
+  if(!hiHaAnterior && !hiHaSeguent) { el.innerHTML = ''; return; }
+  const btnStyle = (actiu) => `padding:6px 14px; border:1px solid var(--border); border-radius:8px; font-size:13px; cursor:${actiu?'pointer':'default'}; background:${actiu?'#fff':'var(--fons-2)'}; color:${actiu?'inherit':'var(--text-sec)'};`;
+  el.innerHTML = `
+    <button onclick="canviarPagina(-1)" ${hiHaAnterior?'':' disabled'} style="${btnStyle(hiHaAnterior)}">← Anterior</button>
+    <span style="color:var(--text-sec); min-width:60px; text-align:center;">Pàg. ${paginaActual + 1}</span>
+    <button onclick="canviarPagina(1)" ${hiHaSeguent?'':' disabled'} style="${btnStyle(hiHaSeguent)}">Següent →</button>`;
+}
+
+async function canviarPagina(delta) {
+  paginaActual += delta;
+  await renderPagina();
+  document.getElementById('llista-events').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderCatPills() {
