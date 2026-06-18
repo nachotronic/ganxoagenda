@@ -190,7 +190,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">AFEGIR NOU LLOC:</label>
         <div style="display:flex; gap:10px;">
           <input type="text" id="nou-lloc-nom" placeholder="Ex: Teatre Principal de Sant Feliu" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
-          <button class="btn-nou" onclick="crearLlocNou()">Guardar Lloc</button>
+          <button class="btn-nou" onclick="crearLlocNou()">Desar lloc</button>
         </div>
       </div>
       <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Lugares actuales en la Base de Datos:</h3>
@@ -223,7 +223,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <div style="display:flex; gap:10px; align-items:center;">
             <input type="text" id="nou-cicle-color" placeholder="Color (opcional, ex: #d85a30)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
             <button class="btn-tornar" id="btn-cancelar-cicle" style="display:none;" onclick="cancelarEdicioCicle()">Cancel·lar</button>
-            <button class="btn-nou" id="btn-guardar-cicle" onclick="guardarCicle()">Guardar Cicle</button>
+            <button class="btn-nou" id="btn-guardar-cicle" onclick="guardarCicle()">Desar cicle</button>
           </div>
         </div>
       </div>
@@ -244,7 +244,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <input type="text" id="nova-categoria-nom" placeholder="Nom de la categoria (Ex: Nit)" style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;">
           <input type="number" id="nova-categoria-ordre" placeholder="Ordre" style="width:90px; padding:10px; border:1px solid var(--border); border-radius:8px;">
           <button class="btn-tornar" id="btn-cancelar-categoria" style="display:none;" onclick="cancelarEdicioCategoria()">Cancel·lar</button>
-          <button class="btn-nou" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar Categoria</button>
+          <button class="btn-nou" id="btn-guardar-categoria" onclick="guardarCategoria()">Desar categoria</button>
         </div>
       </div>
       <h3 style="font-size:14px; margin-bottom:10px; color:var(--text-sec);">Categories actuals:</h3>
@@ -547,6 +547,8 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 <div class="toast" id="toast"></div>
 
 <script>
+const escapeHtml = s => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 const SUPABASE_URL = 'https://bmlkyubpdrgadqhnebti.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtbGt5dWJwZHJnYWRxaG5lYnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjU0MDksImV4cCI6MjA5Njg0MTQwOX0.tA3j1m4_3xuRpqX2RwOc_qDcq5Oo9LrnjSWAB-cHYPU';
 const GANXO_IA_URL = SUPABASE_URL + '/functions/v1/ganxo-ia';
@@ -630,14 +632,14 @@ async function carregarLlocs() {
   llocs = await sbFetch('/rest/v1/llocs?select=*&order=nom');
   const sel = document.getElementById('f-lloc');
   sel.innerHTML = '<option value="">— Tria un lloc —</option>';
-  llocs.forEach(l => sel.innerHTML += `<option value="${l.id}">${l.nom}</option>`);
+  llocs.forEach(l => sel.innerHTML += `<option value="${escapeHtml(l.id)}">${escapeHtml(l.nom)}</option>`);
 }
 
 async function carregarCicles() {
   cicles = await sbFetch('/rest/v1/cicles?select=*&order=data_inici.desc.nullslast,nom');
   const sel = document.getElementById('f-cicle');
   sel.innerHTML = '<option value="">— Cap cicle —</option>';
-  cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
+  cicles.forEach(c => sel.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nom)}</option>`);
 }
 
 // ---- CONTROLADOR DE LUGARES (NUEVA VENTANA) ----
@@ -653,11 +655,11 @@ function tancarGestorLlocs() {
 function renderListaLugaresGestion() {
   const container = document.getElementById('lista-llocs-gestion');
   container.innerHTML = llocs.map(l => `
-    <div class="lloc-item" id="lloc-row-${l.id}">
-      <span>📍 ${l.nom}</span>
+    <div class="lloc-item" id="lloc-row-${escapeHtml(l.id)}">
+      <span>📍 ${escapeHtml(l.nom)}</span>
       <div style="display:flex;gap:6px;">
-        <button onclick="editarLloc('${l.id}','${l.nom.replace(/'/g,"\\'")}')">Editar</button>
-        <button onclick="eliminarLloc('${l.id}')">Eliminar</button>
+        <button onclick="editarLloc('${escapeHtml(l.id)}','${escapeHtml(l.nom).replace(/'/g,"\\'")}')">Editar</button>
+        <button onclick="eliminarLloc('${escapeHtml(l.id)}')">Eliminar</button>
       </div>
     </div>
   `).join('');
@@ -688,7 +690,7 @@ async function crearLlocNou() {
   try {
     await sbFetch('/rest/v1/llocs', { method: 'POST', body: JSON.stringify({ nom }) });
     document.getElementById('nou-lloc-nom').value = '';
-    toast('Lloc guardat a Supabase!');
+    toast('Lloc desat!');
     await carregarLlocs(); renderListaLugaresGestion();
   } catch(e) { toast('Error o lloc ja existent', true); }
 }
@@ -724,12 +726,12 @@ function renderListaCiclesGestion() {
     if(c.data_inici || c.data_fi) rang = `<span style="color:var(--text-sec); font-size:12px;"> · ${fmtData(c.data_inici)}${c.data_fi ? ' – ' + fmtData(c.data_fi) : ''}</span>`;
     return `
     <div class="lloc-item">
-      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}${c.url ? ` <a href="${c.url}" target="_blank" style="font-size:11px; color:var(--blau);">🔗</a>` : ''}</span>
+      <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${escapeHtml(c.color)}; margin-right:6px;"></span>` : '🎟️ '}${escapeHtml(c.nom)}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${escapeHtml(c.descripcio)}</span>` : ''}${rang}${c.url ? ` <a href="${escapeHtml(c.url)}" target="_blank" style="font-size:11px; color:var(--blau);">🔗</a>` : ''}</span>
       <span style="display:flex; gap:14px;">
-        <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
-        <button onclick="assignarEventsCicle('${c.id}','${c.nom.replace(/'/g,"\\'")}')">Events</button>
-        <button onclick="duplicarCicle('${c.id}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
-        <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
+        <button onclick="editarCicle('${escapeHtml(c.id)}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="assignarEventsCicle('${escapeHtml(c.id)}','${escapeHtml(c.nom).replace(/'/g,"\\'")}')">Events</button>
+        <button onclick="duplicarCicle('${escapeHtml(c.id)}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
+        <button onclick="eliminarCicle('${escapeHtml(c.id)}')">Eliminar</button>
       </span>
     </div>
   `}).join('');
@@ -767,7 +769,7 @@ function editarCicle(id) {
   document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
   document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
   document.getElementById('cicle-form-titol').textContent = 'EDITAR CICLE / PROGRAMA:';
-  document.getElementById('btn-guardar-cicle').textContent = 'Actualitzar Cicle';
+  document.getElementById('btn-guardar-cicle').textContent = 'Actualitzar cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
   document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
 }
@@ -783,7 +785,7 @@ function duplicarCicle(id) {
   document.getElementById('nou-cicle-data-inici').value = c.data_inici || '';
   document.getElementById('nou-cicle-data-fi').value = c.data_fi || '';
   document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA (duplicat):';
-  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-guardar-cicle').textContent = 'Desar cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'inline-block';
   document.getElementById('nou-cicle-nom').scrollIntoView({ behavior:'smooth', block:'center' });
   toast('Cicle duplicat — revisa el nom i les dates abans de desar');
@@ -798,7 +800,7 @@ function cancelarEdicioCicle() {
   document.getElementById('nou-cicle-data-inici').value = '';
   document.getElementById('nou-cicle-data-fi').value = '';
   document.getElementById('cicle-form-titol').textContent = 'NOU CICLE / PROGRAMA:';
-  document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
+  document.getElementById('btn-guardar-cicle').textContent = 'Desar cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'none';
 }
 async function assignarEventsCicle(cicleId, cicleNom) {
@@ -899,10 +901,10 @@ function renderListaCategoriesGestion() {
   if(!categories.length) { container.innerHTML = '<div style="font-size:13px; color:var(--text-sec);">Encara no hi ha cap categoria creada.</div>'; return; }
   container.innerHTML = categories.map(c => `
     <div class="lloc-item">
-      <span>🏷️ ${c.nom} <span style="color:var(--text-sec); font-size:12px;">· ordre ${c.ordre ?? '—'}</span></span>
+      <span>🏷️ ${escapeHtml(c.nom)} <span style="color:var(--text-sec); font-size:12px;">· ordre ${escapeHtml(String(c.ordre ?? '—'))}</span></span>
       <span style="display:flex; gap:14px;">
-        <button onclick="editarCategoria('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
-        <button onclick="eliminarCategoria('${c.id}')">Eliminar</button>
+        <button onclick="editarCategoria('${escapeHtml(c.id)}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="eliminarCategoria('${escapeHtml(c.id)}')">Eliminar</button>
       </span>
     </div>
   `).join('');
@@ -937,7 +939,7 @@ function editarCategoria(id) {
   document.getElementById('nova-categoria-nom').value = c.nom || '';
   document.getElementById('nova-categoria-ordre').value = c.ordre ?? '';
   document.getElementById('categoria-form-titol').textContent = 'EDITAR CATEGORIA:';
-  document.getElementById('btn-guardar-categoria').textContent = 'Actualitzar Categoria';
+  document.getElementById('btn-guardar-categoria').textContent = 'Actualitzar categoria';
   document.getElementById('btn-cancelar-categoria').style.display = 'inline-block';
   document.getElementById('nova-categoria-nom').scrollIntoView({ behavior:'smooth', block:'center' });
 }
@@ -946,7 +948,7 @@ function cancelarEdicioCategoria() {
   document.getElementById('nova-categoria-nom').value = '';
   document.getElementById('nova-categoria-ordre').value = '';
   document.getElementById('categoria-form-titol').textContent = 'NOVA CATEGORIA:';
-  document.getElementById('btn-guardar-categoria').textContent = 'Guardar Categoria';
+  document.getElementById('btn-guardar-categoria').textContent = 'Desar categoria';
   document.getElementById('btn-cancelar-categoria').style.display = 'none';
 }
 async function eliminarCategoria(id) {
@@ -971,11 +973,11 @@ function obrirGestorSeries() {
   document.getElementById('vista-series').style.display = 'block';
   // Omplir selects amb les dades ja carregades
   const selLloc = document.getElementById('serie-lloc');
-  selLloc.innerHTML = '<option value="">— Sense lloc —</option>' + llocs.map(l => `<option value="${l.id}">${l.nom}</option>`).join('');
+  selLloc.innerHTML = '<option value="">— Sense lloc —</option>' + llocs.map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.nom)}</option>`).join('');
   const selCat = document.getElementById('serie-categoria');
-  selCat.innerHTML = '<option value="">— Sense categoria —</option>' + categories.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  selCat.innerHTML = '<option value="">— Sense categoria —</option>' + categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nom)}</option>`).join('');
   const selCicle = document.getElementById('serie-cicle');
-  selCicle.innerHTML = '<option value="">— Sense cicle —</option>' + cicles.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  selCicle.innerHTML = '<option value="">— Sense cicle —</option>' + cicles.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nom)}</option>`).join('');
   renderListaSeriesGestion();
 }
 
@@ -1093,13 +1095,13 @@ async function renderListaSeriesGestion() {
     return `
     <div class="lloc-item" style="flex-direction:column; align-items:flex-start; gap:6px;">
       <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-        <strong style="font-size:13px;">🔄 ${s.titol}</strong>
+        <strong style="font-size:13px;">🔄 ${escapeHtml(s.titol)}</strong>
         <span style="display:flex; gap:14px;">
-          <button onclick="eliminarSerie('${s.id}', false)" style="background:none; border:none; color:var(--accent); font-weight:600; cursor:pointer; font-size:12px;">Eliminar futurs</button>
-          <button onclick="eliminarSerie('${s.id}', true)" style="background:none; border:none; color:var(--vermell); font-weight:600; cursor:pointer; font-size:12px;">Eliminar tots</button>
+          <button onclick="eliminarSerie('${escapeHtml(s.id)}', false)" style="background:none; border:none; color:var(--accent); font-weight:600; cursor:pointer; font-size:12px;">Eliminar futurs</button>
+          <button onclick="eliminarSerie('${escapeHtml(s.id)}', true)" style="background:none; border:none; color:var(--vermell); font-weight:600; cursor:pointer; font-size:12px;">Eliminar tots</button>
         </span>
       </div>
-      <div style="font-size:12px; color:var(--text-sec);">${DIES[s.dia_setmana]} · ${s.data_inici} → ${s.data_fi}${s.hora_inici ? ' · ' + s.hora_inici.slice(0,5) : ''}${lloc ? ' · ' + lloc.nom : ''}${cat ? ' · ' + cat.nom : ''}</div>
+      <div style="font-size:12px; color:var(--text-sec);">${DIES[s.dia_setmana]} · ${escapeHtml(s.data_inici)} → ${escapeHtml(s.data_fi)}${s.hora_inici ? ' · ' + escapeHtml(s.hora_inici.slice(0,5)) : ''}${lloc ? ' · ' + escapeHtml(lloc.nom) : ''}${cat ? ' · ' + escapeHtml(cat.nom) : ''}</div>
     </div>`;
   }).join('');
 }
@@ -1125,7 +1127,7 @@ async function eliminarSerie(serieId, tots) {
 function renderFiltres() {
   const bar = document.getElementById('filtre-bar');
   let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
-  categories.forEach(c => html += `<button class="filtre-btn" onclick="filtrar('${c.id}', this)">${c.nom}</button>`);
+  categories.forEach(c => html += `<button class="filtre-btn" onclick="filtrar('${escapeHtml(c.id)}', this)">${escapeHtml(c.nom)}</button>`);
   bar.innerHTML = html;
 }
 function filtrar(catId, btn) {
@@ -1180,12 +1182,12 @@ async function renderPagina() {
   }
 
   container.innerHTML = pagina.map(e => `
-    <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
-      <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
-      <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
+    <div class="event-card" onclick="editarEsdeveniment('${escapeHtml(e.id)}')">
+      <div class="data-col"><div class="dia">${escapeHtml(e.data.split('-')[2])}${e.data_fi && e.data_fi !== e.data ? '–' + escapeHtml(e.data_fi.split('-')[2]) : ''}</div><div class="mes">${escapeHtml(e.data.split('-')[1])}</div></div>
+      <div class="info"><div class="titol">${escapeHtml(e.titol)}</div><div class="meta"><span>${escapeHtml(e.categories?.nom || '')}</span><span>${escapeHtml(e.llocs?.nom || '')}</span>${e.cicles?.nom ? `<span style="color:${escapeHtml(e.cicles.color || 'var(--accent)')}; font-weight:600;">🎟️ ${escapeHtml(e.cicles.nom)}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${escapeHtml(e.data_fi.split('-').reverse().join('/'))}</span>` : ''}</div></div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-        <span class="estat-badge estat-${e.estat}">${e.estat}</span>
-        <button onclick="event.stopPropagation(); confirmarEsborrarCard('${e.id}','${e.titol.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
+        <span class="estat-badge estat-${escapeHtml(e.estat)}">${escapeHtml(e.estat)}</span>
+        <button onclick="event.stopPropagation(); confirmarEsborrarCard('${escapeHtml(e.id)}','${escapeHtml(e.titol).replace(/'/g,\"\\'\")}');" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
       </div>
     </div>
   `).join('');
@@ -1216,7 +1218,7 @@ async function canviarPagina(delta) {
 }
 
 function renderCatPills() {
-  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" data-slug="${c.slug||''}" onclick="selCat(this)">${c.nom}</div>`).join('');
+  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${escapeHtml(c.id)}" data-slug="${escapeHtml(c.slug||'')} " onclick="selCat(this)">${escapeHtml(c.nom)}</div>`).join('');
 }
 // ---- EDITOR DE TEXT ENRIQUIT ----
 function edCmd(cmd) { document.getElementById('f-descripcio').focus(); document.execCommand(cmd, false, null); }
@@ -2116,7 +2118,7 @@ async function carregarAnalitica(){
     const maxFitxa = topFitxes[0]?.[1]||1;
     document.getElementById('analitica-top-fitxes').innerHTML = topFitxes.map(([t,n]) => `
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
-        <div style="flex:1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${t}">${t}</div>
+        <div style="flex:1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(t)}">${escapeHtml(t)}</div>
         <div style="font-size:12px; font-weight:600; color:var(--blau); min-width:22px; text-align:right;">${n}</div>
       </div>`).join('') || '<div style="font-size:12px; color:var(--text-sec);">Sense dades</div>';
 
@@ -2125,10 +2127,10 @@ async function carregarAnalitica(){
     document.getElementById('analitica-raw-tbody').innerHTML = data.slice(0,50).map(e => {
       const dt = new Date(e.created_at);
       const hora = dt.toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('ca-ES',{hour:'2-digit',minute:'2-digit'});
-      const detall = e.payload ? Object.entries(e.payload).filter(([k])=>k!=='ua').map(([k,v])=>`${k}: ${v}`).join(' · ') : '';
+      const detall = e.payload ? Object.entries(e.payload).filter(([k])=>k!=='ua').map(([k,v])=>`${escapeHtml(k)}: ${escapeHtml(String(v))}`).join(' · ') : '';
       return `<tr style="border-top:1px solid var(--border);">
-        <td style="padding:5px 8px; white-space:nowrap; color:var(--text-sec);">${hora}</td>
-        <td style="padding:5px 8px; white-space:nowrap;">${tipusLabels[e.tipus]||e.tipus}</td>
+        <td style="padding:5px 8px; white-space:nowrap; color:var(--text-sec);">${escapeHtml(hora)}</td>
+        <td style="padding:5px 8px; white-space:nowrap;">${escapeHtml(tipusLabels[e.tipus]||e.tipus)}</td>
         <td style="padding:5px 8px; color:var(--text-sec); font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${detall}</td>
       </tr>`;
     }).join('') || '<tr><td colspan="3" style="padding:12px; text-align:center; color:var(--text-sec);">Sense dades</td></tr>';
