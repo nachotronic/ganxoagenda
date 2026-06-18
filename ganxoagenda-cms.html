@@ -461,11 +461,31 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div class="camp"><label>Data</label><input type="date" id="f-data"></div>
         <div class="camp"><label>Hora d'inici</label><input type="time" id="f-hora-inici"></div>
         <div class="camp full"><label>Data de fi <span style="text-transform:none; font-weight:400;">(opcional — per a esdeveniments de diversos dies, com exposicions)</span></label><input type="date" id="f-data-fi"></div>
-        <div class="camp"><label>Lloc</label><select id="f-lloc"></select></div>
+        <div class="camp">
+          <label>Lloc</label>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <select id="f-lloc" style="flex:1;"></select>
+            <button type="button" onclick="nouLlocInline()" title="Crear lloc nou" style="width:32px;height:38px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:18px;color:var(--blau);flex-shrink:0;">+</button>
+          </div>
+        </div>
         <div class="camp"><label>Hora de fi</label><input type="time" id="f-hora-fi"></div>
         <div class="camp"><label>Preu</label><input type="text" id="f-preu-text" placeholder="Ex: Gratuït / 15 €"></div>
         <div class="camp"><label>Enllaç entrades</label><input type="url" id="f-url-entrades"></div>
-        <div class="camp full"><label>Descripció</label><textarea id="f-descripcio"></textarea></div>
+        <div class="camp full">
+          <label>Descripció</label>
+          <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;">
+            <div style="display:flex; gap:2px; padding:6px 8px; border-bottom:1px solid var(--border); background:var(--fons-2); flex-wrap:wrap;">
+              <button type="button" onclick="edCmd('bold')" title="Negreta" style="width:30px;height:28px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-weight:700;font-size:13px;" onmousedown="event.preventDefault()"><b>B</b></button>
+              <button type="button" onclick="edCmd('italic')" title="Cursiva" style="width:30px;height:28px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-style:italic;font-size:13px;" onmousedown="event.preventDefault()"><i>I</i></button>
+              <button type="button" onclick="edCmd('insertUnorderedList')" title="Llista" style="width:30px;height:28px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-size:14px;" onmousedown="event.preventDefault()">•≡</button>
+              <button type="button" onclick="edLink()" title="Enllaç" style="width:30px;height:28px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-size:13px;" onmousedown="event.preventDefault()">🔗</button>
+              <button type="button" onclick="edCmd('removeFormat')" title="Treure format" style="width:30px;height:28px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-size:12px;" onmousedown="event.preventDefault()">✕F</button>
+              <div style="width:1px;background:var(--border);margin:4px 2px;"></div>
+              <button type="button" onclick="edInsertSalt()" title="Salt de línia" style="height:28px;padding:0 8px;border:1px solid transparent;border-radius:5px;background:none;cursor:pointer;font-size:11px;color:var(--text-sec);" onmousedown="event.preventDefault()">↵ Salt</button>
+            </div>
+            <div id="f-descripcio" contenteditable="true" style="min-height:100px; padding:10px 12px; font-family:var(--font-sans); font-size:14px; outline:none; line-height:1.5; white-space:pre-wrap;"></div>
+          </div>
+        </div>
         
         <div class="camp full">
           <label>Foto</label>
@@ -1090,7 +1110,10 @@ async function renderPagina() {
     <div class="event-card" onclick="editarEsdeveniment('${e.id}')">
       <div class="data-col"><div class="dia">${e.data.split('-')[2]}${e.data_fi && e.data_fi !== e.data ? '–' + e.data_fi.split('-')[2] : ''}</div><div class="mes">${e.data.split('-')[1]}</div></div>
       <div class="info"><div class="titol">${e.titol}</div><div class="meta"><span>${e.categories?.nom || ''}</span><span>${e.llocs?.nom || ''}</span>${e.cicles?.nom ? `<span style="color:${e.cicles.color || 'var(--accent)'}; font-weight:600;">🎟️ ${e.cicles.nom}</span>` : ''}${e.series?.titol ? `<span style="color:#3a6b3a; font-weight:600;">🔄</span>` : ''}${e.data_fi && e.data_fi !== e.data ? `<span>📅 fins ${e.data_fi.split('-').reverse().join('/')}</span>` : ''}</div></div>
-      <span class="estat-badge estat-${e.estat}">${e.estat}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+        <span class="estat-badge estat-${e.estat}">${e.estat}</span>
+        <button onclick="event.stopPropagation(); confirmarEsborrarCard('${e.id}','${e.titol.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--vermell);background:none;border:none;cursor:pointer;padding:0;line-height:1;">🗑️</button>
+      </div>
     </div>
   `).join('');
 
@@ -1122,6 +1145,58 @@ async function canviarPagina(delta) {
 function renderCatPills() {
   document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" data-slug="${c.slug||''}" onclick="selCat(this)">${c.nom}</div>`).join('');
 }
+// ---- EDITOR DE TEXT ENRIQUIT ----
+function edCmd(cmd) { document.getElementById('f-descripcio').focus(); document.execCommand(cmd, false, null); }
+function edLink() {
+  const url = prompt('URL de l\'enllaç:');
+  if(url) { document.getElementById('f-descripcio').focus(); document.execCommand('createLink', false, url); }
+}
+function edInsertSalt() { document.getElementById('f-descripcio').focus(); document.execCommand('insertHTML', false, '<br><br>'); }
+function edGetValue() { return document.getElementById('f-descripcio').innerHTML || ''; }
+function edSetValue(html) {
+  const el = document.getElementById('f-descripcio');
+  // Convertir text pla amb \n a <br>
+  if(html && !html.includes('<')) html = html.replace(/\n/g, '<br>');
+  el.innerHTML = html || '';
+}
+
+// ---- CREAR LLOC INLINE ----
+async function nouLlocInline() {
+  const nom = prompt('Nom del nou lloc:');
+  if(!nom || !nom.trim()) return;
+  try {
+    const res = await sbFetch('/rest/v1/llocs', { method:'POST', body: JSON.stringify({ nom: nom.trim() }), headers:{'Prefer':'return=representation'} });
+    const nou = Array.isArray(res) ? res[0] : res;
+    await carregarLlocs();
+    document.getElementById('f-lloc').value = nou.id;
+    toast('Lloc creat i seleccionat!');
+  } catch(e) { toast('Error creant lloc: ' + e.message, true); }
+}
+
+// ---- ESBORRAR CARD DES DEL LLISTAT ----
+function confirmarEsborrarCard(id, titol) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:360px;width:100%;padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:17px;font-weight:700;color:var(--vermell);margin-bottom:10px;">🗑️ Eliminar event</div>
+      <p style="font-size:14px;color:var(--text-sec);margin:0 0 20px;">Segur que vols eliminar <strong>${titol}</strong>? Aquesta acció no es pot desfer.</p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:9px 18px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;">Cancel·lar</button>
+        <button id="btn-conf-del" style="padding:9px 18px;border:none;border-radius:8px;background:var(--vermell);color:#fff;font-weight:600;cursor:pointer;">Eliminar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btn-conf-del').onclick = async () => {
+    try {
+      await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}`, { method:'DELETE' });
+      document.body.removeChild(modal);
+      toast('Event eliminat');
+      await renderPagina();
+    } catch(e) { toast('Error eliminant: ' + e.message, true); }
+  };
+}
+
 function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); actualitzarCampAAgenda(); }
 function toggleSwitch(el) {
   el.classList.toggle('on');
@@ -1139,7 +1214,8 @@ function tornarLlista() { iaIdxActual = null; document.getElementById('vista-for
 
 function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
-  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
+  window._fotoFocalX = 0.5; window._fotoFocalY = 0.5;
+  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; edSetValue(''); document.getElementById('f-edat').value = '';
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on'); document.getElementById('tog-a-agenda').classList.remove('on'); document.getElementById('camp-a-agenda').style.display='none';
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; document.getElementById('btn-editar-foto').style.display='none'; fotoFile = null; fotoGaleriaUrl = null;
   document.getElementById('foto-suggerida').style.display = 'none';
@@ -1150,8 +1226,9 @@ async function editarEsdeveniment(id) {
   const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
   document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data; document.getElementById('f-data-fi').value = e.data_fi || '';
   document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
-  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-descripcio').value = e.descripcio || '';
+  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; edSetValue(e.descripcio || '');
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
+  window._fotoFocalX = e.focal_x ?? 0.5; window._fotoFocalY = e.focal_y ?? 0.5;
   if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
   if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
   if(e.a_agenda) document.getElementById('tog-a-agenda').classList.add('on');
@@ -1198,8 +1275,8 @@ async function desarEsdeveniment(estatDesti) {
   const body = {
     titol, data, data_fi: dataFi || null, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
     hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
-    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
-    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), a_agenda: document.getElementById('tog-a-agenda').classList.contains('on'), foto_url: fotoUrlFinal
+    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: edGetValue()||null,
+    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), a_agenda: document.getElementById('tog-a-agenda').classList.contains('on'), focal_x: window._fotoFocalX ?? 0.5, focal_y: window._fotoFocalY ?? 0.5, foto_url: fotoUrlFinal
   };
   if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
   else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
@@ -1799,7 +1876,7 @@ function cargarEventoIA(idx) {
   document.getElementById('f-data').value = ev.data || '';
   document.getElementById('f-data-fi').value = ev.data_fi || '';
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
-  document.getElementById('f-descripcio').value = formatHoraris(ev.descripcio || '');
+  edSetValue(formatHoraris(ev.descripcio || ''));
   document.getElementById('f-preu-text').value = ev.preu_text || '';
   document.getElementById('f-edat').value = ev.edat_minima || '';
   document.getElementById('f-lloc').value = ev.lloc_id || '';
@@ -2349,6 +2426,15 @@ function _editorAplicar() {
     const nomOriginal = (_editorOriginalFile?.name || 'foto.jpg').replace(/\.[^.]+$/, '');
     fotoFile = new File([blob], nomOriginal + '-crop.jpg', {type:'image/jpeg'});
     fotoGaleriaUrl = null;
+    // Guardar punt focal com a percentatge relatiu al retall
+    if(_editorFocal) {
+      const fx = Math.max(0, Math.min(1, (_editorFocal.x - c.x) / c.w));
+      const fy = Math.max(0, Math.min(1, (_editorFocal.y - c.y) / c.h));
+      window._fotoFocalX = Math.round(fx * 100) / 100;
+      window._fotoFocalY = Math.round(fy * 100) / 100;
+    } else {
+      window._fotoFocalX = 0.5; window._fotoFocalY = 0.5;
+    }
     const previewUrl = URL.createObjectURL(blob);
     document.getElementById('foto-preview').src = previewUrl;
     document.getElementById('foto-preview').style.display = 'block';
