@@ -752,7 +752,9 @@ function gxRenderAgenda(){
   document.getElementById('gx-tots-llista').innerHTML='';
   document.getElementById('gx-cartelera-wrap').style.display='none';
   document.getElementById('gx-cartelera-llista').innerHTML='';
-  var llista = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
+  var llistaBase = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
+  var llistaCinema = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema'; });
+  var llista = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema'; });
 
   if(!llista.length){
     var msgs = {avui:'Avui no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', dema:'Demà no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', cap:'Aquest cap de setmana no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
@@ -816,10 +818,6 @@ function gxRenderAgenda(){
   }
   } // fi else (llista no buida)
 
-  // Separar events de cinema de la resta
-  var llistaFiltre = gxNomesNens ? llista.filter(function(e){ return e.familiar; }) : llista;
-  var llistaSenseCinema = llistaFiltre.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema'; });
-  var llistaCinema = llistaFiltre.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema'; });
 
   // Bloc cartelera col·lapsable
   var carteleraWrap = document.getElementById('gx-cartelera-wrap');
@@ -843,9 +841,6 @@ function gxRenderAgenda(){
   } else {
     carteleraWrap.style.display = 'none';
   }
-
-  // Usar llistaSenseCinema per a la grid i el destacat
-  llista = llistaSenseCinema;
 
   // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
   // exclou els dies ja mostrats al destacat/grid del filtre actiu
