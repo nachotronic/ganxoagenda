@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ganxoagenda-v3';
+const CACHE_NAME = 'ganxoagenda-v4';
 const SHELL_FILES = [
   './',
   './index.html',
