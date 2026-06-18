@@ -756,7 +756,7 @@ function gxRenderAgenda(){
   var llistaCinema = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema' && !e.a_agenda; });
   var llista = llistaBase.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema' || e.a_agenda; });
 
-  if(!llista.length){
+  if(!llista.length && !llistaCinema.length){
     var msgs = {avui:'Avui no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', dema:'Demà no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', cap:'Aquest cap de setmana no hi ha esdeveniments publicats. Però mira que hi ha plans més endavant!', mes:'Aquest mes no hi ha esdeveniments publicats.', cicle:'No hi ha esdeveniments publicats per a aquest cicle.'};
     if(gxNomesNens && (gxFiltreActiu==='avui'||gxFiltreActiu==='dema'||gxFiltreActiu==='cap')){
       msgs.avui = 'Avui no hi ha esdeveniments familiars publicats. Però mira que hi ha plans més endavant!';
