@@ -497,6 +497,13 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <label>Destacat</label>
           <div class="toggle-row"><div class="toggle" id="tog-destacat" onclick="toggleSwitch(this)"><div class="knob"></div></div><input type="number" id="f-ordre" value="0" style="width:70px; margin-left:10px;"></div>
         </div>
+        <div class="camp" id="camp-a-agenda" style="display:none;">
+          <label>Mostrar a l'agenda</label>
+          <div class="toggle-row">
+            <div class="toggle" id="tog-a-agenda" onclick="toggleSwitch(this)"><div class="knob"></div></div>
+            <span style="font-size:12px; color:var(--text-sec); margin-left:6px;">Apareix fora del bloc Cartelera</span>
+          </div>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -1113,10 +1120,19 @@ async function canviarPagina(delta) {
 }
 
 function renderCatPills() {
-  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" onclick="selCat(this)">${c.nom}</div>`).join('');
+  document.getElementById('f-categories').innerHTML = categories.map(c => `<div class="cat-pill" data-id="${c.id}" data-slug="${c.slug||''}" onclick="selCat(this)">${c.nom}</div>`).join('');
 }
-function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); }
-function toggleSwitch(el) { el.classList.toggle('on'); if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none'; }
+function selCat(el) { document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); el.classList.add('selected'); actualitzarCampAAgenda(); }
+function toggleSwitch(el) {
+  el.classList.toggle('on');
+  if(el.id==='tog-familiar') document.getElementById('f-edat').style.display = el.classList.contains('on')?'block':'none';
+}
+
+function actualitzarCampAAgenda() {
+  const pill = document.querySelector('.cat-pill.selected');
+  const slug = pill ? pill.getAttribute('data-slug') : '';
+  document.getElementById('camp-a-agenda').style.display = slug === 'cinema' ? 'flex' : 'none';
+}
 
 function nouEsdeveniment() { editingId = null; iaIdxActual = null; netejarFormulari(); document.getElementById('form-titol').textContent='Nou esdeveniment'; document.getElementById('btn-eliminar').style.display='none'; document.getElementById('btn-duplicar-event').style.display='none'; document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block'; }
 function tornarLlista() { iaIdxActual = null; document.getElementById('vista-form').style.display='none'; document.getElementById('vista-llista').style.display='block'; document.getElementById('ia-resultados-lista').style.display='none'; }
@@ -1124,7 +1140,7 @@ function tornarLlista() { iaIdxActual = null; document.getElementById('vista-for
 function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
   document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
-  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on'); document.getElementById('tog-a-agenda').classList.remove('on'); document.getElementById('camp-a-agenda').style.display='none';
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; document.getElementById('btn-editar-foto').style.display='none'; fotoFile = null; fotoGaleriaUrl = null;
   document.getElementById('foto-suggerida').style.display = 'none';
 }
@@ -1138,6 +1154,8 @@ async function editarEsdeveniment(id) {
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
   if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
   if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
+  if(e.a_agenda) document.getElementById('tog-a-agenda').classList.add('on');
+  actualitzarCampAAgenda();
   if(e.foto_url) { document.getElementById('foto-preview').src = e.foto_url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; document.getElementById('btn-editar-foto').style.display='inline-block'; fotoGaleriaUrl = e.foto_url; }
   document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block';
 }
@@ -1181,7 +1199,7 @@ async function desarEsdeveniment(estatDesti) {
     titol, data, data_fi: dataFi || null, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
     hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
     preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: document.getElementById('f-descripcio').value||null,
-    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), foto_url: fotoUrlFinal
+    familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), a_agenda: document.getElementById('tog-a-agenda').classList.contains('on'), foto_url: fotoUrlFinal
   };
   if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
   else { await sbFetch('/rest/v1/esdeveniments', { method:'POST', body:JSON.stringify(body) }); }
