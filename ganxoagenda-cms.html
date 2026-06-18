@@ -172,6 +172,11 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         </div>
       </div>
       <div class="filtre-bar" id="filtre-bar"></div>
+      <div style="margin-bottom:12px; position:relative;">
+        <input type="text" id="cerca-text" placeholder="🔍 Cercar per títol..." oninput="cercaEsdeveniments(this.value)"
+          style="width:100%; padding:9px 36px 9px 14px; border:1px solid var(--border); border-radius:10px; font-family:var(--font-sans); font-size:14px; box-sizing:border-box; background:var(--fons-2);">
+        <button onclick="netejarCerca()" id="btn-netejar-cerca" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:16px; color:var(--text-sec); line-height:1;">✕</button>
+      </div>
       <div id="llista-events"></div>
     </div>
 
@@ -469,7 +474,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
             <img id="foto-preview" style="display:none;">
             <input type="file" id="f-foto" accept="image/*" onchange="previewFoto(this)" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
           </div>
-          <button type="button" onclick="obrirSelectorGaleria()" style="margin-top:8px; padding:6px 12px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; font-size:12px; cursor:pointer;">🖼️ Triar de la galeria</button>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button type="button" onclick="obrirSelectorGaleria()" style="padding:6px 12px; border:1px solid var(--blau); background:#fff; color:var(--blau); border-radius:6px; font-size:12px; cursor:pointer;">🖼️ Triar de la galeria</button>
+            <button type="button" id="btn-editar-foto" onclick="reEditarFoto()" style="display:none; padding:6px 12px; border:1px solid var(--border); background:#fff; color:var(--text-sec); border-radius:6px; font-size:12px; cursor:pointer;">✂️ Retallar / punt focal</button>
+          </div>
           <div id="foto-suggerida" style="display:none; margin-top:10px; padding:8px; border:1px dashed var(--blau-clar); border-radius:8px; align-items:center; gap:10px;">
             <img id="foto-suggerida-img" style="width:60px; height:60px; object-fit:cover; border-radius:6px; flex-shrink:0;">
             <div style="flex:1; font-size:12px; color:var(--text-sec);">Imatge trobada a la font</div>
@@ -1027,6 +1035,23 @@ function filtrar(catId, btn) {
 const PAGINA_MIDA = 20;
 let paginaActual = 0;
 let paginaCatId = null;
+let cercaActual = '';
+let cercaTimer = null;
+
+function cercaEsdeveniments(val) {
+  clearTimeout(cercaTimer);
+  cercaActual = val.trim();
+  document.getElementById('btn-netejar-cerca').style.display = cercaActual ? 'block' : 'none';
+  cercaTimer = setTimeout(() => { paginaActual = 0; renderPagina(); }, 300);
+}
+
+function netejarCerca() {
+  document.getElementById('cerca-text').value = '';
+  cercaActual = '';
+  document.getElementById('btn-netejar-cerca').style.display = 'none';
+  paginaActual = 0;
+  renderPagina();
+}
 
 async function carregarEsdeveniments(catId = null) {
   paginaActual = 0;
@@ -1042,6 +1067,7 @@ async function renderPagina() {
   // Demanem PAGINA_MIDA+1 per saber si hi ha pàgina següent
   let q = `/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color),series(titol)&order=data.desc,hora_inici&limit=${PAGINA_MIDA + 1}&offset=${offset}`;
   if(paginaCatId) q += `&categoria_id=eq.${paginaCatId}`;
+  if(cercaActual) q += `&titol=ilike.${encodeURIComponent('%' + cercaActual + '%')}`;
 
   const data = await sbFetch(q);
   const hiHaSeguent = data.length > PAGINA_MIDA;
@@ -1099,7 +1125,7 @@ function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
   document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-descripcio').value = ''; document.getElementById('f-edat').value = '';
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on');
-  document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; fotoFile = null; fotoGaleriaUrl = null;
+  document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; document.getElementById('btn-editar-foto').style.display='none'; fotoFile = null; fotoGaleriaUrl = null;
   document.getElementById('foto-suggerida').style.display = 'none';
 }
 
@@ -1112,7 +1138,7 @@ async function editarEsdeveniment(id) {
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
   if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
   if(e.destacat) document.getElementById('tog-destacat').classList.add('on');
-  if(e.foto_url) { document.getElementById('foto-preview').src = e.foto_url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; fotoGaleriaUrl = e.foto_url; }
+  if(e.foto_url) { document.getElementById('foto-preview').src = e.foto_url; document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; document.getElementById('btn-editar-foto').style.display='inline-block'; fotoGaleriaUrl = e.foto_url; }
   document.getElementById('vista-llista').style.display='none'; document.getElementById('vista-form').style.display='block';
 }
 
@@ -1254,7 +1280,9 @@ async function pujarBatch(input) {
   toast(errors ? `${ok} pujades, ${errors} amb error` : `${ok} foto${ok>1?'s':''} pujada${ok>1?'es':''}!`, errors > 0 && ok === 0);
 }
 
-function previewFoto(i) { if(i.files&&i.files[0]) { fotoFile=i.files[0]; fotoGaleriaUrl=null; document.getElementById('foto-preview').src=URL.createObjectURL(fotoFile); document.getElementById('foto-preview').style.display='block'; document.getElementById('foto-placeholder').style.display='none'; } }
+function previewFoto(i) {
+  if(i.files && i.files[0]) { obrirEditorImatge(i.files[0]); i.value = ''; }
+}
 function obrirSelectorGaleria() { document.getElementById('modal-galeria').style.display='block'; actualitzarSelectorGaleria(); }
 function tancarSelectorGaleria() { document.getElementById('modal-galeria').style.display='none'; }
 async function actualitzarSelectorGaleria() { const f = await llistarFotos(); document.getElementById('selector-galeria-grid').innerHTML = f.map(x => `<img src="${urlPublica(x.name)}" onclick="triarFoto('${urlPublica(x.name)}')" style="width:100%; aspect-ratio:1; object-fit:cover; cursor:pointer;">`).join(''); }
@@ -2032,6 +2060,290 @@ async function sincronitzarCartelera() {
     addLog('Tanca aquesta finestra i torna a intentar-ho.');
     modal.addEventListener('click', () => document.body.removeChild(modal));
   }
+}
+
+
+// ---- EDITOR D'IMATGES (crop + punt focal) ----
+let _editorSrc = null;        // Blob URL o data URL de la imatge original
+let _editorImg = null;        // HTMLImageElement carregat
+let _editorDragging = false;
+let _editorResizing = false;
+let _editorResizeHandle = null;
+let _editorDragStart = {x:0,y:0};
+let _editorCrop = {x:0,y:0,w:0,h:0};   // en coordenades de canvas
+let _editorFocal = null;                  // {x,y} en coordenades de canvas (null = no definit)
+let _editorOriginalFile = null;
+
+function obrirEditorImatge(file) {
+  _editorOriginalFile = file;
+  const url = URL.createObjectURL(file);
+  _editorSrc = url;
+  const img = new Image();
+  img.onload = () => { _editorImg = img; _renderEditorModal(); };
+  img.src = url;
+}
+
+function reEditarFoto() {
+  // Re-editar la foto actual (fotoFile o fotoGaleriaUrl)
+  if(fotoFile) { obrirEditorImatge(fotoFile); return; }
+  if(fotoGaleriaUrl) {
+    // Carregar la imatge des de URL i convertir a blob
+    fetch(fotoGaleriaUrl).then(r=>r.blob()).then(b => {
+      obrirEditorImatge(new File([b], 'foto.jpg', {type: b.type || 'image/jpeg'}));
+    }).catch(() => toast('No es pot editar una imatge externa', true));
+  }
+}
+
+function _renderEditorModal() {
+  const existent = document.getElementById('modal-editor-img');
+  if(existent) document.body.removeChild(existent);
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-editor-img';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:400; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:16px; overflow-y:auto;';
+  modal.innerHTML = `
+    <div style="background:#1a1a2e; border-radius:14px; width:100%; max-width:760px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.5);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="color:#fff; font-weight:700; font-size:16px;">✂️ Retallar imatge i punt focal</div>
+        <button onclick="tancarEditorImatge()" style="background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; line-height:1;">✕</button>
+      </div>
+      <div style="color:#aaa; font-size:12px; margin-bottom:12px;">Arrossega per moure el retall · Estira les cantonades per redimensionar · Clica ⊕ per marcar el punt focal</div>
+      <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+        <span style="color:#ccc; font-size:12px; font-weight:600;">Proporció:</span>
+        <button class="ed-ratio actiu" data-r="0" onclick="_setRatio(0,this)">Lliure</button>
+        <button class="ed-ratio" data-r="1" onclick="_setRatio(1,this)">1:1</button>
+        <button class="ed-ratio" data-r="${4/3}" onclick="_setRatio(${4/3},this)">4:3</button>
+        <button class="ed-ratio" data-r="${16/9}" onclick="_setRatio(${16/9},this)">16:9</button>
+        <button class="ed-ratio" data-r="${16/10}" onclick="_setRatio(${16/10},this)">16:10</button>
+        <button class="ed-ratio" data-r="${3/4}" onclick="_setRatio(${3/4},this)">3:4</button>
+        <span style="margin-left:auto; color:#aaa; font-size:12px;" id="ed-mida-label"></span>
+      </div>
+      <style>
+        .ed-ratio { background:#2a2a4a; color:#ccc; border:1px solid #444; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+        .ed-ratio.actiu { background:#5b8dee; color:#fff; border-color:#5b8dee; }
+        #ed-canvas { display:block; border-radius:8px; touch-action:none; cursor:crosshair; max-width:100%; }
+      </style>
+      <canvas id="ed-canvas"></canvas>
+      <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end; flex-wrap:wrap;">
+        <button onclick="tancarEditorImatge()" style="padding:10px 20px; border:1px solid #444; background:#2a2a4a; color:#ccc; border-radius:8px; cursor:pointer;">Cancel·lar</button>
+        <button onclick="_editorReset()" style="padding:10px 20px; border:1px solid #555; background:#2a2a4a; color:#ccc; border-radius:8px; cursor:pointer;">↺ Reset</button>
+        <button onclick="_editorAplicar()" style="padding:10px 20px; border:none; background:#5b8dee; color:#fff; border-radius:8px; font-weight:700; cursor:pointer;">✓ Aplicar retall</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const canvas = document.getElementById('ed-canvas');
+  _initEditorCanvas(canvas);
+}
+
+let _editorRatio = 0;  // 0 = lliure
+
+function _setRatio(r, btn) {
+  _editorRatio = r;
+  document.querySelectorAll('.ed-ratio').forEach(b => b.classList.remove('actiu'));
+  btn.classList.add('actiu');
+  if(r > 0) {
+    // Ajustar el crop actual a la nova proporció mantenint el centre
+    const cx = _editorCrop.x + _editorCrop.w/2;
+    const cy = _editorCrop.y + _editorCrop.h/2;
+    let nw = _editorCrop.w, nh = nw / r;
+    const canvas = document.getElementById('ed-canvas');
+    if(nh > canvas.height) { nh = canvas.height; nw = nh * r; }
+    _editorCrop = { x: Math.max(0, cx - nw/2), y: Math.max(0, cy - nh/2), w: nw, h: nh };
+    _clampCrop(canvas);
+  }
+  _drawEditor();
+}
+
+function _initEditorCanvas(canvas) {
+  const img = _editorImg;
+  const maxW = Math.min(720, window.innerWidth - 64);
+  const maxH = window.innerHeight * 0.55;
+  const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+  canvas.width = Math.round(img.naturalWidth * scale);
+  canvas.height = Math.round(img.naturalHeight * scale);
+
+  _editorCrop = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+  _editorFocal = { x: canvas.width/2, y: canvas.height/2 };
+  _editorRatio = 0;
+
+  canvas.addEventListener('mousedown', _edMouseDown);
+  canvas.addEventListener('mousemove', _edMouseMove);
+  canvas.addEventListener('mouseup', _edMouseUp);
+  canvas.addEventListener('mouseleave', _edMouseUp);
+  canvas.addEventListener('touchstart', _edTouch, {passive:false});
+  canvas.addEventListener('touchmove', _edTouch, {passive:false});
+  canvas.addEventListener('touchend', _edMouseUp);
+
+  _drawEditor();
+}
+
+function _drawEditor() {
+  const canvas = document.getElementById('ed-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const c = _editorCrop;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(_editorImg, 0, 0, canvas.width, canvas.height);
+
+  // Fosc fora del crop
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(0,0,canvas.width,c.y);
+  ctx.fillRect(0,c.y,c.x,c.h);
+  ctx.fillRect(c.x+c.w,c.y,canvas.width-c.x-c.w,c.h);
+  ctx.fillRect(0,c.y+c.h,canvas.width,canvas.height-c.y-c.h);
+
+  // Vora del crop
+  ctx.strokeStyle = '#5b8dee';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(c.x,c.y,c.w,c.h);
+
+  // Quadrícula de terços
+  ctx.strokeStyle = 'rgba(91,141,238,.4)';
+  ctx.lineWidth = 1;
+  [1/3,2/3].forEach(t => {
+    ctx.beginPath(); ctx.moveTo(c.x+c.w*t,c.y); ctx.lineTo(c.x+c.w*t,c.y+c.h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x,c.y+c.h*t); ctx.lineTo(c.x+c.w,c.y+c.h*t); ctx.stroke();
+  });
+
+  // Cantonades (handles)
+  const hs = 10;
+  [[c.x,c.y],[c.x+c.w,c.y],[c.x,c.y+c.h],[c.x+c.w,c.y+c.h]].forEach(([hx,hy]) => {
+    ctx.fillStyle = '#5b8dee';
+    ctx.fillRect(hx-hs/2, hy-hs/2, hs, hs);
+  });
+
+  // Punt focal
+  if(_editorFocal) {
+    const {x,y} = _editorFocal;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x-12,y); ctx.lineTo(x+12,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x,y-12); ctx.lineTo(x,y+12); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,100,0,.8)';
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+  }
+
+  // Info mides
+  const lbl = document.getElementById('ed-mida-label');
+  if(lbl) {
+    const sc = _editorImg.naturalWidth / document.getElementById('ed-canvas').width;
+    lbl.textContent = `${Math.round(c.w*sc)} × ${Math.round(c.h*sc)} px`;
+  }
+}
+
+function _handleAt(x, y) {
+  const c = _editorCrop, hs = 14;
+  const corners = [{n:'tl',cx:c.x,cy:c.y},{n:'tr',cx:c.x+c.w,cy:c.y},{n:'bl',cx:c.x,cy:c.y+c.h},{n:'br',cx:c.x+c.w,cy:c.y+c.h}];
+  for(const {n,cx,cy} of corners) if(Math.abs(x-cx)<hs && Math.abs(y-cy)<hs) return n;
+  if(x>c.x&&x<c.x+c.w&&y>c.y&&y<c.y+c.h) return 'move';
+  return null;
+}
+
+function _edMouseDown(e) {
+  const {x,y} = _evPos(e);
+  const h = _handleAt(x,y);
+  if(h==='move') { _editorDragging=true; _editorDragStart={x,y}; }
+  else if(h) { _editorResizing=true; _editorResizeHandle=h; _editorDragStart={x,y}; }
+  else { _editorFocal={x,y}; _drawEditor(); }
+  e.preventDefault();
+}
+
+function _edMouseMove(e) {
+  const canvas = document.getElementById('ed-canvas');
+  const {x,y} = _evPos(e);
+  if(!_editorDragging && !_editorResizing) {
+    const h = _handleAt(x,y);
+    canvas.style.cursor = h==='move'?'move':h?'nwse-resize':'crosshair';
+    return;
+  }
+  const dx = x - _editorDragStart.x, dy = y - _editorDragStart.y;
+  _editorDragStart = {x,y};
+
+  if(_editorDragging) {
+    _editorCrop.x += dx; _editorCrop.y += dy;
+    _clampCrop(canvas);
+  } else {
+    const c = _editorCrop, r = _editorRatio;
+    const h = _editorResizeHandle;
+    if(h==='tl') { c.x+=dx; c.y+=dy; c.w-=dx; c.h-=dy; }
+    else if(h==='tr') { c.w+=dx; c.y+=dy; c.h-=dy; }
+    else if(h==='bl') { c.x+=dx; c.w-=dx; c.h+=dy; }
+    else if(h==='br') { c.w+=dx; c.h+=dy; }
+    if(r>0) { // Mantenir proporció
+      if(h==='br'||h==='tl') c.h = c.w/r;
+      else c.w = c.h*r;
+      if(h==='tl') { c.x = (c.x+c.w) - c.w; c.y = (c.y+c.h) - c.h; }
+    }
+    c.w = Math.max(40, c.w); c.h = Math.max(40, c.h);
+    _clampCrop(canvas);
+  }
+  _drawEditor();
+  e.preventDefault();
+}
+
+function _edMouseUp() { _editorDragging=false; _editorResizing=false; _editorResizeHandle=null; }
+
+function _edTouch(e) {
+  const t = e.touches[0];
+  const fakeEv = { clientX: t.clientX, clientY: t.clientY, preventDefault: ()=>e.preventDefault(), currentTarget: e.currentTarget };
+  if(e.type==='touchstart') _edMouseDown(fakeEv);
+  else if(e.type==='touchmove') _edMouseMove(fakeEv);
+}
+
+function _evPos(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function _clampCrop(canvas) {
+  const c = _editorCrop;
+  c.w = Math.min(c.w, canvas.width); c.h = Math.min(c.h, canvas.height);
+  c.x = Math.max(0, Math.min(c.x, canvas.width - c.w));
+  c.y = Math.max(0, Math.min(c.y, canvas.height - c.h));
+}
+
+function _editorReset() {
+  const canvas = document.getElementById('ed-canvas');
+  _editorCrop = {x:0,y:0,w:canvas.width,h:canvas.height};
+  _editorFocal = {x:canvas.width/2,y:canvas.height/2};
+  _drawEditor();
+}
+
+function _editorAplicar() {
+  const canvas = document.getElementById('ed-canvas');
+  const c = _editorCrop;
+  const sc = _editorImg.naturalWidth / canvas.width;
+
+  // Exportar el retall en resolució original
+  const out = document.createElement('canvas');
+  out.width = Math.round(c.w * sc);
+  out.height = Math.round(c.h * sc);
+  out.getContext('2d').drawImage(
+    _editorImg,
+    c.x*sc, c.y*sc, c.w*sc, c.h*sc,
+    0, 0, out.width, out.height
+  );
+
+  out.toBlob(blob => {
+    const nomOriginal = (_editorOriginalFile?.name || 'foto.jpg').replace(/\.[^.]+$/, '');
+    fotoFile = new File([blob], nomOriginal + '-crop.jpg', {type:'image/jpeg'});
+    fotoGaleriaUrl = null;
+    const previewUrl = URL.createObjectURL(blob);
+    document.getElementById('foto-preview').src = previewUrl;
+    document.getElementById('foto-preview').style.display = 'block';
+    document.getElementById('foto-placeholder').style.display = 'none';
+    document.getElementById('btn-editar-foto').style.display = 'inline-block';
+    tancarEditorImatge();
+    toast('Retall aplicat! Desa l\'event per pujar la foto.');
+  }, 'image/jpeg', 0.92);
+}
+
+function tancarEditorImatge() {
+  const modal = document.getElementById('modal-editor-img');
+  if(modal) document.body.removeChild(modal);
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
