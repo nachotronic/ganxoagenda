@@ -94,6 +94,13 @@
 <div id="gx-agenda-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
 
 <!-- tots els esdeveniments (llista per dies, només a "Avui") -->
+<div id="gx-cartelera-wrap" style="display:none; margin-top:20px;">
+  <div onclick="gxToggleCartelera()" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:0; padding:0 2px;">
+    <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px;">🎬 Cartelera</div>
+    <div id="gx-cartelera-arrow" style="font-size:13px; color:#8a8478; transition:transform .2s;">▼</div>
+  </div>
+  <div id="gx-cartelera-llista" style="margin-top:11px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px;"></div>
+</div>
 <div id="gx-tots-wrap" style="display:none; margin-top:22px;">
 <div style="font-size:11px; font-weight:700; color:#8a8478; text-transform:uppercase; letter-spacing:.7px; margin:0 2px 11px;">Tots els esdeveniments</div>
 <div id="gx-tots-llista"></div>
@@ -457,6 +464,8 @@ async function gxCarregarRang(range){
   document.getElementById('gx-agenda-grid').innerHTML='';
   document.getElementById('gx-tots-wrap').style.display='none';
   document.getElementById('gx-tots-llista').innerHTML='';
+  document.getElementById('gx-cartelera-wrap').style.display='none';
+  document.getElementById('gx-cartelera-llista').innerHTML='';
   try{
     var query = gxSupabase.from('esdeveniments')
       .select('*, categories(nom,slug,color_gradient,icona), llocs(nom,latitud,longitud,google_maps_url), cicles(id,nom)')
@@ -740,7 +749,9 @@ function gxRenderAgenda(){
   if(existingBtn) existingBtn.remove();
   document.getElementById('gx-tots-wrap').style.display='none';
   document.getElementById('gx-tots-llista').innerHTML='';
-
+  document.getElementById('gx-tots-llista').innerHTML='';
+  document.getElementById('gx-cartelera-wrap').style.display='none';
+  document.getElementById('gx-cartelera-llista').innerHTML='';
   var llista = gxNomesNens ? gxEvents.filter(function(e){ return e.familiar; }) : gxEvents;
 
   if(!llista.length){
@@ -805,6 +816,37 @@ function gxRenderAgenda(){
   }
   } // fi else (llista no buida)
 
+  // Separar events de cinema de la resta
+  var llistaFiltre = gxNomesNens ? llista.filter(function(e){ return e.familiar; }) : llista;
+  var llistaSenseCinema = llistaFiltre.filter(function(e){ return (e.categories && e.categories.slug) !== 'cinema'; });
+  var llistaCinema = llistaFiltre.filter(function(e){ return (e.categories && e.categories.slug) === 'cinema'; });
+
+  // Bloc cartelera col·lapsable
+  var carteleraWrap = document.getElementById('gx-cartelera-wrap');
+  var carteleraLlista = document.getElementById('gx-cartelera-llista');
+  carteleraLlista.innerHTML = '';
+  if(llistaCinema.length){
+    carteleraWrap.style.display = 'block';
+    llistaCinema.forEach(function(ev){
+      var c = gxCatInfo(ev);
+      var card = document.createElement('div');
+      card.onclick = (function(id){ return function(){ gxOpenFicha(id); }; })(ev.id);
+      card.style.cssText = 'background:#fff; border:1px solid #e4e0d7; border-radius:13px; overflow:hidden; cursor:pointer;';
+      card.innerHTML =
+        '<div style="height:110px; position:relative; background-image:'+(ev.foto_url?'url(\''+ev.foto_url+'\')':c.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
+        '<div style="padding:8px 10px 10px;">'+
+          '<div style="font-size:12.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-bottom:4px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">'+ev.titol+'</div>'+
+          '<div style="font-size:10px; color:#8a8478;">'+gxFormatDataCurta(ev.data)+'</div>'+
+        '</div>';
+      carteleraLlista.appendChild(card);
+    });
+  } else {
+    carteleraWrap.style.display = 'none';
+  }
+
+  // Usar llistaSenseCinema per a la grid i el destacat
+  llista = llistaSenseCinema;
+
   // secció "Tots els esdeveniments" (avui, demà, cap de setmana) - màx. 10
   // exclou els dies ja mostrats al destacat/grid del filtre actiu
   var totsWrap = document.getElementById('gx-tots-wrap');
@@ -812,7 +854,7 @@ function gxRenderAgenda(){
   if((gxFiltreActiu==='avui' || gxFiltreActiu==='dema' || gxFiltreActiu==='cap') && gxEventsTots.length){
     var r = gxRangeActiu;
     var restants = gxEventsTots.filter(function(e){
-      return !(r && e.data>=r.from && e.data<=r.to);
+      return !(r && e.data>=r.from && e.data<=r.to) && (e.categories && e.categories.slug) !== 'cinema';
     });
     var llistaTots = gxNomesNens ? restants.filter(function(e){ return e.familiar; }) : restants;
     if(llistaTots.length){
@@ -881,6 +923,14 @@ function gxRenderAgendaLlista(llista, grid, maxItems){
     btn.onclick = function(){ gxPaginaTots += 1; gxRenderAgenda(); };
     grid.appendChild(btn);
   }
+}
+
+function gxToggleCartelera(){
+  var llista = document.getElementById('gx-cartelera-llista');
+  var arrow = document.getElementById('gx-cartelera-arrow');
+  var obert = llista.style.display !== 'none';
+  llista.style.display = obert ? 'none' : 'grid';
+  arrow.style.transform = obert ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 
 function gxAnarInici(){
