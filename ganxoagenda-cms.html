@@ -1460,8 +1460,8 @@ function toast(m,e) { const t=document.getElementById('toast'); t.textContent=m;
 // ============================================================
 // ASSISTENT GEMINI (via Edge Function - clau API al servidor)
 // ============================================================
-let iaImatgeBase64 = null;
-let iaImatgeMime = null;
+window.iaImatgeBase64 = null;
+window.iaImatgeMime = null;
 let iaIdxActual = null;
 
 function ia_onFileSelected(input) {
@@ -1474,9 +1474,9 @@ function ia_carregarImatge(file) {
   const reader = new FileReader();
   reader.onload = () => {
     const dataUrl = reader.result; // data:image/...;base64,XXXX
-    const base64 = dataUrl.split(',')[1];
-    iaImatgeBase64 = base64;
-    iaImatgeMime = file.type || 'image/jpeg';
+    const base64 = dataUrl.split(",")[1];
+    window.iaImatgeBase64 = base64;
+    window.iaImatgeMime = file.type || 'image/jpeg';
     document.getElementById('ia-imatge-img').src = dataUrl;
     document.getElementById('ia-imatge-preview').style.display = 'block';
   };
@@ -1484,7 +1484,7 @@ function ia_carregarImatge(file) {
 }
 
 function ia_eliminarImatge() {
-  iaImatgeBase64 = null; iaImatgeMime = null;
+  window.iaImatgeBase64 = null; window.iaImatgeMime = null;
   document.getElementById('ia-imatge-preview').style.display = 'none';
   document.getElementById('ia-imatge-img').src = '';
   document.getElementById('ia-imatge-input').value = '';
@@ -1632,7 +1632,7 @@ async function fetchGanxoIA(body, onRetry) {
 
 async function procesarConGeminiUnPaso() {
   let inputSource = document.getElementById('ia-contenido').value.trim();
-  if (!inputSource && !iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
+  if (!inputSource && !window.iaImatgeBase64) return toast('Enganxa un text, una URL, o aporta una imatge del cartell', true);
 
   const loadingEl = document.getElementById('ia-loading');
   const listaContenedor = document.getElementById('ia-resultados-lista');
@@ -1656,7 +1656,7 @@ async function procesarConGeminiUnPaso() {
     };
     if (esUrl) body.url = inputSource;
     else if (inputSource) body.texto = inputSource;
-    if (iaImatgeBase64) { body.imagenBase64 = iaImatgeBase64; body.imagenMime = iaImatgeMime; }
+    if (window.iaImatgeBase64) { body.imagenBase64 = window.iaImatgeBase64; body.imagenMime = window.iaImatgeMime; }
 
     const data = await fetchGanxoIA(body, (intent, msg) => {
       textBaseIA = `🤖 Motor d'IA ocupat, reintentant (${intent}/2)`;
@@ -1960,11 +1960,11 @@ function cargarEventoIA(idx) {
   else toast('Dades bolcades al formulari!');
 
   // Si l'usuari havia enganxat una imatge al panell IA, posar-la com a foto del formulari
-  if (iaImatgeBase64) {
+  if (window.iaImatgeBase64) {
     try {
       const mime = window.iaImatgeMime || 'image/jpeg';
       const ext = mime.includes('png') ? 'png' : 'jpg';
-      const byteArr = Uint8Array.from(atob(iaImatgeBase64), c => c.charCodeAt(0));
+      const byteArr = Uint8Array.from(atob(window.iaImatgeBase64), c => c.charCodeAt(0));
       const blob = new Blob([byteArr], { type: mime });
       fotoFile = new File([blob], `ia-cartell.${ext}`, { type: mime });
       fotoGaleriaUrl = null;
