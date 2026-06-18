@@ -634,7 +634,7 @@ async function carregarLlocs() {
 }
 
 async function carregarCicles() {
-  cicles = await sbFetch('/rest/v1/cicles?select=*&order=nom');
+  cicles = await sbFetch('/rest/v1/cicles?select=*&order=data_inici.desc.nullslast,nom');
   const sel = document.getElementById('f-cicle');
   sel.innerHTML = '<option value="">— Cap cicle —</option>';
   cicles.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nom}</option>`);
@@ -727,6 +727,7 @@ function renderListaCiclesGestion() {
       <span>${c.color ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${c.color}; margin-right:6px;"></span>` : '🎟️ '}${c.nom}${c.descripcio ? `<span style="color:var(--text-sec); font-size:12px;"> — ${c.descripcio}</span>` : ''}${rang}${c.url ? ` <a href="${c.url}" target="_blank" style="font-size:11px; color:var(--blau);">🔗</a>` : ''}</span>
       <span style="display:flex; gap:14px;">
         <button onclick="editarCicle('${c.id}')" style="background:none; border:none; color:var(--blau); font-weight:600; cursor:pointer; font-size:12px;">Editar</button>
+        <button onclick="assignarEventsCicle('${c.id}','${c.nom.replace(/'/g,"\\'")}')">Events</button>
         <button onclick="duplicarCicle('${c.id}')" style="background:none; border:none; color:var(--blau-clar); font-weight:600; cursor:pointer; font-size:12px;">Duplicar</button>
         <button onclick="eliminarCicle('${c.id}')">Eliminar</button>
       </span>
@@ -800,6 +801,78 @@ function cancelarEdicioCicle() {
   document.getElementById('btn-guardar-cicle').textContent = 'Guardar Cicle';
   document.getElementById('btn-cancelar-cicle').style.display = 'none';
 }
+async function assignarEventsCicle(cicleId, cicleNom) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="font-size:16px;font-weight:700;color:var(--blau);margin-bottom:4px;">🎟️ ${cicleNom}</div>
+        <div style="font-size:12px;color:var(--text-sec);">Marca els events que vols assignar a aquest cicle</div>
+        <input type="text" placeholder="🔍 Filtrar per títol..." oninput="filtrarAssignacio(this.value)" 
+          style="margin-top:10px;width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div id="assignacio-llista" style="overflow-y:auto;flex:1;padding:8px 0;"></div>
+      <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;">
+        <span id="assignacio-count" style="font-size:12px;color:var(--text-sec);align-self:center;margin-right:auto;"></span>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:9px 18px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;">Cancel·lar</button>
+        <button onclick="desarAssignacio('${cicleId}')" style="padding:9px 18px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;">Desar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Carregar tots els events publicats i esborranys
+  const evs = await sbFetch('/rest/v1/esdeveniments?select=id,titol,data,cicle_id&order=data.desc,hora_inici&limit=500');
+  window._assignacioEvs = evs;
+  window._assignacioCicleId = cicleId;
+  renderAssignacioLlista(evs, cicleId);
+}
+
+function renderAssignacioLlista(evs, cicleId) {
+  const container = document.getElementById('assignacio-llista');
+  if(!container) return;
+  const sel = evs.filter(e => e.cicle_id === cicleId).length;
+  document.getElementById('assignacio-count').textContent = sel ? `${sel} assignats` : '';
+  container.innerHTML = evs.map(e => {
+    const checked = e.cicle_id === cicleId;
+    const dataFmt = e.data ? e.data.split('-').slice(1).reverse().join('/') : '';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 20px;cursor:pointer;border-bottom:1px solid var(--fons-2);" onchange="actualitzarCountAssignacio('${cicleId}')">
+      <input type="checkbox" value="${e.id}" ${checked?'checked':''} style="width:16px;height:16px;flex-shrink:0;accent-color:var(--accent);">
+      <span style="flex:1;font-size:13px;">${e.titol}</span>
+      <span style="font-size:11px;color:var(--text-sec);flex-shrink:0;">${dataFmt}</span>
+    </label>`;
+  }).join('');
+}
+
+function filtrarAssignacio(text) {
+  const evs = (window._assignacioEvs || []).filter(e => e.titol.toLowerCase().includes(text.toLowerCase()));
+  renderAssignacioLlista(evs, window._assignacioCicleId);
+}
+
+function actualitzarCountAssignacio(cicleId) {
+  const sel = document.querySelectorAll('#assignacio-llista input:checked').length;
+  const el = document.getElementById('assignacio-count');
+  if(el) el.textContent = sel ? `${sel} seleccionats` : '';
+}
+
+async function desarAssignacio(cicleId) {
+  const checks = document.querySelectorAll('#assignacio-llista input[type=checkbox]');
+  const aAfegir = [], aTraure = [];
+  checks.forEach(cb => {
+    const ev = (window._assignacioEvs || []).find(e => e.id === cb.value);
+    if(!ev) return;
+    if(cb.checked && ev.cicle_id !== cicleId) aAfegir.push(cb.value);
+    if(!cb.checked && ev.cicle_id === cicleId) aTraure.push(cb.value);
+  });
+  try {
+    if(aAfegir.length) await sbFetch(`/rest/v1/esdeveniments?id=in.(${aAfegir.join(',')})`, { method:'PATCH', body: JSON.stringify({ cicle_id: cicleId }) });
+    if(aTraure.length) await sbFetch(`/rest/v1/esdeveniments?id=in.(${aTraure.join(',')})`, { method:'PATCH', body: JSON.stringify({ cicle_id: null }) });
+    document.querySelector('[style*="position:fixed"][style*="z-index:300"]')?.remove();
+    toast(`${aAfegir.length + aTraure.length} events actualitzats`);
+    await renderPagina();
+  } catch(e) { toast('Error: ' + e.message, true); }
+}
+
 async function eliminarCicle(id) {
   if(!confirm('Segur que vols eliminar aquest cicle? Els events que en formaven part quedaran sense cicle assignat.')) return;
   if(editingCicleId === id) cancelarEdicioCicle();
@@ -1885,6 +1958,23 @@ function cargarEventoIA(idx) {
   const t = document.getElementById('tog-familiar'); if(ev.familiar) { t.classList.add('on'); document.getElementById('f-edat').style.display='block'; } else { t.classList.remove('on'); document.getElementById('f-edat').style.display='none'; }
   if (ev.duplicat) toast(`Atenció: pot ser duplicat de "${ev.duplicat_de}"`, true);
   else toast('Dades bolcades al formulari!');
+
+  // Si l'usuari havia enganxat una imatge al panell IA, posar-la com a foto del formulari
+  if (iaImatgeBase64) {
+    try {
+      const mime = window.iaImatgeMime || 'image/jpeg';
+      const ext = mime.includes('png') ? 'png' : 'jpg';
+      const byteArr = Uint8Array.from(atob(iaImatgeBase64), c => c.charCodeAt(0));
+      const blob = new Blob([byteArr], { type: mime });
+      fotoFile = new File([blob], `ia-cartell.${ext}`, { type: mime });
+      fotoGaleriaUrl = null;
+      const previewUrl = URL.createObjectURL(blob);
+      document.getElementById('foto-preview').src = previewUrl;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('foto-placeholder').style.display = 'none';
+      document.getElementById('btn-editar-foto').style.display = 'inline-block';
+    } catch(e) { console.warn('No s\'ha pogut carregar la imatge IA:', e); }
+  }
 
   // Si tenim permís i la IA ha trobat una imatge associada, la suggerim (sense usar-la encara)
   const sugg = document.getElementById('foto-suggerida');
