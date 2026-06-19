@@ -472,6 +472,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         <div class="camp"><label>Preu</label><input type="text" id="f-preu-text" placeholder="Ex: Gratuït / 15 €"></div>
         <div class="camp"><label>Enllaç entrades</label><input type="url" id="f-url-entrades"></div>
         <div class="camp full">
+          <label>Sinopsis <span style="text-transform:none; font-weight:400; color:var(--text-sec);">(pel·lícules · auto-emplenada des de TMDB)</span></label>
+          <textarea id="f-overview" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:var(--font-sans); resize:vertical; min-height:72px; box-sizing:border-box;" placeholder="Sinopsis o resum breu (opcional)"></textarea>
+        </div>
+        <div class="camp full">
           <label>Descripció</label>
           <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff;">
             <div style="display:flex; gap:2px; padding:6px 8px; border-bottom:1px solid var(--border); background:var(--fons-2); flex-wrap:wrap;">
@@ -1290,7 +1294,7 @@ function tornarLlista() { iaIdxActual = null; document.getElementById('vista-for
 function netejarFormulari() {
   document.getElementById('f-titol').value = ''; document.getElementById('f-data').value = ''; document.getElementById('f-data-fi').value = ''; document.getElementById('f-hora-inici').value = ''; document.getElementById('f-hora-fi').value = '';
   window._fotoFocalX = 0.5; window._fotoFocalY = 0.5;
-  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; edSetValue(''); document.getElementById('f-edat').value = '';
+  document.getElementById('f-lloc').value = ''; document.getElementById('f-cicle').value = ''; document.getElementById('f-preu-text').value = ''; document.getElementById('f-url-entrades').value = ''; document.getElementById('f-overview').value = ''; edSetValue(''); document.getElementById('f-edat').value = '';
   document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('selected')); document.getElementById('tog-familiar').classList.remove('on'); document.getElementById('tog-destacat').classList.remove('on'); document.getElementById('tog-a-agenda').classList.remove('on'); document.getElementById('camp-a-agenda').style.display='none';
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-placeholder').style.display='block'; document.getElementById('btn-editar-foto').style.display='none'; fotoFile = null; fotoGaleriaUrl = null;
   document.getElementById('foto-suggerida').style.display = 'none';
@@ -1301,7 +1305,7 @@ async function editarEsdeveniment(id) {
   const ev = await sbFetch(`/rest/v1/esdeveniments?id=eq.${id}&select=*`); if(!ev.length) return; const e = ev[0];
   document.getElementById('f-titol').value = e.titol; document.getElementById('f-data').value = e.data; document.getElementById('f-data-fi').value = e.data_fi || '';
   document.getElementById('f-hora-inici').value = e.hora_inici?e.hora_inici.slice(0,5):''; document.getElementById('f-hora-fi').value = e.hora_fi?e.hora_fi.slice(0,5):'';
-  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; edSetValue(e.descripcio || '');
+  document.getElementById('f-lloc').value = e.lloc_id || ''; document.getElementById('f-cicle').value = e.cicle_id || ''; document.getElementById('f-preu-text').value = e.preu_text || ''; document.getElementById('f-url-entrades').value = e.url_entrades || ''; document.getElementById('f-overview').value = e.overview || ''; edSetValue(e.descripcio || '');
   if(e.categoria_id) { const p = document.querySelector(`.cat-pill[data-id="${e.categoria_id}"]`); if(p) p.classList.add('selected'); }
   window._fotoFocalX = e.focal_x ?? 0.5; window._fotoFocalY = e.focal_y ?? 0.5;
   if(e.familiar) { document.getElementById('tog-familiar').classList.add('on'); document.getElementById('f-edat').style.display='block'; document.getElementById('f-edat').value = e.edat_minima || ''; }
@@ -1350,7 +1354,7 @@ async function desarEsdeveniment(estatDesti) {
   const body = {
     titol, data, data_fi: dataFi || null, estat: estatDesti, categoria_id: pill?pill.getAttribute('data-id'):null, lloc_id: document.getElementById('f-lloc').value||null, cicle_id: document.getElementById('f-cicle').value||null,
     hora_inici: document.getElementById('f-hora-inici').value?document.getElementById('f-hora-inici').value+':00':null, hora_fi: document.getElementById('f-hora-fi').value?document.getElementById('f-hora-fi').value+':00':null,
-    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, descripcio: edGetValue()||null,
+    preu_text: document.getElementById('f-preu-text').value||null, url_entrades: document.getElementById('f-url-entrades').value||null, overview: document.getElementById('f-overview').value||null, descripcio: edGetValue()||null,
     familiar: document.getElementById('tog-familiar').classList.contains('on'), edat_minima: document.getElementById('f-edat').value||null, destacat: document.getElementById('tog-destacat').classList.contains('on'), a_agenda: document.getElementById('tog-a-agenda').classList.contains('on'), focal_x: window._fotoFocalX ?? 0.5, focal_y: window._fotoFocalY ?? 0.5, foto_url: fotoUrlFinal
   };
   if(editingId) { await sbFetch(`/rest/v1/esdeveniments?id=eq.${editingId}`, { method:'PATCH', body:JSON.stringify(body) }); }
