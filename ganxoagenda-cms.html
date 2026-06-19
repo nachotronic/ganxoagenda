@@ -561,11 +561,16 @@ let accessToken = null, refreshToken = null, currentUser = null, categories = []
 
 const headers = () => ({ 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) });
 
+function formatDateLocal(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 async function sbFetch(path, opts = {}) {
-  let res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+  const buildOpts = () => ({ ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
+  let res = await fetch(SUPABASE_URL + path, buildOpts());
   if (res.status === 401 && accessToken) {
     const refreshed = await refreshAccessToken();
-    if (refreshed) res = await fetch(SUPABASE_URL + path, { headers: headers(), ...opts });
+    if (refreshed) res = await fetch(SUPABASE_URL + path, buildOpts());
   }
   if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || res.statusText); }
   const text = await res.text(); return text ? JSON.parse(text) : null;
@@ -998,7 +1003,7 @@ function generarDatesSerie(diaSetmana, dataInici, dataFi) {
   // Avança fins al primer dia de la setmana demanat
   while (d.getDay() !== parseInt(diaSetmana, 10)) d.setDate(d.getDate() + 1);
   while (d <= fi) {
-    dates.push(d.toISOString().slice(0, 10));
+    dates.push(formatDateLocal(d));
     d.setDate(d.getDate() + 7);
   }
   return dates;
@@ -1116,7 +1121,7 @@ async function eliminarSerie(serieId, tots) {
     : 'Segur que vols eliminar els events FUTURS d\'aquesta sèrie (a partir d\'avui)?';
   if (!confirm(msg)) return;
   try {
-    const avui = new Date().toISOString().slice(0, 10);
+    const avui = formatDateLocal(new Date());
     let q = `/rest/v1/esdeveniments?serie_id=eq.${serieId}`;
     if (!tots) q += `&data=gte.${avui}`;
     await sbFetch(q, { method: 'DELETE' });
@@ -1538,7 +1543,7 @@ async function carregarExistentsPerDedup() {
     const avui = new Date();
     const desde = new Date(avui); desde.setDate(desde.getDate() - 14);
     const fins = new Date(avui); fins.setDate(fins.getDate() + 90);
-    const fmt = (d) => d.toISOString().slice(0,10);
+    const fmt = (d) => formatDateLocal(d);
     const q = `/rest/v1/esdeveniments?select=titol,data&data=gte.${fmt(desde)}&data=lte.${fmt(fins)}`;
     const data = await sbFetch(q);
     return data || [];
@@ -1579,7 +1584,7 @@ function costEstimatIA(promptTokens, candidatesTokens) {
 
 // Acumula l'ús d'avui a localStorage i retorna el total acumulat
 function registrarUsIA(usage) {
-  const avui = new Date().toISOString().slice(0, 10);
+  const avui = formatDateLocal(new Date());
   const key = 'gx_ia_usage_' + avui;
   let acumulat = {};
   try { acumulat = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { acumulat = {}; }
@@ -2075,7 +2080,7 @@ async function carregarAnalitica(){
     document.getElementById('kpi-sessions-7d').textContent = sessions(7)+' últims 7 dies';
 
     // Gràfic per dia (app_open) — 30 dies
-    const fmt = d => d.toISOString().slice(0,10);
+    const fmt = d => formatDateLocal(d);
     const obertures = {};
     for(let i=29; i>=0; i--){
       const d = new Date(); d.setDate(d.getDate()-i);
@@ -2224,9 +2229,9 @@ async function sincronitzarCartelera() {
   try {
     // 1. Carregar existents (amb id i overview per poder actualitzar sinopsis)
     setProgress(10, 'Carregant events existents...');
-    const avuiStr = new Date().toISOString().slice(0,10);
+    const avuiStr = formatDateLocal(new Date());
     const d60 = new Date(); d60.setDate(d60.getDate()+60);
-    const existents = await sbFetch(`/rest/v1/esdeveniments?select=id,titol,overview&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
+    const existents = await sbFetch(`/rest/v1/esdeveniments?select=id,titol,overview&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${formatDateLocal(d60)}`);
     const existentsMap = new Map((existents||[]).map(e => [e.titol.toLowerCase().trim(), e]));
     const existentsSet = new Set(existentsMap.keys());
     addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
