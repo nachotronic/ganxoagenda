@@ -2218,12 +2218,13 @@ async function sincronitzarCartelera() {
   };
 
   try {
-    // 1. Carregar existents
+    // 1. Carregar existents (amb id i overview per poder actualitzar sinopsis)
     setProgress(10, 'Carregant events existents...');
     const avuiStr = new Date().toISOString().slice(0,10);
     const d60 = new Date(); d60.setDate(d60.getDate()+60);
-    const existents = await sbFetch(`/rest/v1/esdeveniments?select=titol&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
-    const existentsSet = new Set((existents||[]).map(e => e.titol.toLowerCase().trim()));
+    const existents = await sbFetch(`/rest/v1/esdeveniments?select=id,titol,overview&categoria_id=eq.${catCinema.id}&data=gte.${avuiStr}&data=lte.${d60.toISOString().slice(0,10)}`);
+    const existentsMap = new Map((existents||[]).map(e => [e.titol.toLowerCase().trim(), e]));
+    const existentsSet = new Set(existentsMap.keys());
     addLog(`✓ ${existents?.length || 0} events de cinema ja existents`);
 
     // 2. Cridar cinema-sync (nova Edge Function dedicada)
@@ -2244,11 +2245,27 @@ async function sincronitzarCartelera() {
     addLog(`✓ ${events.length} pel·lícules trobades (${(data.dies_processats||[]).join(', ')})`);
     setProgress(75, 'Preparant events nous...');
 
-    // 3. Filtrar duplicats i inserir
+    // 3. Filtrar duplicats: inserir nous + actualitzar overview dels existents
     const nous = events.filter(ev => ev.titol && !existentsSet.has(ev.titol.toLowerCase().trim()));
+    const aActualitzar = events.filter(ev => {
+      if (!ev.titol || !ev.overview) return false;
+      const ex = existentsMap.get(ev.titol.toLowerCase().trim());
+      return ex && !ex.overview; // només si no tenia sinopsis
+    });
     const saltats = events.length - nous.length;
 
+    // Actualitzar overview dels existents que no en tenien
+    let actualitzats = 0;
+    for (const ev of aActualitzar) {
+      const ex = existentsMap.get(ev.titol.toLowerCase().trim());
+      if (ex) {
+        await sbFetch(`/rest/v1/esdeveniments?id=eq.${ex.id}`, { method: 'PATCH', body: JSON.stringify({ overview: ev.overview }) });
+        actualitzats++;
+      }
+    }
+
     if(!nous.length) {
+      if(actualitzats) addLog(`✓ ${actualitzats} sinopsis actualitzades`);
       addLog(`ℹ️ ${saltats} pel·lícules ja existien`);
       setProgress(100, 'Ja estàvem al dia!');
     } else {
@@ -2261,6 +2278,7 @@ async function sincronitzarCartelera() {
       await sbFetch('/rest/v1/esdeveniments', { method: 'POST', body: JSON.stringify(nousFmts) });
       await carregarEsdeveniments();
       addLog(`✅ ${nous.length} pel·lícules creades com a esborrany`);
+      if(actualitzats) addLog(`✓ ${actualitzats} sinopsis actualitzades`);
       if(saltats) addLog(`↩️ ${saltats} ja existien (saltades)`);
       setProgress(100, 'Fet!');
     }
