@@ -2080,7 +2080,7 @@ async function carregarAnalitica(){
     document.getElementById('kpi-sessions-7d').textContent = sessions(7)+' últims 7 dies';
 
     // Gràfic per dia (app_open) — 30 dies
-    const fmt = d => formatDateLocal(d);
+    const fmt = d => d.toISOString().slice(0,10); // UTC per coincidir amb created_at de Supabase
     const obertures = {};
     for(let i=29; i>=0; i--){
       const d = new Date(); d.setDate(d.getDate()-i);
