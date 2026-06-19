@@ -168,6 +168,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
           <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
           <button class="btn-nou" style="background:#c0392b;" onclick="confirmarCartelera()">🎬 Cartelera</button>
+          <button class="btn-nou" style="background:#0f766e;" onclick="revisarBibGirona()">📚 BibGirona</button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -1696,6 +1697,7 @@ async function procesarConGeminiUnPaso() {
 
     window.eventosDetectadosIA = data.events || [];
     window.iaUrlBase = data.urlBase || '';
+    window.iaFontEspecial = null;
     window.iaAvisos = data.avisos || [];
 
     // Cap event trobat: avisem amb pistes en lloc de quedar-nos en blanc
@@ -1843,6 +1845,181 @@ function mostrarModalAgrupacio(data, grup, sonPases) {
   });
 }
 
+
+// ---- IMPORTADOR BIBGIRONA ----
+// Revisa la biblioteca de Sant Feliu a partir de les URL mensuals:
+// https://bibgirona.cat/biblioteca/guixols/agenda?month=AAAA-MM-01
+// Fa servir la mateixa Edge Function d'IA que l'assistent normal i deixa els resultats
+// a la llista de revisió. Després es poden guardar en bloc com a esborranys.
+const BIBGIRONA_BASE_URL = 'https://bibgirona.cat/biblioteca/guixols/agenda';
+const BIBGIRONA_MESOS_A_REVISAR = 3;
+
+function generarMesosBibGirona(numMesos = BIBGIRONA_MESOS_A_REVISAR) {
+  const avui = new Date();
+  const mesos = [];
+  for (let i = 0; i < numMesos; i++) {
+    const d = new Date(avui.getFullYear(), avui.getMonth() + i, 1);
+    mesos.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
+  }
+  return mesos;
+}
+
+function clauEventIA(ev) {
+  return [ev.data || '', (ev.hora_inici || '').slice(0,5), normalitzarTitol(ev.titol || '')].join('|');
+}
+
+function normalitzarHoraBD(h) {
+  if (!h) return null;
+  const t = String(h).trim();
+  if (/^\d{2}:\d{2}$/.test(t)) return t + ':00';
+  if (/^\d{2}:\d{2}:\d{2}$/.test(t)) return t;
+  return t;
+}
+
+function urlFontEvent(ev) {
+  return ev.source_url || ev.url_font || ev.font_url || ev.url || ev.enllac || ev.url_entrades || '';
+}
+
+function htmlFontBibGirona(url) {
+  if (!url) return '';
+  const safe = escapeHtml(url);
+  return `<p><small>Font: <a href="${safe}" target="_blank" rel="noopener">BibGirona</a></small></p>`;
+}
+
+function prepararCosEventIA(ev, estatDesti = 'esborrany') {
+  const url = urlFontEvent(ev);
+  const descBase = formatHoraris(ev.descripcio || '');
+  const desc = [descBase, htmlFontBibGirona(url)].filter(Boolean).join('<br>');
+  return {
+    titol: titleCaseCa(ev.titol || ''),
+    data: ev.data || null,
+    data_fi: ev.data_fi || null,
+    estat: estatDesti,
+    categoria_id: ev.categoria_id || null,
+    lloc_id: ev.lloc_id || null,
+    cicle_id: detectarCicle(ev) || null,
+    hora_inici: normalitzarHoraBD(ev.hora_inici),
+    hora_fi: normalitzarHoraBD(ev.hora_fi),
+    preu_text: ev.preu_text || null,
+    url_entrades: url || null,
+    overview: ev.overview || ev.resum || null,
+    descripcio: desc || null,
+    familiar: !!ev.familiar,
+    edat_minima: ev.edat_minima || null,
+    destacat: false,
+    a_agenda: false,
+    focal_x: 0.5,
+    focal_y: 0.5,
+    foto_url: null
+  };
+}
+
+async function revisarBibGirona() {
+  // Fem servir la vista de formulari perquè és on ja viu l'assistent IA.
+  nouEsdeveniment();
+  document.getElementById('form-titol').textContent = 'Revisió BibGirona';
+  document.getElementById('ia-resultados-lista').style.display = 'none';
+  document.getElementById('ia-lista-items').innerHTML = '';
+  document.getElementById('ia-contenido').value = generarMesosBibGirona().map(m => `${BIBGIRONA_BASE_URL}?month=${m}`).join('\n');
+  document.getElementById('ia-aprofundir').checked = true;
+
+  const loadingEl = document.getElementById('ia-loading');
+  const listaContenedor = document.getElementById('ia-resultados-lista');
+  const listaItems = document.getElementById('ia-lista-items');
+  const mesos = generarMesosBibGirona();
+  const existents = await carregarExistentsPerDedup();
+  const existentsPerClau = new Map((existents || []).map(e => [clauEventIA(e), e]));
+  let textBaseIA = `📚 Revisant BibGirona 0/${mesos.length}`;
+  loadingEl.style.display = 'block';
+  listaContenedor.style.display = 'none';
+  listaItems.innerHTML = '';
+  const aturarTemporitzador = iniciarTemporitzadorIA(loadingEl, () => textBaseIA);
+
+  try {
+    const tots = [];
+    const avisos = [];
+    const vistosEnImportacio = new Set();
+
+    for (let i = 0; i < mesos.length; i++) {
+      const mes = mesos[i];
+      const url = `${BIBGIRONA_BASE_URL}?month=${mes}`;
+      textBaseIA = `📚 Revisant BibGirona ${i + 1}/${mesos.length}`;
+      const data = await fetchGanxoIA({
+        url,
+        llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
+        categories: categories.map(c => ({ id: c.id, nom: c.nom })),
+        existents,
+        aprofundir: true,
+      }, (intent) => {
+        textBaseIA = `📚 BibGirona ocupat, reintentant (${intent}/2)`;
+      });
+
+      mostrarUsIA(data.usage);
+      if (data.avisos && data.avisos.length) avisos.push(...data.avisos);
+
+      (data.events || []).forEach(ev => {
+        ev._font_bibgirona = true;
+        ev._mes_bibgirona = mes;
+        if (!urlFontEvent(ev)) ev.source_url = url;
+        const clau = clauEventIA(ev);
+        if (vistosEnImportacio.has(clau)) return;
+        vistosEnImportacio.add(clau);
+        const dup = existentsPerClau.get(clau);
+        if (dup) {
+          ev.duplicat = true;
+          ev.duplicat_de = dup.titol;
+        }
+        tots.push(ev);
+      });
+    }
+
+    window.eventosDetectadosIA = tots;
+    window.iaUrlBase = BIBGIRONA_BASE_URL;
+    window.iaFontEspecial = 'bibgirona';
+    window.iaAvisos = [`Revisats ${mesos.length} mesos: ${mesos.join(', ')}.`].concat(avisos.slice(0, 3));
+
+    if (!tots.length) {
+      listaItems.innerHTML = '<div style="font-size:12px; color:var(--text-sec);">No s\'ha trobat cap event a BibGirona en aquests mesos.</div>';
+      listaContenedor.style.display = 'block';
+      toast('Cap event trobat a BibGirona', true);
+      return;
+    }
+
+    // En BibGirona mantenim els events separats: un mateix dia pot tenir activitats diferents.
+    renderLlistaIA();
+    listaContenedor.style.display = 'block';
+    toast(`BibGirona revisat: ${tots.length} event${tots.length===1?'':'s'} detectat${tots.length===1?'':'s'}.`);
+  } catch (e) {
+    toast('Error revisant BibGirona: ' + e.message, true);
+  } finally {
+    aturarTemporitzador();
+    loadingEl.style.display = 'none';
+  }
+}
+
+async function guardarBibGironaEsborranys() {
+  const candidats = (window.eventosDetectadosIA || []).filter(e => !e.descartat && !e.duplicat && !e._desat_auto && e.titol && e.data);
+  if (!candidats.length) return toast('No hi ha esborranys nous per guardar', true);
+  if (!confirm(`Guardar ${candidats.length} event${candidats.length===1?'':'s'} de BibGirona com a esborrany?`)) return;
+
+  let desats = 0;
+  let saltats = 0;
+  try {
+    for (const ev of candidats) {
+      const dup = await comprovarDuplicatManual(ev.titol, ev.data);
+      if (dup) { ev.duplicat = true; ev.duplicat_de = dup.titol; saltats++; continue; }
+      await sbFetch('/rest/v1/esdeveniments', { method:'POST', body: JSON.stringify(prepararCosEventIA(ev, 'esborrany')) });
+      ev._desat_auto = true;
+      desats++;
+    }
+    renderLlistaIA();
+    await carregarEsdeveniments();
+    toast(`${desats} esborrany${desats===1?'':'s'} guardat${desats===1?'':'s'}${saltats ? ` · ${saltats} duplicat${saltats===1?'':'s'} saltat${saltats===1?'':'s'}` : ''}.`);
+  } catch (e) {
+    toast('Error guardant esborranys: ' + e.message, true);
+  }
+}
+
 // Nombre de fitxes que l'Edge Function processa per lot (ha de coincidir amb MAX_FITXES a index.ts)
 const IA_MAX_FITXES_PER_LOT = 5;
 
@@ -1858,6 +2035,13 @@ function renderLlistaIA() {
   });
 
   let html = '';
+  if (window.iaFontEspecial === 'bibgirona') {
+    const pendentsGuardar = (window.eventosDetectadosIA || []).filter(e => !e.descartat && !e.duplicat && !e._desat_auto && e.titol && e.data).length;
+    html += `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; background:#eef9f7; border:1px solid #b9dfd8; border-radius:8px; padding:10px; margin-bottom:10px;">
+      <div style="font-size:12px; color:var(--blau);"><strong>📚 BibGirona</strong> · ${pendentsGuardar} event${pendentsGuardar===1?'':'s'} nou${pendentsGuardar===1?'':'s'} pendent${pendentsGuardar===1?'':'s'} de guardar com a esborrany.</div>
+      <button type="button" onclick="guardarBibGironaEsborranys()" ${pendentsGuardar ? '' : 'disabled'} style="background:${pendentsGuardar ? 'var(--verd)' : '#9aa3a8'}; color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:${pendentsGuardar ? 'pointer' : 'default'}; font-size:12px; font-weight:600; white-space:nowrap;">Guardar esborranys</button>
+    </div>`;
+  }
   if (window.iaAvisos && window.iaAvisos.length) {
     html += `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">${window.iaAvisos.join(' ')}</div>`;
   }
@@ -1875,14 +2059,20 @@ function renderLlistaIA() {
     const avisPendent = ev.fitxa_pendent
       ? `<div style="font-size:11px; color:#8a7400; margin-top:2px;">⏳ Descripció pendent de completar</div>`
       : '';
+    const avisDesat = ev._desat_auto
+      ? `<div style="font-size:11px; color:var(--verd); margin-top:2px;">✓ Guardat com a esborrany</div>`
+      : '';
+    const btnCarregarDisabled = ev._desat_auto ? 'disabled' : '';
+    const btnCarregarText = ev._desat_auto ? '✓ Esborrany' : 'Carregar';
+    const btnCarregarStyle = ev._desat_auto ? 'background:#9aa3a8; cursor:default;' : 'background:var(--verd); cursor:pointer;';
     html += `
       <div id="ia-item-${idx}" style="display:flex; justify-content:space-between; align-items:center; background:${ev.duplicat ? '#fff6f0' : '#f4f7f9'}; padding:8px; border-radius:6px; border:1px solid ${ev.duplicat ? '#f0d4c0' : '#cbdbe1'};">
         <div>
           <span style="font-size:13px;"><strong>${escapeHtml(ev.data||'S/D')}</strong> — ${escapeHtml(ev.titol)}</span>
-          ${avisDuplicat}${avisPendent}
+          ${avisDuplicat}${avisPendent}${avisDesat}
         </div>
         <div style="display:flex; gap:6px; flex-shrink:0; margin-left:10px;">
-          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" style="background:var(--verd); color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Carregar</button>
+          <button type="button" id="ia-btn-${idx}" onclick="cargarEventoIA(${idx})" ${btnCarregarDisabled} style="${btnCarregarStyle} color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px;">${btnCarregarText}</button>
           <button type="button" onclick="descartarEventIA(${idx})" title="Descartar aquest event" style="background:none; border:1px solid var(--border); color:var(--text-sec); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">✕</button>
         </div>
       </div>`;
@@ -1981,6 +2171,8 @@ function cargarEventoIA(idx) {
   document.getElementById('f-hora-inici').value = ev.hora_inici || '';
   edSetValue(formatHoraris(ev.descripcio || ''));
   document.getElementById('f-preu-text').value = ev.preu_text || '';
+  document.getElementById('f-url-entrades').value = ev.url_entrades || ev.source_url || ev.url_font || ev.font_url || ev.url || ev.enllac || '';
+  document.getElementById('f-overview').value = ev.overview || ev.resum || '';
   document.getElementById('f-edat').value = ev.edat_minima || '';
   document.getElementById('f-lloc').value = ev.lloc_id || '';
   document.getElementById('f-cicle').value = detectarCicle(ev) || '';
@@ -2599,3 +2791,4 @@ document.addEventListener('DOMContentLoaded', tryAutoLogin);
 </script>
 </body>
 </html>
+
