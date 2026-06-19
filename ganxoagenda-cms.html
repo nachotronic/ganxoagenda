@@ -1847,13 +1847,14 @@ function mostrarModalAgrupacio(data, grup, sonPases) {
 
 
 // ---- IMPORTADOR BIBGIRONA ----
-// Detector setmanal en dues fases:
-// 1) intenta llegir el HTML mensual sense IA i extreure els IDs de BibGirona;
-// 2) només envia a la IA les fitxes noves. Si el navegador bloqueja la web per CORS,
-//    cau al mode antic, però igualment separa possibles novetats dels duplicats.
+// Detector real de novetats en dues fases:
+// 1) una Edge Function de Supabase llegeix BibGirona al servidor i retorna les fitxes/IDs;
+// 2) només les fitxes noves passen per la IA existent.
+// Important: el navegador no pot fer aquesta primera fase de forma fiable si BibGirona bloqueja CORS.
 const BIBGIRONA_BASE_URL = 'https://bibgirona.cat/biblioteca/guixols/agenda';
 const BIBGIRONA_MESOS_A_REVISAR = 3;
-const BIBGIRONA_SEEN_KEY = 'gx_bibgirona_seen_events_v1';
+const BIBGIRONA_SEEN_KEY = 'gx_bibgirona_seen_events_v2';
+const GANXO_BIBGIRONA_WATCH_URL = SUPABASE_URL + '/functions/v1/bibgirona-watch';
 
 function generarMesosBibGirona(numMesos = BIBGIRONA_MESOS_A_REVISAR) {
   const avui = new Date();
@@ -1863,6 +1864,12 @@ function generarMesosBibGirona(numMesos = BIBGIRONA_MESOS_A_REVISAR) {
     mesos.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
   }
   return mesos;
+}
+
+function urlPaginaMesBibGirona(mes, pagina = 1) {
+  return pagina && pagina > 1
+    ? `${BIBGIRONA_BASE_URL}?month=${encodeURIComponent(mes)}&page=${pagina}`
+    : `${BIBGIRONA_BASE_URL}?month=${encodeURIComponent(mes)}`;
 }
 
 function clauEventIA(ev) {
@@ -1906,13 +1913,13 @@ function esClubLecturaBibGirona(ev) {
     ev.categoria,
     ev.categoria_nom,
     ev.tipus,
+    ev.title,
     ev.source_url,
     ev.url_font,
     ev.url
   ].filter(Boolean).join(' '));
 
-  // Excloem només els clubs de lectura explícits, sense tocar altres activitats literàries
-  // com tallers, contacontes, presentacions o "Tarda de llibres".
+  // Excloem només clubs de lectura explícits.
   return /\bclubs?\s+de\s+lectura\b/.test(text) || /\bclubs?\s+lectura\b/.test(text);
 }
 
@@ -1929,14 +1936,6 @@ function filtrarClubsLecturaBibGirona(events) {
 function bibGironaEventIdFromUrl(url) {
   const m = String(url || '').match(/\/agenda\/(\d+)(?:-|\/|\?|#|$)/);
   return m ? m[1] : null;
-}
-
-function normalitzarUrlBibGirona(href, baseUrl = BIBGIRONA_BASE_URL) {
-  try {
-    return new URL(href, baseUrl).href.replace(/#.*$/, '');
-  } catch (e) {
-    return '';
-  }
 }
 
 function llegirBibGironaSeen() {
@@ -1969,89 +1968,36 @@ function extreureIdsExistentsBibGirona(existents) {
   return ids;
 }
 
-function urlPaginaMesBibGirona(mes, pagina = 1) {
-  return pagina && pagina > 1
-    ? `${BIBGIRONA_BASE_URL}?month=${encodeURIComponent(mes)}&page=${pagina}`
-    : `${BIBGIRONA_BASE_URL}?month=${encodeURIComponent(mes)}`;
-}
+async function detectarFitxesBibGironaServidor(mesos, setTextBase) {
+  if (setTextBase) setTextBase('📚 Demanant novetats a BibGirona');
+  const res = await fetch(GANXO_BIBGIRONA_WATCH_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+      'apikey': SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ mesos })
+  });
 
-async function fetchHtmlBibGirona(url) {
-  const res = await fetch(url, { method: 'GET', cache: 'no-store', credentials: 'omit' });
-  if (!res.ok) throw new Error(`BibGirona ha retornat HTTP ${res.status}`);
-  return await res.text();
-}
+  const raw = await res.text();
+  let data = null;
+  try { data = raw ? JSON.parse(raw) : null; }
+  catch (e) { throw new Error('La funció bibgirona-watch no ha retornat JSON: ' + raw.slice(0, 180)); }
 
-function extreureEnllacosBibGirona(html, pageUrl, mes) {
-  const out = [];
-  let doc = null;
-  try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch (e) { doc = null; }
-  if (doc) {
-    doc.querySelectorAll('a[href*="/agenda/"]').forEach(a => {
-      const url = normalitzarUrlBibGirona(a.getAttribute('href'), pageUrl);
-      const id = bibGironaEventIdFromUrl(url);
-      if (!id) return;
-      const title = (a.textContent || '').replace(/\s+/g, ' ').trim();
-      out.push({ id, url, title, mes });
-    });
-  }
-
-  // Pla B si el DOMParser no troba els enllaços però sí que són dins l'HTML.
-  const re = /href=["']([^"']*\/agenda\/(\d+)[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let m;
-  while ((m = re.exec(html))) {
-    const url = normalitzarUrlBibGirona(m[1], pageUrl);
-    const id = m[2] || bibGironaEventIdFromUrl(url);
-    if (!id) continue;
-    const title = m[3].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    out.push({ id, url, title, mes });
-  }
-
-  const dedup = new Map();
-  out.forEach(e => { if (e.id && !dedup.has(e.id)) dedup.set(e.id, e); });
-  return [...dedup.values()];
-}
-
-function detectarMaxPaginaBibGirona(html, mes, pageUrl) {
-  let max = 1;
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('a[href*="page="]').forEach(a => {
-      try {
-        const u = new URL(a.getAttribute('href'), pageUrl);
-        if (u.searchParams.get('month') && u.searchParams.get('month') !== mes) return;
-        const p = parseInt(u.searchParams.get('page') || '1', 10);
-        if (Number.isFinite(p) && p > max && p < 20) max = p;
-      } catch (e) {}
-    });
-  } catch (e) {}
-
-  // Pla B per si la paginació no és fàcil de parsejar amb DOMParser.
-  const re = /[?&]page=(\d+)/g;
-  let m;
-  while ((m = re.exec(html))) {
-    const p = parseInt(m[1], 10);
-    if (Number.isFinite(p) && p > max && p < 20) max = p;
-  }
-  return max;
-}
-
-async function detectarFitxesBibGironaSenseIA(mesos, loadingEl, setTextBase) {
-  const linksMap = new Map();
-  for (let i = 0; i < mesos.length; i++) {
-    const mes = mesos[i];
-    const urlMes = urlPaginaMesBibGirona(mes, 1);
-    if (setTextBase) setTextBase(`📚 Llegint BibGirona ${i + 1}/${mesos.length} sense IA`);
-    const html = await fetchHtmlBibGirona(urlMes);
-    extreureEnllacosBibGirona(html, urlMes, mes).forEach(e => linksMap.set(e.id, e));
-    const maxPagina = detectarMaxPaginaBibGirona(html, mes, urlMes);
-    for (let p = 2; p <= maxPagina; p++) {
-      const urlPagina = urlPaginaMesBibGirona(mes, p);
-      if (setTextBase) setTextBase(`📚 Llegint BibGirona ${i + 1}/${mesos.length}, pàgina ${p}/${maxPagina}`);
-      const htmlPagina = await fetchHtmlBibGirona(urlPagina);
-      extreureEnllacosBibGirona(htmlPagina, urlPagina, mes).forEach(e => linksMap.set(e.id, e));
+  if (!res.ok) {
+    const msg = data && (data.error || data.message) ? (data.error || data.message) : ('HTTP ' + res.status);
+    if (res.status === 404) {
+      throw new Error('No està desplegada la funció Supabase bibgirona-watch. Sense aquesta funció el navegador només pot enviar els mesos a la IA, però no detectar IDs abans.');
     }
+    throw new Error(msg);
   }
-  return [...linksMap.values()];
+
+  if (!data || !Array.isArray(data.links)) {
+    throw new Error('Resposta inesperada de bibgirona-watch: falta el camp links.');
+  }
+
+  return data;
 }
 
 function classificarNovetatsBibGirona(links, existents) {
@@ -2098,7 +2044,7 @@ function prepararCosEventIA(ev, estatDesti = 'esborrany') {
   };
 }
 
-async function processarFitxesBibGironaAmbIA(linksNous, existents, loadingEl, setTextBase) {
+async function processarFitxesBibGironaAmbIA(linksNous, existents, setTextBase) {
   const tots = [];
   const avisos = [];
   let usageTotal = { promptTokens: 0, candidatesTokens: 0, totalTokens: 0, calls: 0 };
@@ -2130,6 +2076,7 @@ async function processarFitxesBibGironaAmbIA(linksNous, existents, loadingEl, se
     filtratge.events.forEach(ev => {
       ev._font_bibgirona = true;
       ev._source_event_id = link.id;
+      ev._source_title = link.title || '';
       ev._mes_bibgirona = link.mes || null;
       ev._nou_bibgirona = true;
       if (!urlFontEvent(ev)) ev.source_url = link.url;
@@ -2141,63 +2088,13 @@ async function processarFitxesBibGironaAmbIA(linksNous, existents, loadingEl, se
   return { events: tots, avisos, exclososClubLectura, usage: usageTotal };
 }
 
-async function revisarBibGironaFallbackIA(mesos, existents, loadingEl, setTextBase, motiuFallback) {
-  const existentsPerClau = new Map((existents || []).map(e => [clauEventIA(e), e]));
-  const seen = llegirBibGironaSeen();
-  const vistosEnImportacio = new Set();
-  const tots = [];
-  const avisos = [`No s'ha pogut fer la detecció prèvia sense IA (${motiuFallback}). He fet una revisió completa amb IA i separaré possibles novetats.`];
-  let exclososClubLectura = 0;
-
-  for (let i = 0; i < mesos.length; i++) {
-    const mes = mesos[i];
-    const url = urlPaginaMesBibGirona(mes, 1);
-    if (setTextBase) setTextBase(`🤖 Revisant BibGirona amb IA ${i + 1}/${mesos.length}`);
-    const data = await fetchGanxoIA({
-      url,
-      llocs: llocs.map(l => ({ id: l.id, nom: l.nom })),
-      categories: categories.map(c => ({ id: c.id, nom: c.nom })),
-      existents,
-      aprofundir: true,
-    }, (intent) => {
-      if (setTextBase) setTextBase(`📚 BibGirona ocupat, reintentant (${intent}/2)`);
-    });
-
-    mostrarUsIA(data.usage);
-    if (data.avisos && data.avisos.length) avisos.push(...data.avisos);
-
-    const filtratge = filtrarClubsLecturaBibGirona(data.events || []);
-    exclososClubLectura += filtratge.exclosos;
-    filtratge.events.forEach(ev => {
-      ev._font_bibgirona = true;
-      ev._mes_bibgirona = mes;
-      if (!urlFontEvent(ev)) ev.source_url = url;
-      const id = bibGironaEventIdFromUrl(urlFontEvent(ev));
-      if (id) ev._source_event_id = id;
-      const clau = id ? `id:${id}` : clauEventIA(ev);
-      if (vistosEnImportacio.has(clau)) return;
-      vistosEnImportacio.add(clau);
-      const dup = existentsPerClau.get(clauEventIA(ev));
-      if (dup || (id && seen.ids && seen.ids[id])) {
-        ev.duplicat = true;
-        ev.duplicat_de = dup ? dup.titol : 'ja vist en una revisió anterior';
-        ev._nou_bibgirona = false;
-      } else {
-        ev._nou_bibgirona = true;
-      }
-      tots.push(ev);
-    });
-  }
-  return { events: tots, avisos, exclososClubLectura, modeFallback: true };
-}
-
 async function revisarBibGirona() {
   // Fem servir la vista de formulari perquè és on ja viu l'assistent IA.
   nouEsdeveniment();
   document.getElementById('form-titol').textContent = 'Revisió BibGirona';
   document.getElementById('ia-resultados-lista').style.display = 'none';
   document.getElementById('ia-lista-items').innerHTML = '';
-  document.getElementById('ia-contenido').value = generarMesosBibGirona().map(m => urlPaginaMesBibGirona(m, 1)).join('\n');
+  document.getElementById('ia-contenido').value = 'Revisió automàtica BibGirona: primer es detecten IDs nous al servidor; després només les fitxes noves passen per IA.';
   document.getElementById('ia-aprofundir').checked = true;
 
   const loadingEl = document.getElementById('ia-loading');
@@ -2214,46 +2111,36 @@ async function revisarBibGirona() {
   const aturarTemporitzador = iniciarTemporitzadorIA(loadingEl, () => textBaseIA);
 
   try {
-    let linksDetectats = [];
-    let linksNous = [];
-    let resultatIA = null;
-    let modeFallback = false;
+    const detector = await detectarFitxesBibGironaServidor(mesos, setTextBase);
+    const linksDetectats = detector.links || [];
+    const classificacio = classificarNovetatsBibGirona(linksDetectats, existents);
+    const linksNous = classificacio.nous;
 
-    try {
-      linksDetectats = await detectarFitxesBibGironaSenseIA(mesos, loadingEl, setTextBase);
-      const classificacio = classificarNovetatsBibGirona(linksDetectats, existents);
-      linksNous = classificacio.nous;
-
-      if (!linksDetectats.length) {
-        window.eventosDetectadosIA = [];
-        window.iaFontEspecial = 'bibgirona';
-        window.iaAvisos = [`Revisats ${mesos.length} mesos (${mesos.join(', ')}). No he trobat enllaços d'events a la pàgina.`];
-        listaItems.innerHTML = '<div style="font-size:12px; color:var(--text-sec);">No s\'han trobat enllaços d\'events a BibGirona.</div>';
-        listaContenedor.style.display = 'block';
-        toast('No s\'han trobat enllaços d\'events a BibGirona', true);
-        return;
-      }
-
-      if (!linksNous.length) {
-        guardarBibGironaSeen(linksDetectats);
-        window.eventosDetectadosIA = [];
-        window.iaFontEspecial = 'bibgirona';
-        window.iaAvisos = [`Revisats ${mesos.length} mesos (${mesos.join(', ')}). ${linksDetectats.length} fitxa${linksDetectats.length===1?'':'es'} detectada${linksDetectats.length===1?'':'es'}; cap novetat.`];
-        listaItems.innerHTML = `<div style="font-size:13px; color:var(--verd); background:#e6f4ec; border:1px solid #c9e8d6; border-radius:8px; padding:10px;">✅ No hi ha events nous a BibGirona.</div>`;
-        listaContenedor.style.display = 'block';
-        toast('BibGirona: cap event nou');
-        return;
-      }
-
-      resultatIA = await processarFitxesBibGironaAmbIA(linksNous, existents, loadingEl, setTextBase);
-    } catch (errDetect) {
-      modeFallback = true;
-      resultatIA = await revisarBibGironaFallbackIA(mesos, existents, loadingEl, setTextBase, errDetect.message || 'bloqueig del navegador');
+    if (!linksDetectats.length) {
+      window.eventosDetectadosIA = [];
+      window.iaFontEspecial = 'bibgirona';
+      window.iaAvisos = [`Revisats ${mesos.length} mesos (${mesos.join(', ')}). La funció bibgirona-watch no ha trobat enllaços d'events.`];
+      listaItems.innerHTML = '<div style="font-size:12px; color:var(--text-sec);">No s\'han trobat enllaços d\'events a BibGirona.</div>';
+      listaContenedor.style.display = 'block';
+      toast('No s\'han trobat enllaços d\'events a BibGirona', true);
+      return;
     }
 
+    if (!linksNous.length) {
+      guardarBibGironaSeen(linksDetectats);
+      window.eventosDetectadosIA = [];
+      window.iaFontEspecial = 'bibgirona';
+      window.iaAvisos = [`Revisats ${mesos.length} mesos (${mesos.join(', ')}). ${linksDetectats.length} fitxa${linksDetectats.length===1?'':'es'} detectada${linksDetectats.length===1?'':'es'}; cap novetat.`];
+      listaItems.innerHTML = `<div style="font-size:13px; color:var(--verd); background:#e6f4ec; border:1px solid #c9e8d6; border-radius:8px; padding:10px;">✅ No hi ha events nous a BibGirona.</div>`;
+      listaContenedor.style.display = 'block';
+      toast('BibGirona: cap event nou');
+      return;
+    }
+
+    const resultatIA = await processarFitxesBibGironaAmbIA(linksNous, existents, setTextBase);
     let tots = resultatIA.events || [];
     const avisos = resultatIA.avisos || [];
-    let exclososClubLectura = resultatIA.exclososClubLectura || 0;
+    const exclososClubLectura = resultatIA.exclososClubLectura || 0;
     const vistosEnImportacio = new Set();
 
     tots = tots.filter(ev => {
@@ -2273,29 +2160,21 @@ async function revisarBibGirona() {
     window.eventosDetectadosIA = tots;
     window.iaUrlBase = BIBGIRONA_BASE_URL;
     window.iaFontEspecial = 'bibgirona';
+
     const avisosBibGirona = [];
-    if (modeFallback) {
-      const nousFallback = tots.filter(e => e._nou_bibgirona && !e.duplicat).length;
-      avisosBibGirona.push(`Mode fallback: s'ha hagut d'usar IA per revisar els mesos. Possibles novetats: ${nousFallback}.`);
-    } else {
-      avisosBibGirona.push(`Detecció prèvia: ${linksDetectats.length} fitxa${linksDetectats.length===1?'':'es'} trobada${linksDetectats.length===1?'':'es'}; ${linksNous.length} nova${linksNous.length===1?'':'es'}. Només les noves han passat per IA.`);
-    }
+    avisosBibGirona.push(`Detecció prèvia servidor: ${linksDetectats.length} fitxa${linksDetectats.length===1?'':'es'} trobada${linksDetectats.length===1?'':'es'}; ${linksNous.length} nova${linksNous.length===1?'':'es'}. Només les noves han passat per IA.`);
     avisosBibGirona.push(`Mesos revisats: ${mesos.join(', ')}.`);
+    if (detector.pagesScanned && detector.pagesScanned.length) avisosBibGirona.push(`Pàgines revisades: ${detector.pagesScanned.length}.`);
     if (exclososClubLectura) {
       avisosBibGirona.push(`${exclososClubLectura} club${exclososClubLectura===1?'':'s'} de lectura exclòs${exclososClubLectura===1?'':'os'} dels resultats.`);
     }
     window.iaAvisos = avisosBibGirona.concat(avisos.slice(0, 3));
 
-    const pendentsAbansAgrupar = tots.filter(e => !e.descartat && !e.duplicat && !e._desat_auto).length;
-    if (!tots.length || pendentsAbansAgrupar === 0) {
-      listaItems.innerHTML = '<div style="font-size:13px; color:var(--verd); background:#e6f4ec; border:1px solid #c9e8d6; border-radius:8px; padding:10px;">✅ No hi ha events nous a BibGirona.</div>';
+    if (!tots.length) {
+      listaItems.innerHTML = '<div style="font-size:12px; color:var(--text-sec);">Hi havia fitxes noves, però cap event publicable després del filtre.</div>';
       listaContenedor.style.display = 'block';
-      if (!modeFallback && linksDetectats.length) guardarBibGironaSeen(linksDetectats);
-      if (modeFallback) {
-        const linksVistosFallback = tots.map(ev => ({ id: ev._source_event_id || bibGironaEventIdFromUrl(urlFontEvent(ev)), url: urlFontEvent(ev), title: ev.titol })).filter(x => x.id);
-        if (linksVistosFallback.length) guardarBibGironaSeen(linksVistosFallback);
-      }
-      toast('BibGirona: cap event nou');
+      guardarBibGironaSeen(linksDetectats);
+      toast('BibGirona: cap event publicable');
       return;
     }
 
@@ -2303,14 +2182,15 @@ async function revisarBibGirona() {
     renderLlistaIA();
     listaContenedor.style.display = 'block';
 
-    if (!modeFallback && linksDetectats.length) guardarBibGironaSeen(linksDetectats);
-    if (modeFallback) {
-      const linksVistosFallback = tots.map(ev => ({ id: ev._source_event_id || bibGironaEventIdFromUrl(urlFontEvent(ev)), url: urlFontEvent(ev), title: ev.titol })).filter(x => x.id);
-      if (linksVistosFallback.length) guardarBibGironaSeen(linksVistosFallback);
-    }
+    guardarBibGironaSeen(linksDetectats);
     const pendents = tots.filter(e => !e.descartat && !e.duplicat && !e._desat_auto).length;
     toast(`BibGirona: ${pendents} event${pendents===1?'':'s'} nou${pendents===1?'':'s'} per revisar.`);
   } catch (e) {
+    window.eventosDetectadosIA = [];
+    window.iaFontEspecial = 'bibgirona';
+    window.iaAvisos = ['La revisió BibGirona necessita la funció Supabase bibgirona-watch. No he enviat els mesos a la IA com a fallback perquè això no detecta novetats de veritat.'];
+    listaItems.innerHTML = `<div style="font-size:12px; color:var(--vermell); background:#fff3f2; border:1px solid #f0c6c0; border-radius:8px; padding:10px; line-height:1.45;"><strong>No s'ha pogut fer la detecció real.</strong><br>${escapeHtml(e.message)}<br><br>Solució: desplegar la Edge Function <code>bibgirona-watch</code> i tornar a provar.</div>`;
+    listaContenedor.style.display = 'block';
     toast('Error revisant BibGirona: ' + e.message, true);
   } finally {
     aturarTemporitzador();
@@ -2340,6 +2220,7 @@ async function guardarBibGironaEsborranys() {
     toast('Error guardant esborranys: ' + e.message, true);
   }
 }
+
 
 // Nombre de fitxes que l'Edge Function processa per lot (ha de coincidir amb MAX_FITXES a index.ts)
 const IA_MAX_FITXES_PER_LOT = 5;
@@ -3120,3 +3001,4 @@ document.addEventListener('DOMContentLoaded', tryAutoLogin);
 </script>
 </body>
 </html>
+
