@@ -853,7 +853,8 @@ function gxRenderAgenda(){
         '<div style="height:110px; position:relative; background-image:'+(ev.foto_url?'url(\''+ev.foto_url+'\')':c.color_gradient)+'; background-size:cover; background-position:center;"></div>'+
         '<div style="padding:8px 10px 10px;">'+
           '<div style="font-size:12.5px; font-weight:900; color:#1d2b27; line-height:1.2; letter-spacing:-.3px; font-family:var(--font-serif); margin-bottom:4px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">'+ev.titol+'</div>'+
-          '<div style="font-size:10px; color:#8a8478;">'+gxFormatDataCurta(ev.data)+'</div>'+
+          '<div style="font-size:10px; color:#8a8478; margin-bottom:'+(ev.overview?'5px':'0')+';">'+gxFormatDataCurta(ev.data)+'</div>'+
+          (ev.overview ? '<div style="font-size:10px; color:#5a6068; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">'+ev.overview+'</div>' : '')+
         '</div>';
       carteleraLlista.appendChild(card);
     });
@@ -1033,7 +1034,7 @@ function gxOpenFicha(id, fromFicha){
     document.getElementById('gx-f-lloc-map').textContent = gxLlocNom(ev) || '—';
     document.getElementById('gx-f-preu').textContent = ev.preu_text || 'Entrada lliure';
     document.getElementById('gx-f-organitza').textContent = ev.organitza || '—';
-    document.getElementById('gx-f-desc').innerHTML = ev.descripcio || '';
+    document.getElementById('gx-f-desc').innerHTML = (ev.overview ? '<p style="margin:0 0 10px; color:#4a5568; font-size:13px; line-height:1.55;">'+ev.overview+'</p>' : '') + (ev.descripcio || '');
 
     // recorda-m'ho: estat del botó
     gxActualitzaBotoRecorda(id, gxTeRecordatori(id));
