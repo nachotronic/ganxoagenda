@@ -1886,6 +1886,46 @@ function htmlFontBibGirona(url) {
   return `<p><small>Font: <a href="${safe}" target="_blank" rel="noopener">BibGirona</a></small></p>`;
 }
 
+
+function normalitzarTextBibGirona(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/['’`´]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function esClubLecturaBibGirona(ev) {
+  const text = normalitzarTextBibGirona([
+    ev.titol,
+    ev.descripcio,
+    ev.overview,
+    ev.resum,
+    ev.categoria,
+    ev.categoria_nom,
+    ev.tipus,
+    ev.source_url,
+    ev.url_font,
+    ev.url
+  ].filter(Boolean).join(' '));
+
+  // Excloem només els clubs de lectura explícits, sense tocar altres activitats literàries
+  // com tallers, contacontes, presentacions o "Tarda de llibres".
+  return /clubs?\s+de\s+lectura/.test(text) || /clubs?\s+lectura/.test(text);
+}
+
+function filtrarClubsLecturaBibGirona(events) {
+  const filtrats = [];
+  let exclosos = 0;
+  (events || []).forEach(ev => {
+    if (esClubLecturaBibGirona(ev)) exclosos++;
+    else filtrats.push(ev);
+  });
+  return { events: filtrats, exclosos };
+}
+
 function prepararCosEventIA(ev, estatDesti = 'esborrany') {
   const url = urlFontEvent(ev);
   const descBase = formatHoraris(ev.descripcio || '');
@@ -1938,6 +1978,7 @@ async function revisarBibGirona() {
   try {
     const tots = [];
     const avisos = [];
+    let exclososClubLectura = 0;
     const vistosEnImportacio = new Set();
 
     for (let i = 0; i < mesos.length; i++) {
@@ -1957,7 +1998,10 @@ async function revisarBibGirona() {
       mostrarUsIA(data.usage);
       if (data.avisos && data.avisos.length) avisos.push(...data.avisos);
 
-      (data.events || []).forEach(ev => {
+      const filtratge = filtrarClubsLecturaBibGirona(data.events || []);
+      exclososClubLectura += filtratge.exclosos;
+
+      filtratge.events.forEach(ev => {
         ev._font_bibgirona = true;
         ev._mes_bibgirona = mes;
         if (!urlFontEvent(ev)) ev.source_url = url;
@@ -1976,7 +2020,11 @@ async function revisarBibGirona() {
     window.eventosDetectadosIA = tots;
     window.iaUrlBase = BIBGIRONA_BASE_URL;
     window.iaFontEspecial = 'bibgirona';
-    window.iaAvisos = [`Revisats ${mesos.length} mesos: ${mesos.join(', ')}.`].concat(avisos.slice(0, 3));
+    const avisosBibGirona = [`Revisats ${mesos.length} mesos: ${mesos.join(', ')}.`];
+    if (exclososClubLectura) {
+      avisosBibGirona.push(`${exclososClubLectura} club${exclososClubLectura===1?'':'s'} de lectura exclòs${exclososClubLectura===1?'':'os'} dels resultats.`);
+    }
+    window.iaAvisos = avisosBibGirona.concat(avisos.slice(0, 3));
 
     if (!tots.length) {
       listaItems.innerHTML = '<div style="font-size:12px; color:var(--text-sec);">No s\'ha trobat cap event a BibGirona en aquests mesos.</div>';
@@ -1985,7 +2033,7 @@ async function revisarBibGirona() {
       return;
     }
 
-    // En BibGirona mantenim els events separats: un mateix dia pot tenir activitats diferents.
+    await detectarIOferiAgrupar();
     renderLlistaIA();
     listaContenedor.style.display = 'block';
     toast(`BibGirona revisat: ${tots.length} event${tots.length===1?'':'s'} detectat${tots.length===1?'':'s'}.`);
@@ -2124,8 +2172,16 @@ async function continuarFitxes() {
 
     mostrarUsIA(data.usage);
 
-    window.eventosDetectadosIA = data.events || window.eventosDetectadosIA;
+    let eventsActualitzats = data.events || window.eventosDetectadosIA;
     window.iaAvisos = data.avisos || [];
+    if (window.iaFontEspecial === 'bibgirona') {
+      const filtratge = filtrarClubsLecturaBibGirona(eventsActualitzats);
+      eventsActualitzats = filtratge.events;
+      if (filtratge.exclosos) {
+        window.iaAvisos = [`${filtratge.exclosos} club${filtratge.exclosos===1?'':'s'} de lectura exclòs${filtratge.exclosos===1?'':'os'} dels resultats.`].concat(window.iaAvisos);
+      }
+    }
+    window.eventosDetectadosIA = eventsActualitzats;
     renderLlistaIA();
     toast('Descripcions completades!');
   } catch (e) {
