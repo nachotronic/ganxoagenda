@@ -176,6 +176,16 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
         </div>
       </div>
       <div class="filtre-bar" id="filtre-bar"></div>
+      <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+        <select id="filtre-estat" onchange="renderPagina()" style="padding:7px 12px; border:1px solid var(--border); border-radius:20px; font-family:var(--font-sans); font-size:12px; background:#fff; color:var(--text); cursor:pointer;">
+          <option value="">Tots els estats</option>
+          <option value="publicat">✅ Publicats</option>
+          <option value="esborrany">📝 Esborranys</option>
+        </select>
+        <select id="filtre-cicle" onchange="renderPagina()" style="padding:7px 12px; border:1px solid var(--border); border-radius:20px; font-family:var(--font-sans); font-size:12px; background:#fff; color:var(--text); cursor:pointer; max-width:200px;">
+          <option value="">Tots els cicles</option>
+        </select>
+      </div>
       <div style="margin-bottom:12px; position:relative;">
         <input type="text" id="cerca-text" placeholder="🔍 Cercar per títol..." oninput="cercaEsdeveniments(this.value)"
           style="width:100%; padding:9px 36px 9px 14px; border:1px solid var(--border); border-radius:10px; font-family:var(--font-sans); font-size:14px; box-sizing:border-box; background:var(--fons-2);">
@@ -1143,6 +1153,12 @@ function renderFiltres() {
   let html = '<button class="filtre-btn actiu" onclick="filtrar(null, this)">Tots</button>';
   categories.forEach(c => html += `<button class="filtre-btn" onclick="filtrar('${escapeHtml(c.id)}', this)">${escapeHtml(c.nom)}</button>`);
   bar.innerHTML = html;
+  // Omplir select de cicles
+  const selCicle = document.getElementById('filtre-cicle');
+  if(selCicle) {
+    selCicle.innerHTML = '<option value="">Tots els cicles</option>' +
+      cicles.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nom)}</option>`).join('');
+  }
 }
 function filtrar(catId, btn) {
   document.querySelectorAll('.filtre-btn').forEach(b => b.classList.remove('actiu')); btn.classList.add('actiu');
@@ -1181,9 +1197,13 @@ async function renderPagina() {
 
   const offset = paginaActual * PAGINA_MIDA;
   // Demanem PAGINA_MIDA+1 per saber si hi ha pàgina següent
+  const filtreEstat = document.getElementById('filtre-estat')?.value || '';
+  const filtreCicle = document.getElementById('filtre-cicle')?.value || '';
   let q = `/rest/v1/esdeveniments?select=*,categories(nom),llocs(nom),cicles(nom,color),series(titol)&order=data.desc,hora_inici&limit=${PAGINA_MIDA + 1}&offset=${offset}`;
   if(paginaCatId) q += `&categoria_id=eq.${paginaCatId}`;
   if(cercaActual) q += `&titol=ilike.${encodeURIComponent('%' + cercaActual + '%')}`;
+  if(filtreEstat) q += `&estat=eq.${filtreEstat}`;
+  if(filtreCicle) q += `&cicle_id=eq.${filtreCicle}`;
 
   const data = await sbFetch(q);
   const hiHaSeguent = data.length > PAGINA_MIDA;
@@ -2716,38 +2736,43 @@ async function executarSincBiblio() {
     if (mes2Month > 12) { mes2Month = 1; mes2Year++; }
     const mes2 = mes2Year + '-' + String(mes2Month).padStart(2, '0');
 
-    setProgress(40, 'Processant amb IA...');
-
-    // El scraping el fa la Edge Function (evita CORS del navegador)
-    // Timeout de 120s perque ganxo-ia pot trigar amb molts actes
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
-    const res = await fetch(BIBLIO_SYNC_URL, {
+    // Fire and forget: disparem la funció sense esperar resposta (pot trigar >60s)
+    setProgress(30, 'Llancant sincronitzacio...');
+    fetch(BIBLIO_SYNC_URL, {
       method: 'POST',
-      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
         'apikey': SUPABASE_ANON_KEY
       },
       body: JSON.stringify({})
-    });
-    clearTimeout(timeoutId);
-    const data = await res.json();
+    }).catch(() => {});
 
-    setProgress(100, data.ok ? 'Fet!' : 'Error');
-    (data.log || []).forEach(l => addLog(l));
-    if (data.errors && data.errors.length) data.errors.forEach(e => addLog('⚠️ ' + e));
+    // Anem mostrant progrés mentre esperem
+    setProgress(50, 'Processant amb IA (pot trigar 1-2 min)...');
+    addLog('La sincronitzacio s\'ha engegat en segon pla...');
 
-    if (data.nous > 0) {
-      addLog('✅ ' + data.nous + ' actes nous afegits com a esborranys');
+    // Esperem 90 segons i comprovem si han aparegut esborranys nous
+    await new Promise(r => setTimeout(r, 90000));
+    setProgress(90, 'Comprovant resultats...');
+
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      '/rest/v1/esdeveniments?select=id,titol,data&estat=eq.esborrany&cicle_id=eq.' + CICLE_BIBLIOTECA_ID + '&data=gte.' + avui + '&order=created_at.desc&limit=20'
+    );
+    const nous = res || [];
+
+    setProgress(100, 'Fet!');
+    if (nous.length > 0) {
+      addLog('✅ ' + nous.length + ' esborranys de biblioteca disponibles per revisar');
+      nous.forEach(e => addLog('  · ' + e.data + ' — ' + e.titol));
       await carregarEsdeveniments();
       await comprovarBadgeBiblio();
     } else {
       addLog('ℹ️ Ja estàvem al dia, cap novetat');
     }
-    document.getElementById('biblio-progress-bar').style.background = data.ok ? '#1d8a4e' : 'var(--vermell)';
-    setTimeout(() => document.body.removeChild(modal), 3500);
+    document.getElementById('biblio-progress-bar').style.background = '#1d8a4e';
+    setTimeout(() => document.body.removeChild(modal), 4000);
   } catch(e) {
     setProgress(100, 'Error: ' + e.message.slice(0, 80));
     document.getElementById('biblio-progress-bar').style.background = 'var(--vermell)';
