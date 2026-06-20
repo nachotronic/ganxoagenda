@@ -2716,31 +2716,23 @@ async function executarSincBiblio() {
     if (mes2Month > 12) { mes2Month = 1; mes2Year++; }
     const mes2 = mes2Year + '-' + String(mes2Month).padStart(2, '0');
 
-    setProgress(20, 'Llegint mes actual...');
-    const actesMes1 = await biblioScrapeMes(mes1);
-    addLog(mes1 + ': ' + actesMes1.length + ' actes trobats');
+    setProgress(40, 'Processant amb IA...');
 
-    setProgress(40, 'Llegint mes seguent...');
-    const actesMes2 = await biblioScrapeMes(mes2);
-    addLog(mes2 + ': ' + actesMes2.length + ' actes trobats');
-
-    const totesActes = [...actesMes1, ...actesMes2];
-    const avui = formatDateLocal(ara);
-    const futures = totesActes.filter(a => a.data >= avui);
-    addLog('Actes futurs: ' + futures.length);
-
-    setProgress(60, 'Processant amb IA...');
-
-    // 2. Enviar a la Edge Function per deduplicar + IA + inserir
+    // El scraping el fa la Edge Function (evita CORS del navegador)
+    // Timeout de 120s perque ganxo-ia pot trigar amb molts actes
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
     const res = await fetch(BIBLIO_SYNC_URL, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ actes: futures })
+      body: JSON.stringify({})
     });
+    clearTimeout(timeoutId);
     const data = await res.json();
 
     setProgress(100, data.ok ? 'Fet!' : 'Error');
