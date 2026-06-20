@@ -171,6 +171,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
             🎬 Cartelera
             <span id="badge-cartelera" style="display:none; position:absolute; top:-7px; right:-7px; background:#f39c12; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
           </button>
+          <button class="btn-nou" style="background:#b8860b; position:relative;" onclick="sincronitzarLasVegas()" id="btn-lasvegas">
+            🎸 Las Vegas
+            <span id="badge-lasvegas" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
+          </button>
           <button class="btn-nou" style="background:#6b4c9a; position:relative;" onclick="sincronitzarBiblio()" id="btn-biblio">
             🏛️ Biblioteca
             <span id="badge-biblio" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
@@ -650,6 +654,7 @@ async function showApp() {
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
   comprovarBadgeBiblio();
   comprovarBadgeCartelera();
+  comprovarBadgeLasVegas();
 }
 
 async function carregarCategories() {
@@ -2631,6 +2636,103 @@ const BIBLIO_SYNC_URL = SUPABASE_URL + '/functions/v1/biblio-sync';
 const CICLE_BIBLIOTECA_ID = 'ba375538-59ad-41df-b5b6-de90beb55bff';
 
 const CAT_CINEMA_ID = 'e85914b2-c780-4660-92bf-92c23f758672';
+const LASVEGAS_SYNC_URL = SUPABASE_URL + '/functions/v1/lasvegas-sync';
+const LLOC_LASVEGAS_ID = '457b691c-3a24-4798-9544-4d8af8324965';
+
+async function comprovarBadgeLasVegas() {
+  try {
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id&estat=eq.esborrany&lloc_id=eq.${LLOC_LASVEGAS_ID}&data=gte.${avui}&limit=1`
+    );
+    const badge = document.getElementById('badge-lasvegas');
+    if (badge) badge.style.display = (res && res.length > 0) ? 'block' : 'none';
+  } catch(e) { /* silenciós */ }
+}
+
+async function sincronitzarLasVegas() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:420px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:17px; font-weight:700; color:#b8860b; margin-bottom:10px;">🎸 Sincronitzar Sala Las Vegas</div>
+      <p style="font-size:13px; color:var(--text-sec); margin:0 0 16px;">S'obtindran els propers esdeveniments de les tres sales (Principal, Sala 2, Terrassa Fnix) i es crearan com a esborranys.</p>
+      <div style="background:var(--fons-2); border-radius:10px; padding:12px 14px; margin-bottom:20px; font-size:12px; color:var(--text-sec);">
+        Els events que ja existeixin a Ganxoagenda no es duplicaran.
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="btn-cancel-lv" style="padding:10px 18px; border:1px solid var(--border); border-radius:8px; background:#fff; font-size:14px; cursor:pointer;">Cancel·lar</button>
+        <button id="btn-ok-lv" style="padding:10px 18px; border:none; border-radius:8px; background:#b8860b; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">Sincronitzar ara</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btn-cancel-lv').onclick = () => document.body.removeChild(modal);
+  modal.querySelector('#btn-ok-lv').onclick = () => { document.body.removeChild(modal); executarSincLasVegas(); };
+}
+
+async function executarSincLasVegas() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:16px; font-weight:700; color:#b8860b; margin-bottom:16px;">🎸 Sincronitzant Las Vegas...</div>
+      <div style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
+        <div id="lv-progress-bar" style="height:100%; background:#b8860b; border-radius:8px; width:10%; transition:width .5s;"></div>
+      </div>
+      <div id="lv-progress-text" style="font-size:13px; color:var(--text-sec);">Llancant sincronitzacio...</div>
+      <div id="lv-progress-log" style="margin-top:12px; font-size:12px; color:var(--text-sec); display:flex; flex-direction:column; gap:4px; min-height:60px;"></div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const setProgress = (pct, text) => {
+    document.getElementById('lv-progress-bar').style.width = pct + '%';
+    document.getElementById('lv-progress-text').textContent = text;
+  };
+  const addLog = (text) => {
+    const el = document.createElement('div'); el.textContent = text;
+    document.getElementById('lv-progress-log').appendChild(el);
+  };
+
+  try {
+    fetch(LASVEGAS_SYNC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({})
+    }).catch(() => {});
+
+    setProgress(30, 'Processant 3 sales amb IA (pot trigar 2-3 min)...');
+    addLog('La sincronitzacio s\'ha engegat en segon pla...');
+
+    await new Promise(r => setTimeout(r, 120000));
+    setProgress(90, 'Comprovant resultats...');
+
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id,titol,data&estat=eq.esborrany&lloc_id=eq.${LLOC_LASVEGAS_ID}&data=gte.${avui}&order=data.asc&limit=20`
+    );
+    const nous = res || [];
+
+    setProgress(100, 'Fet!');
+    if (nous.length > 0) {
+      addLog('✅ ' + nous.length + ' esborranys de Las Vegas per revisar');
+      nous.forEach(e => addLog('  · ' + e.data + ' — ' + e.titol));
+      await carregarEsdeveniments();
+      await comprovarBadgeLasVegas();
+    } else {
+      addLog('ℹ️ Ja estàvem al dia, cap novetat');
+    }
+    document.getElementById('lv-progress-bar').style.background = '#1d8a4e';
+    setTimeout(() => document.body.removeChild(modal), 4000);
+  } catch(e) {
+    setProgress(100, 'Error: ' + e.message.slice(0, 80));
+    document.getElementById('lv-progress-bar').style.background = 'var(--vermell)';
+    modal.addEventListener('click', () => document.body.removeChild(modal));
+  }
+}
 
 async function comprovarBadgeCartelera() {
   try {
