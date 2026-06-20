@@ -168,6 +168,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
           <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
           <button class="btn-nou" style="background:#c0392b;" onclick="confirmarCartelera()">🎬 Cartelera</button>
+          <button class="btn-nou" style="background:#6b4c9a; position:relative;" onclick="sincronitzarBiblio()" id="btn-biblio">
+            🏛️ Biblioteca
+            <span id="badge-biblio" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
+          </button>
           <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
         </div>
       </div>
@@ -631,6 +635,7 @@ async function showApp() {
   await carregarCicles();
   await carregarSeries();
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
+  comprovarBadgeBiblio();
 }
 
 async function carregarCategories() {
@@ -2593,6 +2598,99 @@ function _editorAplicar() {
 function tancarEditorImatge() {
   const modal = document.getElementById('modal-editor-img');
   if(modal) document.body.removeChild(modal);
+}
+
+// ============================================================
+// SINCRONITZACIÓ BIBLIOTECA OCTAVI VIADER
+// ============================================================
+const BIBLIO_SYNC_URL = SUPABASE_URL + '/functions/v1/biblio-sync';
+const CICLE_BIBLIOTECA_ID = 'ba375538-59ad-41df-b5b6-de90beb55bff';
+
+async function comprovarBadgeBiblio() {
+  try {
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id&estat=eq.esborrany&cicle_id=eq.${CICLE_BIBLIOTECA_ID}&data=gte.${avui}&limit=1`
+    );
+    const badge = document.getElementById('badge-biblio');
+    if (badge) badge.style.display = (res && res.length > 0) ? 'block' : 'none';
+  } catch(e) { /* silenciós */ }
+}
+
+async function sincronitzarBiblio() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:420px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:17px; font-weight:700; color:#6b4c9a; margin-bottom:10px;">🏛️ Sincronitzar Biblioteca</div>
+      <p style="font-size:13px; color:var(--text-sec); margin:0 0 16px;">S'obtindran els actes del mes actual i el següent de la Biblioteca Octavi Viader i es crearan com a esborranys assignats al cicle <strong>Biblioteca Octavi Viader</strong>.</p>
+      <div style="background:var(--fons-2); border-radius:10px; padding:12px 14px; margin-bottom:20px; font-size:12px; color:var(--text-sec);">
+        Els actes que ja existeixin a Ganxoagenda no es duplicaran.<br>Podràs revisar i publicar els nous des de la llista filtrant per cicle.
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="btn-cancel-biblio" style="padding:10px 18px; border:1px solid var(--border); border-radius:8px; background:#fff; font-size:14px; cursor:pointer;">Cancel·lar</button>
+        <button id="btn-ok-biblio" style="padding:10px 18px; border:none; border-radius:8px; background:#6b4c9a; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">Sincronitzar ara</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btn-cancel-biblio').onclick = () => document.body.removeChild(modal);
+  modal.querySelector('#btn-ok-biblio').onclick = () => { document.body.removeChild(modal); executarSincBiblio(); };
+}
+
+async function executarSincBiblio() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:16px; font-weight:700; color:#6b4c9a; margin-bottom:16px;">🏛️ Sincronitzant...</div>
+      <div style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
+        <div id="biblio-progress-bar" style="height:100%; background:#6b4c9a; border-radius:8px; width:30%; transition:width .5s;"></div>
+      </div>
+      <div id="biblio-progress-text" style="font-size:13px; color:var(--text-sec);">Llegint agenda de la biblioteca...</div>
+      <div id="biblio-progress-log" style="margin-top:12px; font-size:12px; color:var(--text-sec); display:flex; flex-direction:column; gap:4px; min-height:60px;"></div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const setProgress = (pct, text) => {
+    document.getElementById('biblio-progress-bar').style.width = pct + '%';
+    document.getElementById('biblio-progress-text').textContent = text;
+  };
+  const addLog = (text) => {
+    const el = document.createElement('div'); el.textContent = text;
+    document.getElementById('biblio-progress-log').appendChild(el);
+  };
+
+  try {
+    setProgress(50, 'Processant amb IA...');
+    const res = await fetch(BIBLIO_SYNC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+
+    setProgress(100, data.ok ? 'Fet!' : 'Error');
+    (data.log || []).forEach(l => addLog(l));
+    if (data.errors && data.errors.length) data.errors.forEach(e => addLog('⚠️ ' + e));
+
+    if (data.nous > 0) {
+      addLog(`✅ ${data.nous} actes nous afegits com a esborranys`);
+      await carregarEsdeveniments();
+      await comprovarBadgeBiblio();
+    } else {
+      addLog('ℹ️ Ja estàvem al dia, cap novetat');
+    }
+    document.getElementById('biblio-progress-bar').style.background = data.ok ? '#1d8a4e' : 'var(--vermell)';
+    setTimeout(() => document.body.removeChild(modal), 3500);
+  } catch(e) {
+    setProgress(100, 'Error: ' + e.message.slice(0, 80));
+    document.getElementById('biblio-progress-bar').style.background = 'var(--vermell)';
+    modal.addEventListener('click', () => document.body.removeChild(modal));
+  }
 }
 
 document.addEventListener('DOMContentLoaded', tryAutoLogin);
