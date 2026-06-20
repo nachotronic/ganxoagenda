@@ -2694,15 +2694,14 @@ async function executarSincLasVegas() {
   };
 
   try {
-    fetch(LASVEGAS_SYNC_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
-        'apikey': SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({})
-    }).catch(() => {});
+    const lvHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+      'apikey': SUPABASE_ANON_KEY
+    };
+    // Disparem les dues funcions en paral·lel (sales + clubs)
+    fetch(LASVEGAS_SYNC_URL, { method: 'POST', headers: lvHeaders, body: JSON.stringify({}) }).catch(() => {});
+    fetch(SUPABASE_URL + '/functions/v1/lasvegas-clubs-sync', { method: 'POST', headers: lvHeaders, body: JSON.stringify({}) }).catch(() => {});
 
     setProgress(30, 'Processant 3 sales amb IA (pot trigar 2-3 min)...');
     addLog('La sincronitzacio s\'ha engegat en segon pla...');
