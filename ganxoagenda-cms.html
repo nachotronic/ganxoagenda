@@ -2637,6 +2637,53 @@ async function sincronitzarBiblio() {
   modal.querySelector('#btn-ok-biblio').onclick = () => { document.body.removeChild(modal); executarSincBiblio(); };
 }
 
+// Parseja l'HTML de la biblioteca directament al navegador (evita el problema SSL de Deno)
+const BIBLIO_MESOS_CAT = {
+  'gener':'01','febrer':'02','marc':'03','abril':'04',
+  'maig':'05','juny':'06','juliol':'07','agost':'08',
+  'setembre':'09','octubre':'10','novembre':'11','desembre':'12'
+};
+
+function biblioParseData(text) {
+  const m = text.trim().match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  if (!m) return '';
+  const dia = m[1].padStart(2, '0');
+  const mesKey = m[2].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const mes = BIBLIO_MESOS_CAT[mesKey] || '00';
+  return m[3] + '-' + mes + '-' + dia;
+}
+
+function biblioParseHora(text) {
+  const m = text.match(/[-–]\s*(\d{1,2}):(\d{2})/);
+  return m ? m[1].padStart(2, '0') + ':' + m[2] : '';
+}
+
+async function biblioScrapeMes(anyMes) {
+  const url = 'https://bibgirona.cat/biblioteca/guixols/agenda?month=' + anyMes + '-01';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const html = await res.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const articles = doc.querySelectorAll('.article-agenda');
+  const actes = [];
+  articles.forEach(art => {
+    const titolEl = art.querySelector('.title-agenda h3');
+    const timeEl = art.querySelector('.meta-agenda .time');
+    const catEl = art.querySelector('.text-treatment');
+    const linkEl = art.querySelector('a');
+    const titol = titolEl ? titolEl.textContent.trim() : '';
+    const timeText = timeEl ? timeEl.textContent.trim() : '';
+    const data = biblioParseData(timeText);
+    const hora = biblioParseHora(timeText);
+    const categoria = catEl ? catEl.textContent.trim() : '';
+    const href = linkEl ? linkEl.getAttribute('href') : '';
+    const url2 = href && href.startsWith('http') ? href : 'https://bibgirona.cat' + href;
+    if (titol && data) actes.push({ titol, data, hora, url: url2, categoria });
+  });
+  return actes;
+}
+
 async function executarSincBiblio() {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
@@ -2644,7 +2691,7 @@ async function executarSincBiblio() {
     <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
       <div style="font-size:16px; font-weight:700; color:#6b4c9a; margin-bottom:16px;">🏛️ Sincronitzant...</div>
       <div style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
-        <div id="biblio-progress-bar" style="height:100%; background:#6b4c9a; border-radius:8px; width:30%; transition:width .5s;"></div>
+        <div id="biblio-progress-bar" style="height:100%; background:#6b4c9a; border-radius:8px; width:10%; transition:width .5s;"></div>
       </div>
       <div id="biblio-progress-text" style="font-size:13px; color:var(--text-sec);">Llegint agenda de la biblioteca...</div>
       <div id="biblio-progress-log" style="margin-top:12px; font-size:12px; color:var(--text-sec); display:flex; flex-direction:column; gap:4px; min-height:60px;"></div>
@@ -2661,7 +2708,30 @@ async function executarSincBiblio() {
   };
 
   try {
-    setProgress(50, 'Processant amb IA...');
+    // 1. Scraping al navegador (sense problema SSL)
+    const ara = new Date();
+    const mes1 = ara.getFullYear() + '-' + String(ara.getMonth() + 1).padStart(2, '0');
+    let mes2Month = ara.getMonth() + 2;
+    let mes2Year = ara.getFullYear();
+    if (mes2Month > 12) { mes2Month = 1; mes2Year++; }
+    const mes2 = mes2Year + '-' + String(mes2Month).padStart(2, '0');
+
+    setProgress(20, 'Llegint mes actual...');
+    const actesMes1 = await biblioScrapeMes(mes1);
+    addLog(mes1 + ': ' + actesMes1.length + ' actes trobats');
+
+    setProgress(40, 'Llegint mes seguent...');
+    const actesMes2 = await biblioScrapeMes(mes2);
+    addLog(mes2 + ': ' + actesMes2.length + ' actes trobats');
+
+    const totesActes = [...actesMes1, ...actesMes2];
+    const avui = formatDateLocal(ara);
+    const futures = totesActes.filter(a => a.data >= avui);
+    addLog('Actes futurs: ' + futures.length);
+
+    setProgress(60, 'Processant amb IA...');
+
+    // 2. Enviar a la Edge Function per deduplicar + IA + inserir
     const res = await fetch(BIBLIO_SYNC_URL, {
       method: 'POST',
       headers: {
@@ -2669,7 +2739,7 @@ async function executarSincBiblio() {
         'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
         'apikey': SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({})
+      body: JSON.stringify({ actes: futures })
     });
     const data = await res.json();
 
@@ -2678,7 +2748,7 @@ async function executarSincBiblio() {
     if (data.errors && data.errors.length) data.errors.forEach(e => addLog('⚠️ ' + e));
 
     if (data.nous > 0) {
-      addLog(`✅ ${data.nous} actes nous afegits com a esborranys`);
+      addLog('✅ ' + data.nous + ' actes nous afegits com a esborranys');
       await carregarEsdeveniments();
       await comprovarBadgeBiblio();
     } else {
