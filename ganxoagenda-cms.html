@@ -167,7 +167,10 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
           <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
           <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
           <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
-          <button class="btn-nou" style="background:#c0392b;" onclick="confirmarCartelera()">🎬 Cartelera</button>
+          <button class="btn-nou" style="background:#c0392b; position:relative;" onclick="confirmarCartelera()" id="btn-cartelera">
+            🎬 Cartelera
+            <span id="badge-cartelera" style="display:none; position:absolute; top:-7px; right:-7px; background:#f39c12; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
+          </button>
           <button class="btn-nou" style="background:#6b4c9a; position:relative;" onclick="sincronitzarBiblio()" id="btn-biblio">
             🏛️ Biblioteca
             <span id="badge-biblio" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
@@ -646,6 +649,7 @@ async function showApp() {
   await carregarSeries();
   renderFiltres(); renderCatPills(); await carregarEsdeveniments();
   comprovarBadgeBiblio();
+  comprovarBadgeCartelera();
 }
 
 async function carregarCategories() {
@@ -2626,6 +2630,19 @@ function tancarEditorImatge() {
 const BIBLIO_SYNC_URL = SUPABASE_URL + '/functions/v1/biblio-sync';
 const CICLE_BIBLIOTECA_ID = 'ba375538-59ad-41df-b5b6-de90beb55bff';
 
+const CAT_CINEMA_ID = 'e85914b2-c780-4660-92bf-92c23f758672';
+
+async function comprovarBadgeCartelera() {
+  try {
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id&estat=eq.esborrany&categoria_id=eq.${CAT_CINEMA_ID}&data=gte.${avui}&limit=1`
+    );
+    const badge = document.getElementById('badge-cartelera');
+    if (badge) badge.style.display = (res && res.length > 0) ? 'block' : 'none';
+  } catch(e) { /* silenciós */ }
+}
+
 async function comprovarBadgeBiblio() {
   try {
     const avui = formatDateLocal(new Date());
@@ -2784,4 +2801,3 @@ document.addEventListener('DOMContentLoaded', tryAutoLogin);
 </script>
 </body>
 </html>
-
