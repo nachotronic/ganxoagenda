@@ -64,7 +64,7 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 .main { max-width:900px; margin:0 auto; padding:24px; }
 
 /* ---- LLISTA ---- */
-.llista-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.llista-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; }
 .llista-header h2 { font-family:var(--font-serif); font-size:22px; font-weight:600; }
 .btn-nou {
   background:var(--blau); color:#fff; border:none; border-radius:8px;
@@ -158,15 +158,23 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
 
     <!-- SECCIÓ LLISTAT PRINCIPAL -->
     <div id="vista-llista">
-      <div class="llista-header">
-        <h2>Esdeveniments</h2>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-nou" style="background:#5f6b73;" onclick="obrirGestorLlocs()">📍 Lugares</button>
-          <button class="btn-nou" style="background:#706351;" onclick="obrirGaleria()">📷 Fotos</button>
-          <button class="btn-nou" style="background:#5c4a8a;" onclick="obrirGestorCicles()">🎟️ Cicles</button>
-          <button class="btn-nou" style="background:#2d6e7e;" onclick="obrirGestorCategories()">🏷️ Categories</button>
-          <button class="btn-nou" style="background:#3a6b3a;" onclick="obrirGestorSeries()">🔄 Sèries</button>
-          <button class="btn-nou" style="background:#8b5cf6;" onclick="obrirAnalitica()">📊 Analítica</button>
+      <div class="llista-header" style="flex-direction:column; align-items:flex-start; gap:12px;">
+        <!-- Fila principal -->
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+          <h2>Esdeveniments</h2>
+          <button class="btn-nou" onclick="nouEsdeveniment()" style="font-size:15px; padding:11px 24px;">+ Nou esdeveniment</button>
+        </div>
+        <!-- Fila sincronitzacions -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:11px; font-weight:600; color:var(--text-sec); text-transform:uppercase; letter-spacing:.5px; margin-right:2px;">Sincronitzar:</span>
+          <button class="btn-nou" style="background:#2d7a4f; position:relative;" onclick="sincronitzarVisitGuixols()" id="btn-visitguixols">
+            🏖️ Visit Guíxols
+            <span id="badge-visitguixols" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
+          </button>
+          <button class="btn-nou" style="background:#6b4c9a; position:relative;" onclick="sincronitzarBiblio()" id="btn-biblio">
+            🏛️ Biblioteca
+            <span id="badge-biblio" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
+          </button>
           <button class="btn-nou" style="background:#c0392b; position:relative;" onclick="confirmarCartelera()" id="btn-cartelera">
             🎬 Cartelera
             <span id="badge-cartelera" style="display:none; position:absolute; top:-7px; right:-7px; background:#f39c12; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
@@ -175,11 +183,16 @@ body { font-family:var(--font-sans); background:var(--fons-2); color:var(--text)
             🎸 Las Vegas
             <span id="badge-lasvegas" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
           </button>
-          <button class="btn-nou" style="background:#6b4c9a; position:relative;" onclick="sincronitzarBiblio()" id="btn-biblio">
-            🏛️ Biblioteca
-            <span id="badge-biblio" style="display:none; position:absolute; top:-7px; right:-7px; background:#c0392b; color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; font-weight:700; line-height:18px; text-align:center;">!</span>
-          </button>
-          <button class="btn-nou" onclick="nouEsdeveniment()">+ Nou esdeveniment</button>
+        </div>
+        <!-- Fila gestió -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:11px; font-weight:600; color:var(--text-sec); text-transform:uppercase; letter-spacing:.5px; margin-right:2px;">Gestió:</span>
+          <button onclick="obrirGestorLlocs()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">📍 Llocs</button>
+          <button onclick="obrirGaleria()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">📷 Fotos</button>
+          <button onclick="obrirGestorCicles()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">🎟️ Cicles</button>
+          <button onclick="obrirGestorCategories()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">🏷️ Categories</button>
+          <button onclick="obrirGestorSeries()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">🔄 Sèries</button>
+          <button onclick="obrirAnalitica()" style="padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:#fff; font-family:var(--font-sans); font-size:12px; cursor:pointer; color:var(--text);">📊 Analítica</button>
         </div>
       </div>
       <div class="filtre-bar" id="filtre-bar"></div>
@@ -655,6 +668,7 @@ async function showApp() {
   comprovarBadgeBiblio();
   comprovarBadgeCartelera();
   comprovarBadgeLasVegas();
+  comprovarBadgeVisitGuixols();
 }
 
 async function carregarCategories() {
@@ -2090,7 +2104,13 @@ async function carregarAnalitica(){
   try{
     const ara = new Date();
     const fa30 = new Date(ara); fa30.setDate(fa30.getDate()-30);
-    const data = await sbFetch(`/rest/v1/analytics_events?select=*&created_at=gte.${fa30.toISOString()}&order=created_at.desc&limit=2000`);
+    let data;
+    try {
+      data = await sbFetch(`/rest/v1/analytics_events?select=*&created_at=gte.${fa30.toISOString()}&order=created_at.desc&limit=2000`);
+    } catch(err) {
+      document.getElementById('analitica-raw-tbody').innerHTML = `<tr><td colspan="3" style="padding:12px; color:var(--vermell);">Error llegint analytics_events: ${escapeHtml(err.message)}<br><br>Possible causa: RLS (Row Level Security) bloqueja la lectura. Ves a Supabase → Authentication → Policies → analytics_events i afegeix una política SELECT per a usuaris autenticats.</td></tr>`;
+      return;
+    }
     if(!Array.isArray(data)) return;
 
     const tipos = (tipus, dies) => {
@@ -2636,6 +2656,103 @@ const BIBLIO_SYNC_URL = SUPABASE_URL + '/functions/v1/biblio-sync';
 const CICLE_BIBLIOTECA_ID = 'ba375538-59ad-41df-b5b6-de90beb55bff';
 
 const CAT_CINEMA_ID = 'e85914b2-c780-4660-92bf-92c23f758672';
+const VISITGUIXOLS_SYNC_URL = SUPABASE_URL + '/functions/v1/visitguixols-sync';
+
+async function comprovarBadgeVisitGuixols() {
+  try {
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id&estat=eq.esborrany&data=gte.${avui}&limit=1`
+    );
+    const badge = document.getElementById('badge-visitguixols');
+    if (badge) badge.style.display = (res && res.length > 0) ? 'block' : 'none';
+  } catch(e) { /* silenciós */ }
+}
+
+async function sincronitzarVisitGuixols() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:420px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:17px; font-weight:700; color:#2d7a4f; margin-bottom:10px;">🏖️ Sincronitzar Visit Guíxols</div>
+      <p style="font-size:13px; color:var(--text-sec); margin:0 0 16px;">S'obtindran els events del mes actual i el seguent de l'agenda oficial de l'Ajuntament. S'exclouen exposicions i duplicats.</p>
+      <div style="background:var(--fons-2); border-radius:10px; padding:12px 14px; margin-bottom:20px; font-size:12px; color:var(--text-sec);">
+        Tots els events es crearan com a <strong>esborranys</strong> per revisar abans de publicar.
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="btn-cancel-vg" style="padding:10px 18px; border:1px solid var(--border); border-radius:8px; background:#fff; font-size:14px; cursor:pointer;">Cancel·lar</button>
+        <button id="btn-ok-vg" style="padding:10px 18px; border:none; border-radius:8px; background:#2d7a4f; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">Sincronitzar ara</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#btn-cancel-vg').onclick = () => document.body.removeChild(modal);
+  modal.querySelector('#btn-ok-vg').onclick = () => { document.body.removeChild(modal); executarSincVisitGuixols(); };
+}
+
+async function executarSincVisitGuixols() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:#fff; border-radius:14px; max-width:400px; width:100%; padding:28px 24px; box-shadow:0 12px 40px rgba(0,0,0,.25);">
+      <div style="font-size:16px; font-weight:700; color:#2d7a4f; margin-bottom:16px;">🏖️ Sincronitzant Visit Guíxols...</div>
+      <div style="background:var(--fons-2); border-radius:8px; height:10px; margin-bottom:14px; overflow:hidden;">
+        <div id="vg-progress-bar" style="height:100%; background:#2d7a4f; border-radius:8px; width:10%; transition:width .5s;"></div>
+      </div>
+      <div id="vg-progress-text" style="font-size:13px; color:var(--text-sec);">Llancant sincronitzacio...</div>
+      <div id="vg-progress-log" style="margin-top:12px; font-size:12px; color:var(--text-sec); display:flex; flex-direction:column; gap:4px; min-height:60px;"></div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const setProgress = (pct, text) => {
+    document.getElementById('vg-progress-bar').style.width = pct + '%';
+    document.getElementById('vg-progress-text').textContent = text;
+  };
+  const addLog = (text) => {
+    const el = document.createElement('div'); el.textContent = text;
+    document.getElementById('vg-progress-log').appendChild(el);
+  };
+
+  try {
+    fetch(VISITGUIXOLS_SYNC_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY),
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({})
+    }).catch(() => {});
+
+    setProgress(30, 'Processant amb IA (pot trigar 1-2 min)...');
+    addLog('La sincronitzacio s\'ha engegat en segon pla...');
+
+    await new Promise(r => setTimeout(r, 90000));
+    setProgress(90, 'Comprovant resultats...');
+
+    const avui = formatDateLocal(new Date());
+    const res = await sbFetch(
+      `/rest/v1/esdeveniments?select=id,titol,data&estat=eq.esborrany&data=gte.${avui}&order=data.asc&limit=20`
+    );
+    const nous = res || [];
+
+    setProgress(100, 'Fet!');
+    if (nous.length > 0) {
+      addLog('✅ ' + nous.length + ' esborranys nous per revisar');
+      nous.slice(0, 8).forEach(e => addLog('  · ' + e.data + ' — ' + e.titol));
+      if (nous.length > 8) addLog('  ... i ' + (nous.length - 8) + ' mes');
+      await carregarEsdeveniments();
+      await comprovarBadgeVisitGuixols();
+    } else {
+      addLog('ℹ️ Ja estàvem al dia, cap novetat');
+    }
+    document.getElementById('vg-progress-bar').style.background = '#1d8a4e';
+    setTimeout(() => document.body.removeChild(modal), 4000);
+  } catch(e) {
+    setProgress(100, 'Error: ' + e.message.slice(0, 80));
+    document.getElementById('vg-progress-bar').style.background = 'var(--vermell)';
+    modal.addEventListener('click', () => document.body.removeChild(modal));
+  }
+}
 const LASVEGAS_SYNC_URL = SUPABASE_URL + '/functions/v1/lasvegas-sync';
 const LLOC_LASVEGAS_ID = '457b691c-3a24-4798-9544-4d8af8324965';
 
